@@ -1,0 +1,16 @@
+{
+    "id": 1,
+    "name": "Anirban Das",
+    "email": "anirban@example.com",
+    "username": "anirbandas",
+    "phone": "+91-9876543210",
+    "role": "Admin",
+    "isActive": true,
+    "image": "/user.png",
+    "address": {
+        "street": "Sector 5",
+        "city": "Kolkata",
+        "state": "West Bengal",
+        "zip": "700091"
+    }
+}

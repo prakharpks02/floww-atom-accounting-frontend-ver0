@@ -1,0 +1,22 @@
+[
+    {
+        "name": "Week1",
+        "revenue": 4000,
+        "expenses": 2400
+    },
+    {
+        "name": "Week2",
+        "revenue": 3000,
+        "expenses": 1398
+    },
+    {
+        "name": "Week3",
+        "revenue": 2000,
+        "expenses": 9800
+    },
+    {
+        "name": "Week4",
+        "revenue": 2780,
+        "expenses": 3908
+    }
+]

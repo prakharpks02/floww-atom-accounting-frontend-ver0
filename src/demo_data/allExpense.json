@@ -1,0 +1,262 @@
+[
+  {
+    "createdBy": {
+      "name": "Person 1",
+      "email": "person1@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/women/44.jpg"
+    },
+    "expenseName": "New Travel Expense",
+    "category": "Travel",
+    "amount": 6480,
+    "billDate": "20-03-2025",
+    "status": "Rejected",
+    "reimbursement": "❌"
+  },
+  {
+    "createdBy": {
+      "name": "Person 2",
+      "email": "person2@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/men/33.jpg"
+    },
+    "expenseName": "Hotel Stay",
+    "category": "Lodging",
+    "amount": 8200,
+    "billDate": "18-03-2025",
+    "status": "Approved",
+    "reimbursement": "✅"
+  },
+  {
+    "createdBy": {
+      "name": "Person 3",
+      "email": "person3@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/women/21.jpg"
+    },
+    "expenseName": "Taxi Fare",
+    "category": "Transport",
+    "amount": 1200,
+    "billDate": "19-03-2025",
+    "status": "Pending",
+    "reimbursement": "🟡"
+  },
+  {
+    "createdBy": {
+      "name": "Person 4",
+      "email": "person4@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/men/41.jpg"
+    },
+    "expenseName": "Client Dinner",
+    "category": "Food",
+    "amount": 4320,
+    "billDate": "17-03-2025",
+    "status": "Approved",
+    "reimbursement": "✅"
+  },
+  {
+    "createdBy": {
+      "name": "Person 5",
+      "email": "person5@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/women/50.jpg"
+    },
+    "expenseName": "Flight Ticket",
+    "category": "Travel",
+    "amount": 10500,
+    "billDate": "16-03-2025",
+    "status": "Rejected",
+    "reimbursement": "❌"
+  },
+  {
+    "createdBy": {
+      "name": "Person 6",
+      "email": "person6@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/men/27.jpg"
+    },
+    "expenseName": "Team Lunch",
+    "category": "Food",
+    "amount": 3120,
+    "billDate": "15-03-2025",
+    "status": "Pending",
+    "reimbursement": "🟡"
+  },
+  {
+    "createdBy": {
+      "name": "Person 7",
+      "email": "person7@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/women/32.jpg"
+    },
+    "expenseName": "Train Ticket",
+    "category": "Transport",
+    "amount": 870,
+    "billDate": "14-03-2025",
+    "status": "Approved",
+    "reimbursement": "✅"
+  },
+  {
+    "createdBy": {
+      "name": "Person 8",
+      "email": "person8@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/men/30.jpg"
+    },
+    "expenseName": "Stationery",
+    "category": "Office Supplies",
+    "amount": 450,
+    "billDate": "13-03-2025",
+    "status": "Rejected",
+    "reimbursement": "❌"
+  },
+  {
+    "createdBy": {
+      "name": "Person 9",
+      "email": "person9@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/women/60.jpg"
+    },
+    "expenseName": "Conference Ticket",
+    "category": "Event",
+    "amount": 6200,
+    "billDate": "12-03-2025",
+    "status": "Pending",
+    "reimbursement": "🟡"
+  },
+  {
+    "createdBy": {
+      "name": "Person 10",
+      "email": "person10@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/men/14.jpg"
+    },
+    "expenseName": "Parking Fee",
+    "category": "Misc",
+    "amount": 300,
+    "billDate": "11-03-2025",
+    "status": "Approved",
+    "reimbursement": "✅"
+  },
+  {
+    "createdBy": {
+      "name": "Person 11",
+      "email": "person11@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/men/45.jpg"
+    },
+    "expenseName": "Internet Bill",
+    "category": "Utilities",
+    "amount": 2200,
+    "billDate": "10-03-2025",
+    "status": "Approved",
+    "reimbursement": "✅"
+  },
+  {
+    "createdBy": {
+      "name": "Person 12",
+      "email": "person12@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/women/18.jpg"
+    },
+    "expenseName": "Laptop Repair",
+    "category": "IT Services",
+    "amount": 4900,
+    "billDate": "09-03-2025",
+    "status": "Pending",
+    "reimbursement": "🟡"
+  },
+  {
+    "createdBy": {
+      "name": "Person 13",
+      "email": "person13@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/men/22.jpg"
+    },
+    "expenseName": "Lunch with Client",
+    "category": "Food",
+    "amount": 2600,
+    "billDate": "08-03-2025",
+    "status": "Approved",
+    "reimbursement": "✅"
+  },
+  {
+    "createdBy": {
+      "name": "Person 14",
+      "email": "person14@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/women/37.jpg"
+    },
+    "expenseName": "Taxi to Airport",
+    "category": "Transport",
+    "amount": 1500,
+    "billDate": "07-03-2025",
+    "status": "Rejected",
+    "reimbursement": "❌"
+  },
+  {
+    "createdBy": {
+      "name": "Person 15",
+      "email": "person15@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/men/11.jpg"
+    },
+    "expenseName": "Coffee with Partner",
+    "category": "Food",
+    "amount": 540,
+    "billDate": "06-03-2025",
+    "status": "Approved",
+    "reimbursement": "✅"
+  },
+  {
+    "createdBy": {
+      "name": "Person 16",
+      "email": "person16@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/women/41.jpg"
+    },
+    "expenseName": "Cab Fare",
+    "category": "Transport",
+    "amount": 980,
+    "billDate": "05-03-2025",
+    "status": "Pending",
+    "reimbursement": "🟡"
+  },
+  {
+    "createdBy": {
+      "name": "Person 17",
+      "email": "person17@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/men/50.jpg"
+    },
+    "expenseName": "Business Meal",
+    "category": "Food",
+    "amount": 3600,
+    "billDate": "04-03-2025",
+    "status": "Approved",
+    "reimbursement": "✅"
+  },
+  {
+    "createdBy": {
+      "name": "Person 18",
+      "email": "person18@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/women/22.jpg"
+    },
+    "expenseName": "Metro Pass",
+    "category": "Transport",
+    "amount": 720,
+    "billDate": "03-03-2025",
+    "status": "Rejected",
+    "reimbursement": "❌"
+  },
+  {
+    "createdBy": {
+      "name": "Person 19",
+      "email": "person19@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/men/7.jpg"
+    },
+    "expenseName": "Airbnb Stay",
+    "category": "Lodging",
+    "amount": 9800,
+    "billDate": "02-03-2025",
+    "status": "Pending",
+    "reimbursement": "🟡"
+  },
+  {
+    "createdBy": {
+      "name": "Person 20",
+      "email": "person20@estatepilot.com",
+      "image": "https://randomuser.me/api/portraits/women/9.jpg"
+    },
+    "expenseName": "Subscription",
+    "category": "Software",
+    "amount": 2999,
+    "billDate": "01-03-2025",
+    "status": "Approved",
+    "reimbursement": "✅"
+  }
+]
