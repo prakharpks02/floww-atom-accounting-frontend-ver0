@@ -227,7 +227,7 @@ const ShowSalesInTable = ({ AllSales }) => {
   return (
     <>
       {AllSales && (
-        <div div className=" overflow-auto flex-1 min-h-[300px]">
+        <div div className=" overflow-auto flex-1 min-h-[400px]">
           <table className="min-w-full text-sm text-left ">
             <thead className=" text-sm lg:text-base xl:text-lg 2xl:text-xl text-[#4A4A4A] border-b-[#0000001A] border-b-[1px]  ">
               <tr className="">

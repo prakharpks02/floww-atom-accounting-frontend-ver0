@@ -88,11 +88,11 @@ export const AddMemberContextProvider = ({ children }) => {
         throw new Error("Company ID not found");
       }
 
-      const userId =  userDetails?.userId;
-      if (!userId) {
-        showToast("User ID not found", 1);
-        throw new Error("User ID not found");
-      }
+      // const userId =  userDetails?.userId;
+      // if (!userId) {
+      //   showToast("User ID not found", 1);
+      //   throw new Error("User ID not found");
+      // }
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -105,7 +105,7 @@ export const AddMemberContextProvider = ({ children }) => {
         const res = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/accounting/add-members/`,
           {
-            userId: userId,
+            // userId: userId,
             companyId: companyDetails.company_id,
             memberAddedOn: Date.now(),
             ...addMemberForm,
@@ -118,7 +118,7 @@ export const AddMemberContextProvider = ({ children }) => {
         );
         console.log(res);
 
-        if (res.data?.status.toLowerCase() !== "success") {
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
           setisLoading(false);
           showToast(
             res.data?.message || "Somthing went wrong. Please try again",
@@ -183,10 +183,16 @@ export const AddMemberContextProvider = ({ children }) => {
       );
 
       // console.log(res);
-      if (res.data?.status.toLowerCase() !== "success") {
-        showToast("Somthing went wrong. Please try again", 1);
-        return;
-      }
+     if (res.data.status && res.data.status.toLowerCase() !== "success") {
+          setisLoading(false);
+          showToast(
+            res.data?.message || "Somthing went wrong. Please try again",
+            1
+          );
+          throw new Error(
+            res.data?.message || "Somthing went wrong. Please try again"
+          );
+        }
 
       setallMemberList(res.data.data);
     } catch (error) {
@@ -221,11 +227,11 @@ export const AddMemberContextProvider = ({ children }) => {
         throw new Error("Company ID not found");
       }
 
-      const userId = userDetails?.userId;
-      if (!userId) {
-        showToast("User ID not found", 1);
-        throw new Error("User ID not found");
-      }
+      // const userId = userDetails?.userId;
+      // if (!userId) {
+      //   showToast("User ID not found", 1);
+      //   throw new Error("User ID not found");
+      // }
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -243,7 +249,7 @@ export const AddMemberContextProvider = ({ children }) => {
           }/api/accounting/update-member-details/`,
           {
             memberId: data.member_id,
-            userId: userId,
+            // userId: userId,
             companyId: companyDetails.company_id,
             memberName: data.member_name,
             username: data.username,
@@ -264,10 +270,15 @@ export const AddMemberContextProvider = ({ children }) => {
         );
         console.log(res);
         // console.log(res);
-        if (res.data?.status.toLowerCase() !== "success") {
+       if (res.data.status && res.data.status.toLowerCase() !== "success") {
           setisLoading(false);
-          showToast("Somthing went wrong. Please try again", 1);
-          throw new Error("Somthing went wrong. Please try again");
+          showToast(
+            res.data?.message || "Somthing went wrong. Please try again",
+            1
+          );
+          throw new Error(
+            res.data?.message || "Somthing went wrong. Please try again"
+          );
         }
 
         // reset form data

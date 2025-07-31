@@ -150,11 +150,11 @@ export const InvoiceContextProvider = ({ children }) => {
         throw new Error("No company details found");
       }
 
-      const userId =  userDetails?.userId;
-      if (!userId) {
-        showToast("user ID not found", 1);
-        throw new Error("user ID not found");
-      }
+      // const userId =  userDetails?.userId;
+      // if (!userId) {
+      //   showToast("user ID not found", 1);
+      //   throw new Error("user ID not found");
+      // }
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -168,7 +168,7 @@ export const InvoiceContextProvider = ({ children }) => {
           `${import.meta.env.VITE_BACKEND_URL}/api/accounting/create-invoices/`,
           {
             companyId: companyDetails.company_id,
-            userId: userId,
+            // userId: userId,
             ...createInvoiceForm,
           },
           {
@@ -179,7 +179,7 @@ export const InvoiceContextProvider = ({ children }) => {
         );
 
         console.log(res);
-        if (res.data?.status.toLowerCase() !== "success") {
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
           showToast("Somthing went wrong. Please try again", 1);
           throw new Error("Somthing went wrong. Please try again");
         }
@@ -235,7 +235,7 @@ export const InvoiceContextProvider = ({ children }) => {
         }
       );
 
-      if (res.data?.status.toLowerCase() !== "success") {
+      if (res.data.status && res.data.status.toLowerCase() !== "success") {
         showToast("Somthing went wrong. Please try again", 1);
         setisLoading(false);
         return;

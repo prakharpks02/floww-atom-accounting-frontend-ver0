@@ -65,6 +65,7 @@ import { OnBoardingPage } from "./routes/onBoarding/OnBoarding.jsx";
 import { CompanyContextProvider } from "./context/company/CompanyContext.jsx";
 import { UserLoginPage } from "./routes/userAuth/UserLoginPage.jsx";
 import { UserSignupPage } from "./routes/userAuth/UserSignupPage.jsx";
+import { AllInvoiceList } from "./routes/sales/InvoiceList.jsx";
 
 function App() {
   const containerRef = useRef(null);
@@ -94,6 +95,7 @@ function App() {
                 element={<EditSalesEntry />}
               />
               <Route path="/sales/createInvoice" element={<CreateInvoice />} />
+              <Route path="/sales/allInvoiceList" element={<AllInvoiceList />} />
 
               <Route path="/purchase/purchaseList" element={<PurchaseList />} />
               <Route

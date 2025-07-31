@@ -55,7 +55,7 @@ export const OTPVerification = ({ userData, mobile, onBack, type = "" }) => {
         userLogin(
           {
             firebaseToken: token,
-            mobileNumber: `+91${mobile}`,
+            mobileNumber: `${mobile}`,
           },
           setIsLoading
         );
@@ -74,7 +74,6 @@ export const OTPVerification = ({ userData, mobile, onBack, type = "" }) => {
 
   return (
     <>
-      <ToastContainer />
       <div className=" relative text-center">
         {/* Back Button */}
         <button
