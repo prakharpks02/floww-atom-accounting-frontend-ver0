@@ -116,15 +116,15 @@ export const QuotationDetails = () => {
 
           {/* Quotation info  */}
           {!isLoading && quotationDetails && (
-            <div className=" grid grid-cols-10 gap-3">
+            <div className=" grid grid-cols-1 gap-3">
               <QuotationInfoLeftPart
-                className={"col-span-6"}
+                // className={"col-span-6"}
                 quotationDetails={quotationDetails}
               />
-              <QuotationInfoRightPart
+              {/* <QuotationInfoRightPart
                 className={"col-span-4"}
                 quotationDetails={quotationDetails}
-              />
+              /> */}
             </div>
           )}
         </div>
