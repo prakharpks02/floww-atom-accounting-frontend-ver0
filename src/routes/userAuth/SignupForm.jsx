@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Smartphone, ArrowRight, Upload } from "lucide-react";
+import { Smartphone, ArrowRight, Upload, UserPlus } from "lucide-react";
 import { showToast } from "../../utils/showToast";
 import { useNavigate } from "react-router-dom";
 
@@ -111,6 +111,13 @@ export const SignupForm = ({
           }}
         />
       </div> */}
+
+      <div className="flex items-center justify-center gap-2 mb-8">
+        <UserPlus className="w-6 h-6 text-purple-500" />
+        <h2 className="text-2xl font-medium text-gray-800">
+          Create Your Account
+        </h2>
+      </div>
 
       {/* Form */}
       <form className="space-y-4" onSubmit={handleSubmit}>

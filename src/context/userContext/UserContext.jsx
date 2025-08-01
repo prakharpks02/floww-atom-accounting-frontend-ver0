@@ -34,42 +34,35 @@ export const UserContextProvider = ({ children }) => {
     try {
       setisLoading(true);
 
-      // upload profile image
-      const file = userData.imageUrl;
-      const response = await uploadFile(file.fileName, file.fileBlob);
-      console.log(response);
-      userData.imageUrl = response.doc_url;
-      console.log("profile image uploaded");
-
-      // const res = await axios.post(
-      //   `${import.meta.env.VITE_BACKEND_URL}/api/auth/user/signup/`,
-      //   {
-      //     firebase_token: userData.firebaseToken,
-      //     phone_number: `+91${userData.mobileNumber}`,
-      //     name: userData.name,
-      //     email: userData.email,
-      //     icon_image : userData.imageUrl
-      //   }
-      // );
-      // console.log(res);
-      // if (
-      //   res.data.error ||
-      //   (res.data.status && res.data.status.toLowerCase() !== "success")
-      // ) {
-      //   showToast(res.data.error || "Fail to create user", 1);
-      //   // navigate("/onBoarding");
-      //   return;
-      // }
-      // localStorage.setItem("token", res.data.token);
-      // setuserDetails({
-      //   username: userData.name,
-      //   // userId: res.data.user_id,
-      //   email: userData.email,
-      //   mobileNo: `+91${userData.mobileNumber}`,
-      //   image: undefined,
-      // });
-      // navigate("/");
-      // showToast("User created successfully");
+      const res = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/auth/user/signup/`,
+        {
+          firebase_token: userData.firebaseToken,
+          phone_number: `+91${userData.mobileNumber}`,
+          name: userData.name,
+          email: userData.email,
+          icon_image: userData.imageUrl,
+        }
+      );
+      console.log(res);
+      if (
+        res.data.error ||
+        (res.data.status && res.data.status.toLowerCase() !== "success")
+      ) {
+        showToast(res.data.error || "Fail to create user", 1);
+        // navigate("/onBoarding");
+        return;
+      }
+      localStorage.setItem("token", res.data.token);
+      setuserDetails({
+        username: userData.name,
+        // userId: res.data.user_id,
+        email: userData.email,
+        mobileNo: `+91${userData.mobileNumber}`,
+        image: undefined,
+      });
+      navigate("/");
+      showToast("User created successfully");
     } catch (error) {
       console.log(error);
       showToast(
