@@ -350,7 +350,7 @@ export const UserContextProvider = ({ children }) => {
       showToast("User login successfully");
       await getUserDetails();
 
-      // navigate("/");
+      navigate("/");
     } catch (error) {
       console.log(error);
       showToast(

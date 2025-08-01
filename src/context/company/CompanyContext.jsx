@@ -183,7 +183,9 @@ export const CompanyContextProvider = ({ children }) => {
         showToast("Company created");
         localStorage.setItem("companyid", res.data.data.company_id);
         navigate("/");
-        window.location.reload();
+
+        await getCompanyList()
+        // window.location.reload();
       } catch (error) {
         console.log(error);
         showToast(
@@ -267,6 +269,7 @@ export const CompanyContextProvider = ({ children }) => {
           1
         );
       } finally {
+        setisAuthenticating(false);
         setisLoading(false);
       }
     },
@@ -274,7 +277,10 @@ export const CompanyContextProvider = ({ children }) => {
   );
 
   useEffect(() => {
-    getCompanyDetails();
+    if (localStorage.getItem("companyid").toString() == "null")
+      getCompanyList();
+    else getCompanyDetails();
+
     // !companyDetails && getCompanyList();
   }, []);
 
