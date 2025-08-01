@@ -2,7 +2,7 @@ import { toast } from "react-toastify";
 
 export const showToast = (msg, err) => {
   const toastId = msg; // Or a hash of the msg if msg can be long or identical
-  toast.dismiss(toastId); // Close it if it exists
+  // toast.dismiss(toastId); // Close it if it exists
 
   const config = {
     toastId,

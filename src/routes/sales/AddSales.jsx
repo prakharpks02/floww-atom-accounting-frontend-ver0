@@ -178,7 +178,9 @@ const UploadDocuments = ({ saleDetails }) => {
       field: "invoiceUrl",
       value: (files || []).map((item) => {
         return {
-          invoice_url: item.name,
+          fileBlob: item || "N/A",
+          fileName: item.name || "N/A",
+          invoice_url: item.related_doc_url || "N/A",
         };
       }),
     });

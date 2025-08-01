@@ -12,9 +12,7 @@ export const OnBoardingPage = () => {
 
   return (
     <>
-      <ToastContainer
-        
-      />
+      <ToastContainer />
       <div className="md:p-6 px-2 py-6">
         <h1 className=" text-lg md:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-semibold text-[#4A4A4A] mb-1">
           Company Onboarding
@@ -93,7 +91,11 @@ const NameAndProfileImg = ({ className }) => {
   }, [companyName]);
 
   useEffect(() => {
-    selectedFile && handleChange("companyLogo", selectedFile.name);
+    selectedFile &&
+      handleChange("companyLogo", {
+        fileBlob: selectedFile || "N/A",
+        fileName: selectedFile.name || "N/A",
+      });
   }, [selectedFile]);
 
   return (

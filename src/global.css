@@ -223,3 +223,17 @@ input:-webkit-autofill {
   -webkit-text-fill-color: #000 !important;
   transition: background-color 5000s ease-in-out 0s;
 }
+
+
+/* body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+#root {
+  transform: scale(0.75);
+  transform-origin: top left;
+  width: 133.33vw; 
+  height: 133.33vh;
+} */

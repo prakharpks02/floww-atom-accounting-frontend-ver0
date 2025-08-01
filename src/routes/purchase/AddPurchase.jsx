@@ -96,7 +96,7 @@ export const AddPurchase = () => {
                 onClick={(e) => {
                   purchaseid?.toLowerCase() === "new" &&
                     createPurchaseList(e, setisLoading);
-                  if(purchaseid?.toLowerCase() !== "new" ){
+                  if (purchaseid?.toLowerCase() !== "new") {
                     updatePurchaseList(purchaseid, setisLoading);
                   }
                 }}
@@ -709,7 +709,7 @@ const PANNumberInputField = () => {
 
 const UploadInvoice = ({ purchaseDetails }) => {
   const [files, setfiles] = useState(
-     purchaseDetails?.attachments && purchaseDetails?.attachments[0]
+    purchaseDetails?.attachments && purchaseDetails?.attachments[0]
       ? purchaseDetails?.attachments
       : []
   );
@@ -720,8 +720,10 @@ const UploadInvoice = ({ purchaseDetails }) => {
       field: "attachments",
       value: (files || []).map((file) => {
         return {
-          related_doc_name: file.name || file.related_doc_name,
-          related_doc_url: file.name || file.related_doc_url,
+          fileBlob: file || "N/A",
+          fileName: file.name || "N/A",
+          related_doc_name: file.related_doc_name || "N/A",
+          related_doc_url: file.related_doc_url || "N/A",
         };
       }),
     });

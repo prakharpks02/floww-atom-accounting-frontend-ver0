@@ -27,7 +27,7 @@ export const AddExpense = () => {
     getExpenseDetails(expenseid, setisDataFechting);
   }, []);
 
-  console.log(expenseid)
+  console.log(expenseid);
 
   return (
     <>
@@ -220,8 +220,10 @@ const UploadAttachment = ({ className, expenseDetails }) => {
   useEffect(() => {
     const payload = files?.map((file) => {
       return {
-        related_doc_name: file.name || file.related_doc_name,
-        related_doc_url: file.name || file.related_doc_url,
+        fileBlob: file || "N/A",
+        fileName: file.name || "N/A",
+        related_doc_name: file.related_doc_name || "N/A",
+        related_doc_url: file.related_doc_url || "N/A",
       };
     });
     createExpenseFormdispatch({
@@ -258,7 +260,7 @@ const UploadAttachment = ({ className, expenseDetails }) => {
         >
           <Upload className=" w-10 h-8 text-[#000000] mb-3" />
           <p className="font-medium xl:text-base md:text-sm mb-1">
-            Upload invoices, receipts, or related documents
+            Upload expense related documents
           </p>
           <p className="text-[#00000080] text-xs ">
             Supported formats: PDF, JPG, PNG, DOC (Max 10MB)

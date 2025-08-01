@@ -33,6 +33,7 @@ export const UserContextProvider = ({ children }) => {
 
     try {
       setisLoading(true);
+
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/auth/user/signup/`,
         {
@@ -40,6 +41,7 @@ export const UserContextProvider = ({ children }) => {
           phone_number: `+91${userData.mobileNumber}`,
           name: userData.name,
           email: userData.email,
+          icon_image: userData.imageUrl,
         }
       );
       console.log(res);
@@ -60,7 +62,7 @@ export const UserContextProvider = ({ children }) => {
         image: undefined,
       });
       navigate("/");
-      // showToast("User created successfully");
+      showToast("User created successfully");
     } catch (error) {
       console.log(error);
       showToast(
@@ -117,8 +119,9 @@ export const UserContextProvider = ({ children }) => {
         // navigate("/onBoarding");
         return;
       }
-
-      localStorage.setItem("companyid", res.data.data.member_company_id);
+      if (res.data?.data?.member_company_id) console.log("present");
+      res.data?.data?.member_company_id &&
+        localStorage.setItem("companyid", res.data.data.member_company_id);
       setuserDetails({
         // userId: res.data.data.user_id,
         name: res.data.data.name,

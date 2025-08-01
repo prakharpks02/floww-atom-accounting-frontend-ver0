@@ -22,6 +22,7 @@ import { showToast } from "../../utils/showToast";
 import axios from "axios";
 import { validateFields } from "../../utils/checkFormValidation";
 import { UserContext } from "../userContext/UserContext";
+import { uploadFile } from "../../utils/uploadFiles";
 
 export const SalesContext = createContext();
 
@@ -60,7 +61,7 @@ export const initialSalesState = {
   contactNo: "",
   email: "",
   address: "",
-  invoiceUrl: [{ invoice_url: "N/A" }],
+  invoiceUrl: [{ invoice_url: "" }],
   paymentNameList: [
     {
       payment_name: "N/A",
@@ -327,6 +328,17 @@ export const SalesContextProvider = ({ children }) => {
 
       try {
         setisLoading(true);
+
+        for (let i = 0; i < createSaleForm.invoiceUrl.length; i++) {
+          const file = createSaleForm.invoiceUrl[i];
+          const res = await uploadFile(file.fileName, file.fileBlob, token);
+          console.log(res);
+          createSaleForm.invoiceUrl[i] = { invoice_url: res.doc_url };
+        }
+
+        console.log("file uploaded");
+
+        // call backend apis for create
         const res = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/accounting/create-sales/`,
           {
@@ -445,6 +457,19 @@ export const SalesContextProvider = ({ children }) => {
       }
       try {
         setisLoading(true);
+
+        // upload documens
+        for (let i = 0; i < createSaleForm.invoiceUrl.length; i++) {
+          if (createSaleForm.invoiceUrl[i].invoice_url.toLowerCase() != "n/a")
+            continue;
+          const file = createSaleForm.invoiceUrl[i];
+          const res = await uploadFile(file.fileName, file.fileBlob, token);
+          console.log(res);
+          createSaleForm.invoiceUrl[i] = { invoice_url: res.doc_url };
+        }
+
+        console.log("file uploaded");
+
         const res = await axios.post(
           `${
             import.meta.env.VITE_BACKEND_URL

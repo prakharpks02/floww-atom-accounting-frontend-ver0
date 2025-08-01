@@ -31,47 +31,7 @@ import {
   getLast10FinancialYears,
   getAllMonths,
 } from "../../utils/dropdownFields";
-
-const dropdowndata = {
-  Status: [
-    {
-      name: "Paid",
-      value: "Paid",
-    },
-    {
-      name: "Unpaid",
-      value: "Unpaid",
-    },
-  ],
-  Amount: [
-    {
-      name: "₹0 - ₹5,000",
-      value: "₹0 - ₹5,000",
-    },
-    {
-      name: "₹5,000 - ₹10,000",
-      value: "₹5,000 - ₹10,000",
-    },
-    {
-      name: "₹10,000+",
-      value: "₹10,000+",
-    },
-  ],
-  Salesperson: [
-    {
-      name: "Anirban",
-      value: "Anriban",
-    },
-    {
-      name: "Shubham",
-      value: "Shubham",
-    },
-    {
-      name: "Aditya",
-      value: "Aditya",
-    },
-  ],
-};
+import { downloadFile } from "../../utils/downloadFile";
 
 export const PurchaseOrderList = () => {
   const [tempAllPurchaseOrder, settempAllPurchaseOrder] = useState(null);
@@ -110,19 +70,42 @@ export const PurchaseOrderList = () => {
               aria-label="download excel"
               onClick={(e) => {
                 e.preventDefault();
-                const expandedPurchase = tempAllPurchaseOrder.flatMap(
-                  (Purchase) =>
-                    Purchase.list_items.map((item) => ({
-                      "Purchase Order ID": Purchase.po_id,
-                      "Vendor Name": Purchase.vendor_name,
-                      Email: Purchase.email,
+
+                // Filter purchase orders where invoice_url is "n/a"
+                const expandedPurchase = tempAllPurchaseOrder
+                  .filter(
+                    (purchase) =>
+                      purchase?.po_url?.[0]?.invoice_url?.toLowerCase() ===
+                      "n/a"
+                  )
+                  .flatMap((purchase) =>
+                    purchase.list_items.map((item) => ({
+                      "Purchase Order ID": purchase.po_id,
+                      "Vendor Name": purchase.vendor_name,
+                      Email: purchase.email,
                       Item: item.item_description,
                       Quantity: item.quantity,
                       Amount: item.gross_amount,
-                      Date: Purchase.po_date,
+                      Date: purchase.po_date,
                     }))
-                );
-                exportToExcel(expandedPurchase, "Purchase-order-list.xlsx");
+                  );
+
+                // Check if we have any valid data
+                if (!expandedPurchase.length) {
+                  // showToast("No matching purchase orders found.");
+                  return;
+                }
+
+                console.log(expandedPurchase);
+
+                try {
+                  exportToExcel(expandedPurchase, "Purchase-order-list.xlsx");
+                } catch (err) {
+                  console.error("Export failed:", err);
+                  showToast(
+                    "Failed to export purchase orders. Please try again."
+                  );
+                }
               }}
               className=" hover:bg-[#0033662b] transition-all cursor-pointer col-span-4 flex items-center justify-center gap-2 px-2 lg:px-4 py-2 lg:py-3  bg-[#0033661A] text-[#2543B1] rounded-xl font-medium "
             >
@@ -218,43 +201,101 @@ const ShowPurchaseOrderInTable = ({ allPurchase }) => {
             <tbody>
               {allPurchase?.map((purchase, idx) => {
                 return purchase?.list_items?.map((item, index) => {
-                  return (
-                    <tr
-                      key={`${idx}-${index}`}
-                      onClick={(e) => {
-                        navigate(
-                          `/purchase/purchaseOrderDetails/${purchase.po_id}`
-                        );
-                      }}
-                      className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
-                    >
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
-                        {purchase.po_id}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
-                        {purchase.vendor_name}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
-                        {purchase.email}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
-                        {item.item_name}
-                      </td>
-                      <td className=" text-center whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
-                        {item.quantity}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
-                        ₹
-                        {Number(item.gross_amount).toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
-                        {purchase.po_date}
-                      </td>
-                    </tr>
-                  );
+                  return purchase.po_url?.map((doc, i) => {
+                    return (
+                      <tr
+                        key={`${idx}-${index}-${i}`}
+                        onClick={(e) => {
+                          doc.invoice_url?.toLowerCase() == "n/a" &&
+                            navigate(
+                              `/purchase/purchaseOrderDetails/${purchase.po_id}`
+                            );
+
+                          doc.invoice_url?.toLowerCase() != "n/a" &&
+                            downloadFile(doc.invoice_url,`Purchase-order-${purchase.po_id}`);
+                        }}
+                        className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
+                      >
+                        <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
+                          {purchase.po_id}
+                        </td>
+                        <td
+                          className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium"
+                          style={{
+                            textAlign:
+                              doc.invoice_url?.toLowerCase() == "n/a"
+                                ? "start"
+                                : "center",
+                          }}
+                        >
+                          {doc.invoice_url?.toLowerCase() == "n/a"
+                            ? `${purchase.vendor_name}`
+                            : "--"}
+                        </td>
+                        <td
+                          className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium"
+                          style={{
+                            textAlign:
+                              doc.invoice_url?.toLowerCase() == "n/a"
+                                ? "start"
+                                : "center",
+                          }}
+                        >
+                          {doc.invoice_url?.toLowerCase() == "n/a"
+                            ? `${purchase.email}`
+                            : "--"}
+                        </td>
+                        <td
+                          className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium"
+                          style={{
+                            textAlign:
+                              doc.invoice_url?.toLowerCase() == "n/a"
+                                ? "start"
+                                : "center",
+                          }}
+                        >
+                          {doc.invoice_url?.toLowerCase() == "n/a"
+                            ? `${item.item_name}`
+                            : "--"}
+                        </td>
+                        <td
+                          className=" text-center whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium"
+                          style={{
+                            textAlign:
+                              doc.invoice_url?.toLowerCase() == "n/a"
+                                ? "start"
+                                : "center",
+                          }}
+                        >
+                          {doc.invoice_url?.toLowerCase() == "n/a"
+                            ? `${item.quantity}`
+                            : "--"}
+                        </td>
+                        <td
+                          className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium"
+                          style={{
+                            textAlign:
+                              doc.invoice_url?.toLowerCase() == "n/a"
+                                ? "start"
+                                : "center",
+                          }}
+                        >
+                          {doc.invoice_url?.toLowerCase() == "n/a"
+                            ? ` ₹ ${Number(item.gross_amount).toLocaleString(
+                                "en-IN",
+                                {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                }
+                              )}`
+                            : "--"}
+                        </td>
+                        <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
+                          {purchase.po_date}
+                        </td>
+                      </tr>
+                    );
+                  });
                 });
               })}
             </tbody>

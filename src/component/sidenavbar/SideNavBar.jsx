@@ -423,7 +423,7 @@ const SwitchCompanyButton = () => {
             "https://api.dicebear.com/6.x/initials/svg?seed=G"
           } // fallback
           alt="logo"
-          className="w-10 h-10 rounded-full text-xs bg-white object-contain"
+          className="w-10 h-10 rounded-full text-xs bg-white object-cover"
         />
         <div className="text-left">
           <p className="2xl:text-xl xl:text-lg lg:text-base text-sm font-semibold text-[#4A4A4A]">
