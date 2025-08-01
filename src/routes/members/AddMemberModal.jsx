@@ -89,7 +89,7 @@ const AddMemberModal = ({
       }
       try {
         await createMember(e, setisLoading);
-        getAllMemberList(setisMemberListLoading);
+        await getAllMemberList(setisMemberListLoading);
         onClose();
         // window.location.reload()
       } catch (error) {

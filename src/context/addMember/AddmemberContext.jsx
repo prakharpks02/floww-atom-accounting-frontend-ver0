@@ -76,16 +76,16 @@ export const AddMemberContextProvider = ({ children }) => {
 
       if (Object.keys(validationErrors).length > 0) {
         console.log(validationErrors);
-        showToast("All fields are required", 1);
+        // showToast("All fields are required", 1);
         throw new Error("All fields are required");
       }
 
       if (!companyDetails) {
-        showToast("Company details not found", 1);
+        // showToast("Company details not found", 1);
         throw new Error("Company details not found");
       }
       if (!companyDetails.company_id) {
-        showToast("Company ID not found", 1);
+        // showToast("Company ID not found", 1);
         throw new Error("Company ID not found");
       }
 
@@ -130,10 +130,10 @@ export const AddMemberContextProvider = ({ children }) => {
 
         if (res.data.status && res.data.status.toLowerCase() !== "success") {
           setisLoading(false);
-          showToast(
-            res.data?.message || "Somthing went wrong. Please try again",
-            1
-          );
+          // showToast(
+          //   res.data?.message || "Somthing went wrong. Please try again",
+          //   1
+          // );
           throw new Error(
             res.data?.message || "Somthing went wrong. Please try again"
           );
@@ -227,16 +227,16 @@ export const AddMemberContextProvider = ({ children }) => {
       console.log(data);
 
       if (!data) {
-        showToast("Member data not found", 1);
+        // showToast("Member data not found", 1);
         throw new Error("Member data not found");
       }
 
       if (!companyDetails) {
-        showToast("Company details not found", 1);
+        // showToast("Company details not found", 1);
         throw new Error("Company details not found");
       }
       if (!companyDetails.company_id) {
-        showToast("Company ID not found", 1);
+        // showToast("Company ID not found", 1);
         throw new Error("Company ID not found");
       }
 
@@ -248,7 +248,7 @@ export const AddMemberContextProvider = ({ children }) => {
 
       const token = localStorage.getItem("token");
       if (!token) {
-        showToast("Token not found", 1);
+        // showToast("Token not found", 1);
         throw new Error("Token not found");
       }
 
@@ -285,10 +285,10 @@ export const AddMemberContextProvider = ({ children }) => {
         // console.log(res);
         if (res.data.status && res.data.status.toLowerCase() !== "success") {
           setisLoading(false);
-          showToast(
-            res.data?.message || "Somthing went wrong. Please try again",
-            1
-          );
+          // showToast(
+          //   res.data?.message || "Somthing went wrong. Please try again",
+          //   1
+          // );
           throw new Error(
             res.data?.message || "Somthing went wrong. Please try again"
           );
