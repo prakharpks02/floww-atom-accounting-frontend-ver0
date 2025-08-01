@@ -18,7 +18,7 @@ import {
   UserCircle2,
   XCircle,
 } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { FileIcon, defaultStyles } from "react-file-icon";
 import { ToastContainer } from "react-toastify";
@@ -29,6 +29,9 @@ import { InputField } from "../../utils/ui/InputField";
 import { showToast } from "../../utils/showToast";
 import { ItemDetailsTable } from "../../component/ItemDetailsTable";
 import { PurchaseListContext } from "../../context/purchaseList/PurchaseListContext";
+import { UserContext } from "../../context/userContext/UserContext";
+import { CompanyContext } from "../../context/company/CompanyContext";
+import axios from "axios";
 
 const timelineData = [
   {
@@ -130,6 +133,8 @@ export const PurchaseDetails = () => {
             <PurchaseInfoRightPart
               className={"lg:col-span-4"}
               purchaseDetails={purchaseDetails}
+              setisLoading={setisLoading}
+              getPurchaseListDetails={getPurchaseListDetails}
             />
           </div>
         </div>
@@ -150,88 +155,16 @@ const PurchaseInfoLeftPart = ({ className, purchaseDetails }) => {
   );
 };
 
-const AmountPieChart = ({ className }) => {
-  const totalAmount = 1000000;
-  const amountPaid = 600000;
-  const amountLeft = totalAmount - amountPaid;
-
-  const data = [
-    { name: "Amount Left", value: amountLeft },
-    { name: "Amount Paid", value: amountPaid },
-  ];
-
-  const COLORS = ["#FB3748", "#2543B1"];
-
-  return (
-    <div
-      className={`flex flex-col items-center p-4 w-full rounded-lg bg-white border-[1.5px] border-[#E8E8E8] ${className}`}
-    >
-      <h2 className="text-xl font-semibold mb-2">Payment Summary</h2>
-
-      <div className="relative w-full ">
-        <ResponsiveContainer width="100%" aspect={1}>
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={"80%"}
-              outerRadius={"95%"}
-              startAngle={50}
-              endAngle={-310}
-              paddingAngle={5}
-              dataKey="value"
-              stroke="none"
-              animationDuration={800} // default is 1500 ms
-              animationEasing="ease"
-            >
-              {data.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={COLORS[index]}
-                  cornerRadius={10}
-                />
-              ))}
-            </Pie>
-          </PieChart>
-        </ResponsiveContainer>
-
-        <div className="absolute inset-0 flex flex-col items-center justify-center 2xl:text-3xl xl:text-2xl lg:text-xl md:text-lg text-base font-semibold text-[#4A4A4A]">
-          <span className=" ">Total Amount</span>
-          <span className=" ">₹ 10,00,000</span>
-        </div>
-      </div>
-
-      <div className="flex justify-between w-full mt-4 gap-4">
-        <div className="flex items-center font-medium text-[#606060] ">
-          <div
-            className="w-4 h-4 rounded-full mr-2"
-            style={{ backgroundColor: `${COLORS[1]}` }}
-          ></div>
-          <div>
-            <span>Amount Paid</span>
-            <br />
-            <span>₹ 6,00,0700</span>
-          </div>
-        </div>
-        <div className="flex items-center font-medium text-[#606060] ">
-          <div
-            className="w-4 h-4 rounded-full mr-2"
-            style={{ backgroundColor: `${COLORS[0]}` }}
-          ></div>
-          <div>
-            <span>Amount Left</span>
-            <br />
-            <span>₹ 4,00,000</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const PurchaseInfoRightPart = ({ className }) => {
+const PurchaseInfoRightPart = ({
+  className,
+  purchaseDetails,
+  setisLoading,
+  getPurchaseListDetails,
+}) => {
   const [isModalOpen, setisModalOpen] = useState(false);
+  const [amountPaid, setamountPaid] = useState(
+    Number(purchaseDetails.total_amount)
+  );
   const iconMap = {
     Approved: <CheckCircle size={18} />,
     Sent: <Send size={18} />,
@@ -240,14 +173,66 @@ const PurchaseInfoRightPart = ({ className }) => {
     Cancel: <XCircle size={18} />,
   };
 
+  const getFileExtension = (filename) => {
+    return filename?.split(".").pop().toLowerCase();
+  };
+
+  const isImage = useCallback((ext) => {
+    return ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext);
+  }, []);
+
+  const getFilePreview = (file, ext) => {
+    if (isImage(ext)) {
+      return (
+        <img
+          src={file?.related_doc_url || "document image"}
+          alt={`preview ${file?.related_doc_name}`}
+          className="object-contain w-full text-[10px]"
+        />
+      );
+    } else {
+      return (
+        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+          <div className="w-12 h-12">
+            <FileIcon
+              extension={ext}
+              {...(defaultStyles[ext] || defaultStyles.doc)}
+            />
+          </div>
+        </div>
+      );
+    }
+  };
+
+  useEffect(() => {
+    const totalAmount = purchaseDetails.payment_transactions_list?.reduce(
+      (sum, txn) => {
+        return sum + parseFloat(txn.amount || "0");
+      },
+      0
+    );
+    setamountPaid(totalAmount);
+  }, [purchaseDetails]);
+
   return (
     <>
-      <UpdateTimeLineModal isOpen={isModalOpen} setisOpen={setisModalOpen} />
+      <UpdateTimeLineModal
+        amountPaid={amountPaid}
+        setisPurchaseDetailLoading={setisLoading}
+        getPurchaseListDetails={getPurchaseListDetails}
+        purchaseDetails={purchaseDetails}
+        isOpen={isModalOpen}
+        setisOpen={setisModalOpen}
+      />
       <div
         className={`h-fit w-full grid lg:grid-cols-1 grid-cols-2 gap-4 ${className}`}
       >
         {/* amount pie chart  */}
-        <AmountPieChart className={" h-fit"} />
+        <AmountPieChart
+          className={" h-fit"}
+          totalAmount={Number(purchaseDetails.total_amount)}
+          amountPaid={amountPaid}
+        />
         <div
           className={`rounded-lg w-full h-fit 2xl:p-8 xl:p-6 md:p-4 p-2 border-[1.5px] border-[#E8E8E8] `}
         >
@@ -264,7 +249,7 @@ const PurchaseInfoRightPart = ({ className }) => {
             >
               Update Timeline <History className="w-5 h-5 rotate-y-180" />
             </button>
-            <button
+            {/* <button
               onClick={() => {
                 setisModalOpen(true);
               }}
@@ -272,42 +257,345 @@ const PurchaseInfoRightPart = ({ className }) => {
           border-[#2543B1] border-2 text-[#2543B1] rounded-xl cursor-pointer transition-colors"
             >
               Update TDS
-            </button>
+            </button> */}
           </div>
           <div className="space-y-4">
-            {timelineData.map((item, idx) => (
-              <div
-                key={idx}
-                className="bg-gray-100 rounded-xl p-4 flex flex-col gap-2"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center ${item.statusColor}`}
-                  >
-                    {iconMap[item.status]}
-                  </div>
-                  <p className="text-[#777777] font-medium xl:text-base md:text-sm text-xs">
-                    {item.message}
-                  </p>
-                </div>
-
-                {/* File box if present */}
-                {item.file && (
-                  <div className="ml-11 bg-white border-[#0000001A] border-1  shadow-sm rounded-lg flex items-center gap-3 px-4 py-2 w-fit text-sm">
-                    <div className="bg-[#FB3748] text-white px-2 py-2 rounded text-xs font-semibold">
-                      PDF
+            {purchaseDetails?.payment_transactions_list.map((item, idx) => {
+              const ext = getFileExtension(item?.transaction_url);
+              return (
+                <div
+                  key={idx}
+                  className="bg-gray-100 rounded-xl p-4 flex flex-col gap-2 overflow-x-auto"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center ${item.statusColor}`}
+                    >
+                      {/* {iconMap[item.status]} */}
+                      <CheckCircle size={18} />
                     </div>
-                    <span className="text-[#606060] font-medium xl:text-base md:text-sm text-xs">
-                      {item.file.name}
-                    </span>
+                    <p className="text-[#777777] font-medium xl:text-base md:text-sm text-xs">
+                      {item.remark}
+                    </p>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {/* File box if present */}
+                  {item.transaction_url &&
+                    item.transaction_url.toLowerCase() != "n/a" && (
+                      <div className="ml-11 bg-white border-[#0000001A] border-1  shadow-sm rounded-lg flex items-center gap-3 px-2 py-2 w-fit text-sm">
+                        <div className=" text-white w-15 px-2 py-2 rounded text-xs font-semibold">
+                          {getFilePreview(item?.transaction_url, ext)}
+                        </div>
+                        <span className="text-[#606060] font-medium xl:text-base md:text-sm text-xs">
+                          {item.transaction_url}
+                        </span>
+                      </div>
+                    )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
     </>
+  );
+};
+
+const UpdateTimeLineModal = ({
+  amountPaid,
+  isOpen,
+  setisOpen,
+  purchaseDetails,
+  setisPurchaseDetailLoading,
+  getPurchaseListDetails,
+}) => {
+  const [formData, setformData] = useState({
+    transaction_id: "N/A",
+    timestamp: Date.now(),
+    amount: "",
+    remark: "",
+    transaction_url: "",
+  });
+  const { userDetails } = useContext(UserContext);
+  const { companyDetails } = useContext(CompanyContext);
+  const [isLoading, setisLoading] = useState(false);
+  const { purchaseid } = useParams();
+
+  const handleSubmit = async () => {
+    await updateTimeLine();
+  };
+
+  const handelClose = () => {
+    setisOpen(false);
+  };
+
+  const updateTimeLine = useCallback(async () => {
+    // const userId = userDetails?.userId;
+    // if (!userId) {
+    //   showToast("user ID not found", 1);
+    //   return;
+    // }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      showToast("Token not found", 1);
+      return;
+    }
+    if (!formData.amount || !formData.transaction_url || !formData.remark) {
+      showToast("All fields are required", 1);
+      return;
+    }
+
+    if (
+      Number(formData.amount) >
+      Number(purchaseDetails.total_amount) - amountPaid
+    ) {
+      // console.log(
+      //   Number(saleDetails.total_amount) - amountPaid,
+      //   Number(formData.amount)
+      // );
+      showToast("Amount must less than leftover amount", 1);
+      return;
+    }
+
+    try {
+      setisLoading(true);
+      const res = await axios.post(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/accounting/update-purchase-details/`,
+        {
+          poId: purchaseDetails.po_id,
+          poNumber: purchaseDetails.po_number,
+          listItems: purchaseDetails.list_items,
+          listToc: purchaseDetails.list_toc,
+          listStatus: purchaseDetails.list_status,
+          paymentTransactionsList: [
+            ...purchaseDetails.payment_transactions_list,
+            formData,
+          ],
+          attachments: purchaseDetails.attachments,
+          vendorId: purchaseDetails.vendor_id,
+          notes: purchaseDetails.notes,
+          contactNo: purchaseDetails.contact_no,
+          email: purchaseDetails.email,
+          invoiceNo: purchaseDetails.invoice_no,
+          invoiceUrl: purchaseDetails.invoice_url,
+          invoiceDate: purchaseDetails.invoice_date,
+          invoiceDueBy: purchaseDetails.invoice_due_by,
+          quotationId: purchaseDetails.quotation_id,
+          vendorName: purchaseDetails.vendor_name,
+          purchaseDate: purchaseDetails.purchase_date,
+          createdOn: purchaseDetails.created_on,
+          status: purchaseDetails.status,
+          gstNumber: purchaseDetails.gst_number,
+          panNumber: purchaseDetails.pan_number,
+          subtotalAmount: purchaseDetails.subtotal_amount,
+          discountAmount: purchaseDetails.discount_amount,
+          tdsAmount: purchaseDetails.tds_amount,
+          adjustmentAmount: purchaseDetails.adjustment_amount,
+          totalAmount: purchaseDetails.total_amount,
+          tdsReason: purchaseDetails.tds_reason,
+          companyId: purchaseDetails.company_id,
+          // userId: userId,
+          purchaseId: purchaseDetails.purchase_id,
+          purchaseTs: Date.now(),
+        },
+        {
+          headers: {
+            Authorization: token,
+          },
+        }
+      );
+      if (res.data?.status && res.data.status.toLowerCase() !== "success") {
+        showToast("Somthing went wrong. Please try again", 1);
+        setisLoading(false);
+        return;
+      }
+
+      console.log(res);
+      await getPurchaseListDetails(purchaseid, setisPurchaseDetailLoading);
+      handelClose();
+    } catch (error) {
+      console.log(error);
+      showToast(
+        error.response?.data?.message || error.message || "Somthing went wrong",
+        1
+      );
+    } finally {
+      setisLoading(false);
+    }
+  }, [formData, userDetails, purchaseDetails, companyDetails]);
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      <ToastContainer />
+      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm overflow-y-auto p-5">
+        <div className="w-full max-w-md mx-auto my-5 bg-white rounded-xl shadow-lg p-6 space-y-5 animate-slideDown">
+          {/* header  */}
+          <div className="">
+            <h2 className=" mb-3 2xl:text-3xl xl:text-2xl lg:text-xl md:text-lg text-base font-semibold">
+              Update Timeline
+            </h2>
+            <p className=" text-[#777777] font-medium xl:text-base md:text-sm text-xs">
+              Choose how update the timeline
+            </p>
+          </div>
+
+          {/* balance  */}
+          <div>
+            <p className="font-normal text-[#000000] 2xl:text-lg xl:text-base lg:text-sm text-xs">
+              Enter Payment Amount*
+            </p>
+            <div className=" flex items-end ">
+              <div className="text-[#333333c6] w-fit font-normal 2xl:text-lg md:text-base px-3 py-2 border-[1.5px] border-[#0000001A] rounded-lg mr-3">
+                INR
+              </div>
+              <InputField
+                hasLabel={false}
+                inputType={"number"}
+                className={"inline-block flex-1"}
+                value={formData.amount}
+                setvalue={(value) => {
+                  setformData((prev) => {
+                    return {
+                      ...prev,
+                      amount: value,
+                    };
+                  });
+                }}
+                label={""}
+                required={true}
+                placeholder={"Enter Balance"}
+              />
+            </div>
+          </div>
+
+          {/* remarks  */}
+          <div>
+            <InputField
+              value={formData.remark}
+              setvalue={(value) => {
+                setformData((prev) => {
+                  return {
+                    ...prev,
+                    remark: value,
+                  };
+                });
+              }}
+              label={"Remarks"}
+              placeholder={"Enter remarks related to payment"}
+            />
+          </div>
+
+          {/* upload document  */}
+          <UploadDocuments setSelectedFile={setformData} />
+
+          {/* buttons  */}
+          <div className="grid grid-cols-2 gap-4 mt-4">
+            <button
+              disabled={isLoading}
+              onClick={handelClose}
+              className="col-span-1 py-2 border-2 border-[#3333331A] rounded-xl hover:bg-gray-100 transition cursor-pointer text-[#777777] "
+            >
+              Cancel
+            </button>
+            <button
+              disabled={isLoading}
+              aria-label="Update timeline"
+              onClick={handleSubmit}
+              className=" col-span-1 cursor-pointer flex items-center justify-center px-3 lg:px-5 py-1 lg:py-3 bg-[#2543B1] transition hover:bg-blue-900 border-2 border-[#3333331A] rounded-xl text-[#ffffff] font-medium "
+            >
+              {isLoading ? (
+                <Loader2 className=" w-5 animate-spin mx-auto" />
+              ) : (
+                <span className="">Confirm</span>
+              )}{" "}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+const UploadDocuments = ({ setSelectedFile }) => {
+  const [files, setfiles] = useState(null);
+  useEffect(() => {
+    setSelectedFile((prev) => {
+      return {
+        ...prev,
+        transaction_url: files && files.length > 0 ? files[0].name : "",
+      };
+    });
+  }, [files]);
+
+  return (
+    <div className=" outline-[#00000029] rounded-lg px-3 py-5 border-2 border-[#00000033] border-dashed">
+      {files && (
+        <div>
+          <ShowUploadedFiles files={files} setfiles={setfiles} />
+          <div className=" flex flex-col gap-2 items-center my-5">
+            <label
+              htmlFor="upload-invoice"
+              className="bg-black cursor-pointer py-3 px-6 text-sm xl:text-base text-white rounded-lg "
+            >
+              Choose files
+            </label>
+            <p className="text-[#00000080] text-xs ">
+              Supported formats: PDF, JPG, PNG, DOC (Max 10MB)
+            </p>
+          </div>
+        </div>
+      )}
+
+      {!files && (
+        <label
+          tabIndex={0}
+          htmlFor="upload-invoice"
+          className="flex flex-col items-center cursor-pointer"
+        >
+          <Upload className=" w-8 h-8 text-[#000000] mb-3" />
+          <p className="font-medium text-sm mb-1">
+            Documents related to transaction
+          </p>
+          <p className="text-[#00000080] text-xs ">
+            Supported formats: PDF, JPG, PNG, DOC (Max 10MB)
+          </p>
+        </label>
+      )}
+
+      <input
+        type="file"
+        accept=".pdf, .jpg, .jpeg, .png, .doc, .docx"
+        id="upload-invoice"
+        onChange={(e) => {
+          const maxSizeMB = 10;
+          const validFiles = [];
+          const invalidFiles = [];
+
+          const files = Array.from(e.target.files);
+
+          files.forEach((file) => {
+            if (file.size <= maxSizeMB * 1024 * 1024) {
+              validFiles.push(file);
+            } else {
+              invalidFiles.push(file.name);
+              showToast(`"${file.name}" is too large. Max size is 25MB.`, 1);
+            }
+          });
+
+          // Do something with the valid files (e.g. store them in state)
+          console.log("Valid files:", validFiles);
+          setfiles(validFiles);
+
+          // Clear the input to allow re-uploading the same files
+          e.target.value = "";
+        }}
+        className="hidden"
+      />
+    </div>
   );
 };
 
@@ -461,6 +749,90 @@ const RelatedDocuments = ({ purchaseDetails }) => {
   );
 };
 
+const AmountPieChart = ({ className, totalAmount, amountPaid }) => {
+  const amountLeft = Number((totalAmount - amountPaid).toFixed(2));
+
+  const data = [
+    { name: "Amount Left", value: amountLeft },
+    { name: "Amount Paid", value: amountPaid },
+  ];
+
+  const COLORS = ["#FB3748", "#2543B1"];
+
+  return (
+    <div
+      className={`flex flex-col items-center p-4 w-full rounded-lg bg-white border-[1.5px] border-[#E8E8E8] ${className}`}
+    >
+      <h2 className="text-xl font-semibold mb-2">Payment Summary</h2>
+
+      <div className="relative w-full ">
+        <ResponsiveContainer width="100%" aspect={1}>
+          <PieChart>
+            <Pie
+              data={data}
+              cx="50%"
+              cy="50%"
+              innerRadius={"80%"}
+              outerRadius={"95%"}
+              startAngle={50}
+              endAngle={-310}
+              paddingAngle={5}
+              dataKey="value"
+              stroke="none"
+              animationDuration={800} // default is 1500 ms
+              animationEasing="ease"
+            >
+              {data.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={COLORS[index]}
+                  cornerRadius={10}
+                />
+              ))}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+
+        <div className="absolute inset-0 flex flex-col items-center justify-center 2xl:text-3xl xl:text-2xl lg:text-xl md:text-lg text-base font-semibold text-[#4A4A4A]">
+          <span className=" ">Total Amount</span>
+          <span className=" ">₹ {totalAmount}</span>
+        </div>
+      </div>
+
+      <div className="flex justify-between w-full mt-4 gap-4">
+        <div className="flex items-center font-medium text-[#606060] ">
+          <div
+            className="w-4 h-4 rounded-full mr-2"
+            style={{ backgroundColor: `${COLORS[1]}` }}
+          ></div>
+          <div>
+            <span>Amount Paid</span>
+            <br />
+            <span>₹ {amountPaid}</span>
+          </div>
+        </div>
+        <div className="flex items-center font-medium text-[#606060] ">
+          <div
+            className="w-4 h-4 rounded-full mr-2"
+            style={{ backgroundColor: `${COLORS[0]}` }}
+          ></div>
+          <div>
+            <span>Amount Left</span>
+            <br />
+            <span>
+              ₹{" "}
+              {amountLeft.toLocaleString("en-IN", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              })}
+            </span>{" "}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const Description = () => {
   return (
     <div className="w-full lg:p-6 p-4 rounded-xl border-[1.5px] border-[#E8E8E8]">
@@ -471,164 +843,6 @@ const Description = () => {
         Purchase of office chairs, desks, and filing cabinets for the new
         department.
       </p>
-    </div>
-  );
-};
-
-const UpdateTimeLineModal = ({ isOpen, setisOpen }) => {
-  const [isConfirm, setisConfirm] = useState(false);
-  const [files, setfiles] = useState(null);
-  const [balance, setbalance] = useState("");
-
-  const handleSubmit = () => {
-    setisConfirm(true);
-  };
-
-  const handelClose = () => {
-    setisConfirm(false);
-    setisOpen(false);
-    setfiles(null);
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <>
-      <ToastContainer />
-      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm overflow-y-auto p-5">
-        <div className="w-full max-w-md mx-auto my-5 bg-white rounded-xl shadow-lg p-6 space-y-5 animate-slideDown">
-          {/* header  */}
-          <div className="">
-            <h2 className=" mb-3 2xl:text-3xl xl:text-2xl lg:text-xl md:text-lg text-base font-semibold">
-              Update Timeline
-            </h2>
-            <p className=" text-[#777777] font-medium xl:text-base md:text-sm text-xs">
-              Choose how update the timeline
-            </p>
-          </div>
-
-          {/* balance  */}
-          <div>
-            <p className="font-normal text-[#000000] 2xl:text-lg xl:text-base lg:text-sm text-xs">
-              Enter Payment Amount*
-            </p>
-            <div className=" flex items-end ">
-              <div className="text-[#333333c6] w-fit font-normal 2xl:text-lg md:text-base px-3 py-2 border-[1.5px] border-[#0000001A] rounded-lg mr-3">
-                INR
-              </div>
-              <InputField
-                hasLabel={false}
-                inputType={"number"}
-                className={"inline-block flex-1"}
-                value={balance}
-                setvalue={setbalance}
-                label={""}
-                required={true}
-                placeholder={"Enter Balance"}
-              />
-            </div>
-          </div>
-
-          {/* remarks  */}
-          <div>
-            <InputField
-              label={"Remarks"}
-              placeholder={"Enter remarks related to payment"}
-            />
-          </div>
-
-          {/* upload document  */}
-          <UploadDocuments />
-
-          {/* buttons  */}
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <button
-              onClick={handelClose}
-              className="col-span-1 py-2 border-2 border-[#3333331A] rounded-xl hover:bg-gray-100 transition cursor-pointer text-[#777777] "
-            >
-              Cancel
-            </button>
-            <button
-              aria-label="Add Member"
-              onClick={handleSubmit}
-              className=" col-span-1 cursor-pointer flex items-center justify-center px-3 lg:px-5 py-1 lg:py-3 bg-[#2543B1] transition hover:bg-blue-900 border-2 border-[#3333331A] rounded-xl text-[#ffffff] font-medium "
-            >
-              <span className="">Confirm</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-};
-
-const UploadDocuments = () => {
-  const [files, setfiles] = useState(null);
-
-  return (
-    <div className=" outline-[#00000029] rounded-lg px-3 py-5 border-2 border-[#00000033] border-dashed">
-      {files && (
-        <div>
-          <ShowUploadedFiles files={files} />
-          <div className=" flex flex-col gap-2 items-center my-5">
-            <label
-              htmlFor="upload-invoice"
-              className="bg-black cursor-pointer py-3 px-6 text-sm xl:text-base text-white rounded-lg "
-            >
-              Choose files
-            </label>
-            <p className="text-[#00000080] text-xs ">
-              Supported formats: PDF, JPG, PNG, DOC (Max 10MB)
-            </p>
-          </div>
-        </div>
-      )}
-
-      {!files && (
-        <label
-          tabIndex={0}
-          htmlFor="upload-invoice"
-          className="flex flex-col items-center cursor-pointer"
-        >
-          <Upload className=" w-8 h-8 text-[#000000] mb-3" />
-          <p className="font-medium text-sm mb-1">
-            Documents related to transaction
-          </p>
-          <p className="text-[#00000080] text-xs ">
-            Supported formats: PDF, JPG, PNG, DOC (Max 10MB)
-          </p>
-        </label>
-      )}
-
-      <input
-        type="file"
-        accept=".pdf, .jpg, .jpeg, .png, .doc, .docx"
-        id="upload-invoice"
-        onChange={(e) => {
-          const maxSizeMB = 10;
-          const validFiles = [];
-          const invalidFiles = [];
-
-          const files = Array.from(e.target.files);
-
-          files.forEach((file) => {
-            if (file.size <= maxSizeMB * 1024 * 1024) {
-              validFiles.push(file);
-            } else {
-              invalidFiles.push(file.name);
-              showToast(`"${file.name}" is too large. Max size is 25MB.`, 1);
-            }
-          });
-
-          // Do something with the valid files (e.g. store them in state)
-          console.log("Valid files:", validFiles);
-          setfiles(validFiles);
-
-          // Clear the input to allow re-uploading the same files
-          e.target.value = "";
-        }}
-        className="hidden"
-      />
     </div>
   );
 };

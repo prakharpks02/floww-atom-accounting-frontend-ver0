@@ -141,11 +141,11 @@ export const VendorContextProvider = ({ children }) => {
         return;
       }
 
-      const userid = userDetails?.userId;
-      if (!userid) {
-        showToast("User ID not found", 1);
-        return;
-      }
+      // const userid = userDetails?.userId;
+      // if (!userid) {
+      //   showToast("User ID not found", 1);
+      //   return;
+      // }
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -163,7 +163,7 @@ export const VendorContextProvider = ({ children }) => {
         const res = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/accounting/create-vendor/`,
           {
-            userId: userid,
+            // userId: userid,
             companyId: companyDetails.company_id,
             vendorName: `${createVendorForm.vendorSalutation} ${createVendorForm.vendorFirstName} ${createVendorForm.vendorLastName}`,
             ...createVendorForm,
@@ -176,7 +176,7 @@ export const VendorContextProvider = ({ children }) => {
         );
 
         console.log(res);
-        if (res.data?.status.toLowerCase() !== "success") {
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
           showToast("Somthing went wrong. Please try again", 1);
           return;
         }
@@ -226,11 +226,11 @@ export const VendorContextProvider = ({ children }) => {
         return;
       }
 
-      const userid = userDetails?.userId;
-      if (!userid) {
-        showToast("User ID not found", 1);
-        return;
-      }
+      // const userid = userDetails?.userId;
+      // if (!userid) {
+      //   showToast("User ID not found", 1);
+      //   return;
+      // }
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -246,7 +246,7 @@ export const VendorContextProvider = ({ children }) => {
           }/api/accounting/update-vendor-details/`,
           {
             ...createVendorForm,
-            userId: userid,
+            // userId: userid,
             companyId: companyDetails.company_id,
             vendorName: `${createVendorForm.vendorSalutation} ${createVendorForm.vendorFirstName} ${createVendorForm.vendorLastName}`,
             vendorId: vendorDetails.vendor_id,
@@ -258,7 +258,7 @@ export const VendorContextProvider = ({ children }) => {
           }
         );
         console.log(res);
-        if (res.data?.status.toLowerCase() !== "success") {
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
           showToast("Somthing went wrong. Please try again", 1);
           return;
         }
@@ -308,7 +308,7 @@ export const VendorContextProvider = ({ children }) => {
         }
       );
 
-      if (res.data?.status.toLowerCase() !== "success") {
+      if (res.data.status && res.data.status.toLowerCase() !== "success") {
         showToast("Somthing went wrong. Please try again", 1);
         return;
       }

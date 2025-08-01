@@ -87,14 +87,14 @@ export const DocumentContextProvider = ({ children }) => {
         return;
       }
 
-      const userId =  userDetails?.userId;
-      if (!userId) {
-        showToast("User ID not found", 1);
-        return;
-      }
+      // const userId =  userDetails?.userId;
+      // if (!userId) {
+      //   showToast("User ID not found", 1);
+      //   return;
+      // }
 
       console.log({
-        userId: userId,
+        // userId: userId,
         companyId: companyDetails.company_id,
         uploadedBy:userDetails?.username || "Unkown",
         ...documentForm,
@@ -112,7 +112,7 @@ export const DocumentContextProvider = ({ children }) => {
         const res = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/accounting/add-documents/`,
           {
-            userId: userId,
+            // userId: userId,
             companyId: companyDetails.company_id,
             uploadedBy:userDetails?.username || "",
             ...documentForm,
@@ -178,7 +178,7 @@ export const DocumentContextProvider = ({ children }) => {
       );
 
       // console.log(res);
-      if (res.data?.status.toLowerCase() !== "success") {
+      if (res.data.status && res.data.status.toLowerCase() !== "success") {
         showToast("Somthing went wrong. Please try again", 1);
         return;
       }

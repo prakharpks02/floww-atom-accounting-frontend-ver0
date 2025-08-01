@@ -20,85 +20,103 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { exportToExcel } from "../../utils/downloadExcel";
-import { getAllSales } from "../../data/sales/handelSalesdata";
 import { InputField } from "../../utils/ui/InputField";
 import { formatISODateToDDMMYYYY } from "../../utils/formateDate";
-import { PurchaseListContext } from "../../context/purchaseList/PurchaseListContext";
+import { SalesContext } from "../../context/sales/salesContext";
+// import data from "../../demo_data/allSales.json";
 import {
+  amountDropdown,
+  currentFinancialYear,
   getAllMonths,
   getLast10FinancialYears,
+  StatusFieldsDropDown,
 } from "../../utils/dropdownFields";
 
-export const PurchaseList = () => {
-  const [tempAllPurchaseList, settempAllPurchaseList] = useState(null);
-  const [isLoading, setisLoading] = useState(true);
+
+export const AllInvoiceList = () => {
+  const [tempAllSales, settempAllSales] = useState([]);
+  const [isLoading, setisLoading] = useState(false);
   const navigate = useNavigate();
-  const { getPurchaseList, purchaseList } = useContext(PurchaseListContext);
+
+  const { AllSalesList, getAllSales } = useContext(SalesContext);
 
   useEffect(() => {
-    getPurchaseList(setisLoading);
+    getAllSales(setisLoading);
   }, []);
+
   useEffect(() => {
-    settempAllPurchaseList(purchaseList);
-  }, [purchaseList]);
+    settempAllSales(AllSalesList);
+  }, [AllSalesList]);
+
+  console.log(tempAllSales);
 
   return (
     <>
-      <div className="p-6 md:px-4 xl:px-6 2xl:px-8 h-[calc(100dvh-80px)] flex flex-col">
-        <h1 className=" md:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-semibold text-[#4A4A4A] mb-1">
-          Purchase List
+      <div className="p-6 px-3 md:px-4 xl:px-6 2xl:px-8 h-[calc(100dvh-80px)] min-h-[400px] flex flex-col">
+        <h1 className=" text-lg md:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-semibold text-[#4A4A4A] mb-1">
+          Sales List
         </h1>
-        <p className=" md:text-sm lg:text-base xl:text-lg 2xl:text-xl text-[#A4A4A4] font-medium mb-6">
-          Manage your purchase transactions
+        <p className="text-xs md:text-sm lg:text-base xl:text-lg 2xl:text-xl text-[#A4A4A4] font-medium mb-6">
+          Manage your sales transactions
         </p>
 
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between md:gap-4 lg:gap-6 xl:gap-8 2xl:gap-10 mb-6">
-          <SearchPurchaseComponent setData={settempAllPurchaseList} />
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 lg:gap-6 xl:gap-8 2xl:gap-10 mb-6">
+          <SearchSalesComponent setData={settempAllSales} />
 
-          <div className=" grid grid-cols-12 gap-3 lg:text-sm text-xs xl:text-base">
+          <div className=" grid grid-cols-12 gap-3 lg:text-sm text-sm xl:text-base">
             <button
               aria-label="download excel"
               onClick={(e) => {
-                e.preventDefault();
-                const expandedPurchase = tempAllPurchaseList.flatMap(
-                  (Purchase) =>
-                    Purchase.list_items.map((item) => ({
-                      "Purchase ID": Purchase.purchase_id,
-                      Vendor: Purchase.vendor_name,
-                      Email: Purchase.email,
+                if (!tempAllSales) window.location.reload();
+
+                const expandedSales = tempAllSales.flatMap((sale) => {
+                  // console.log(sale)
+                  return sale.list_items.map((item) => {
+                    return {
+                      "Sale ID": sale.sales_id,
+                      Customer: sale.customer_name,
+                      Email: sale.email,
                       Item: item.item_description,
-                      Quantity: item.quantity,
-                      Amount: item.gross_amount,
-                      "Purchase Date": Purchase.purchase_date,
-                      Status: Purchase.status,
-                    }))
-                );
-                exportToExcel(expandedPurchase, "Purchase-List.xlsx");
+                      "No of items": item.quantity,
+                      Amount: Number(item.gross_amount).toLocaleString(
+                        "en-IN",
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }
+                      ),
+                      Date: sale.sales_ts,
+                      Status: sale.status,
+                    };
+                  });
+                });
+                exportToExcel(expandedSales, "Sales-List.xlsx");
               }}
-              className=" hover:bg-[#0033662b] transition-all cursor-pointer col-span-4 flex items-center justify-center gap-2 px-2 lg:px-4 py-2 lg:py-3  bg-[#0033661A] text-[#2543B1] rounded-xl font-medium "
+              className=" hover:bg-[#0033662b] transition-all cursor-pointer md:col-span-5 col-span-3 flex items-center justify-center gap-2 px-2 md:px-4 lg:px-4 py-2 lg:py-3  bg-[#0033661A] text-[#2543B1] md:rounded-xl rounded-lg font-medium "
             >
-              <Download className="w-4  h-4 " />
-              <span className="">Download</span>
+              <Download className="sm:w-4 sm:h-4 w-5 h-5 " />
+              <span className="md:block hidden">Download Excel</span>
             </button>
             {/* <button aria-label='Share'
                             className=" hover:bg-[#e2e2e260] transition-all cursor-pointer col-span-3 flex flex-wrap items-center justify-center gap-2 px-2 xl:px-4 py-1 xl:py-3 border-2 border-[#3333331A] rounded-xl text-[#606060] font-medium ">
                             <Upload className="w-4 h-4 text-[#2543B1]" /><span className=''>Share</span>
                         </button> */}
-            <FilterPurchaseButton
-              AllPurchase={tempAllPurchaseList}
-              setdata={settempAllPurchaseList}
+            <FilterSalesButton
+              className={""}
+              currData={tempAllSales}
+              setData={settempAllSales}
             />
             <button
-              aria-label="Add Purchase"
+              aria-label="Add Sale"
               onClick={() => {
-                navigate(`/purchase/addPurchase/new`);
+                navigate("/sales/addSales/new");
               }}
-              className=" cursor-pointer col-span-5 flex items-center justify-center gap-1 px-2 lg:px-4 py-2 lg:py-3 bg-[#2543B1] border-2 border-[#3333331A] rounded-xl text-[#ffffff] font-medium "
+              className=" cursor-pointer md:col-span-4 col-span-6 flex items-center justify-center gap-1 px-2 lg:px-4 py-2 lg:py-3 bg-[#2543B1] border-2 border-[#3333331A] rounded-xl text-[#ffffff] font-medium "
             >
-              <Plus className="w-5 h-5 " />
-              <span className="">Add Purchase</span>
+              <Plus className="w-5 h-5 " />{" "}
+              <span className=" whitespace-nowrap">Add Sale</span>
             </button>
           </div>
         </div>
@@ -109,20 +127,62 @@ export const PurchaseList = () => {
           </div>
         )}
 
-        {!isLoading && tempAllPurchaseList && (
-          <ShowPurchaseInTable AllPurchase={tempAllPurchaseList} />
+        {!isLoading && tempAllSales && (
+          <ShowSalesInTable AllSales={tempAllSales} />
         )}
       </div>
     </>
   );
 };
 
-const ShowPurchaseInTable = ({ AllPurchase }) => {
+const SearchSalesComponent = ({ setData }) => {
+  const [query, setquery] = useState(null);
+  const [isSeachNow, setisSeachNow] = useState(false);
+  const { searchSales, AllSalesList } = useContext(SalesContext);
+
+  const handelSearchSales = async () => {
+    console.log("searching");
+    if (!query) setData(AllSalesList);
+
+    const searchData = await searchSales(query);
+    setData(searchData);
+    setisSeachNow(false);
+  };
+
+  useEffect(() => {
+    isSeachNow && handelSearchSales();
+  }, [isSeachNow]);
+
+  useEffect(() => {}, [query]);
+
+  return (
+    <div className=" w-full sm:w-1/3 px-3 md:px-4 xl:px-6 py-2 lg:py-3 rounded-xl border-2 border-[#3333331A] flex items-center justify-between gap-2">
+      <Search className="md:w-4 xl:w-6 md:h-4 xl:h-6 text-[#2543B1] " />
+      <input
+        tabIndex={0}
+        value={query}
+        onChange={(e) => {
+          setquery(e.target.value);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            setisSeachNow(true);
+          }
+        }}
+        type="text"
+        placeholder="Search Sales..."
+        className="w-11/12 placeholder:text-[#A4A4A4] text-[#464646] font-medium lg:text-sm text-xs  xl:text-base outline-none"
+      />
+    </div>
+  );
+};
+
+const ShowSalesInTable = ({ AllSales }) => {
   const navigate = useNavigate();
 
   return (
     <>
-      {AllPurchase && (
+      {AllSales && (
         <div div className=" overflow-auto flex-1 min-h-[400px]">
           <table className="min-w-full text-sm text-left ">
             <thead className=" text-sm lg:text-base xl:text-lg 2xl:text-xl text-[#4A4A4A] border-b-[#0000001A] border-b-[1px]  ">
@@ -131,13 +191,13 @@ const ShowPurchaseInTable = ({ AllPurchase }) => {
                   scope="col"
                   className="px-3 py-4 whitespace-nowrap font-medium "
                 >
-                  Purchase Id
+                  Sale Id
                 </th>
                 <th
                   scope="col"
                   className="px-3 py-4 whitespace-nowrap font-medium "
                 >
-                  Vendor
+                  Customer
                 </th>
                 <th
                   scope="col"
@@ -145,6 +205,7 @@ const ShowPurchaseInTable = ({ AllPurchase }) => {
                 >
                   Email
                 </th>
+
                 <th
                   scope="col"
                   className="px-3 py-4 whitespace-nowrap font-medium "
@@ -178,55 +239,54 @@ const ShowPurchaseInTable = ({ AllPurchase }) => {
               </tr>
             </thead>
             <tbody>
-              {AllPurchase.map((purchase, idx) =>
-                purchase.list_items.map((item, index) => {
-                  return (
-                    <tr
-                      key={`${idx}-${index}`}
-                      onClick={(e) => {
-                        navigate(
-                          `/purchase/purchaseDetails/${purchase.purchase_id}`
-                        );
-                      }}
-                      className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
+              {AllSales.map((sale, idx) =>
+                sale.list_items.map((item, index) => (
+                  <tr
+                    key={`${idx}-${index}`}
+                    onClick={(e) => {
+                      navigate(`/sales/saleDetails/${sale.sales_id}`);
+                    }}
+                    className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
+                  >
+                    <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
+                      {sale.sales_id}
+                    </td>
+                    <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
+                      {sale.customer_name || "Unknown"}
+                    </td>
+                    <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
+                      {sale.email}
+                    </td>
+                    <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
+                      {item.item_name}
+                    </td>
+                    <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium text-center">
+                      {item.quantity}
+                    </td>
+
+                    <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
+                      ₹
+                      {Number(item.gross_amount).toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                    <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
+                      {sale.sales_ts}
+                    </td>
+                    <td
+                      className={`whitespace-nowrap px-3 py-4 ${
+                        sale.status?.toLowerCase() === "paid"
+                          ? "text-[#1FC16B]"
+                          : sale.status?.toLowerCase().includes("partially")
+                          ? "text-yellow-400"
+                          : "text-[#FB3748]"
+                      } font-medium`}
                     >
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
-                        {purchase.purchase_id}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
-                        {purchase.vendor_name}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
-                        {purchase.email}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
-                        {item.item_name}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium text-center">
-                        {item.quantity}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
-                        ₹
-                        {Number(item.gross_amount).toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
-                        {purchase.purchase_date}
-                      </td>
-                      <td
-                        className={`whitespace-nowrap px-3 py-4 ${
-                          purchase.status?.toLowerCase() === "paid"
-                            ? "text-[#1FC16B]"
-                            : "text-[#FB3748]"
-                        } font-medium`}
-                      >
-                        {purchase.status}
-                      </td>
-                    </tr>
-                  );
-                })
+                      {sale.status}
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
@@ -236,10 +296,9 @@ const ShowPurchaseInTable = ({ AllPurchase }) => {
   );
 };
 
-const FilterPurchaseButton = ({ AllPurchase, setdata = () => {} }) => {
+const FilterSalesButton = ({ currData, setData }) => {
   const [isFilterPannelOpen, setisFilterPannelOpen] = useState(false);
-  const [distinctItems, setdistinctItems] = useState([]);
-  const { purchaseList } = useContext(PurchaseListContext);
+
   const buttonRef = useRef(null);
   const panelRef = useRef(null);
 
@@ -261,30 +320,14 @@ const FilterPurchaseButton = ({ AllPurchase, setdata = () => {} }) => {
     };
   }, []);
 
-  useEffect(() => {
-    if (!purchaseList || purchaseList.length == 0) return;
-
-    // Step 1: Flatten all item_names from all list_items
-    const allItemNames = purchaseList.flatMap((obj) =>
-      obj.list_items.map((item) => item.item_name)
-    );
-
-    // Step 2: Get unique item names using a Set
-    const uniqueItemNames = [...new Set(allItemNames)];
-
-    // Step 3: Map into desired format
-    const result = uniqueItemNames.map((name) => ({ name, value: name }));
-    setdistinctItems(result);
-  }, [purchaseList]);
-
   return (
     <>
-      <FilterPurchasedata
-        items={distinctItems}
+      <FilterSalesdata
+        setData={setData}
+        setisOpen={setisFilterPannelOpen}
         ref={panelRef}
         isOpen={isFilterPannelOpen}
-        setisOpen={setisFilterPannelOpen}
-        setdata={setdata}
+        currData={currData}
       />
       <button
         ref={buttonRef}
@@ -292,24 +335,18 @@ const FilterPurchaseButton = ({ AllPurchase, setdata = () => {} }) => {
         onClick={() => {
           setisFilterPannelOpen(!isFilterPannelOpen);
         }}
-        className="hover:bg-[#e2e2e260] transition-all cursor-pointer col-span-3 flex flex-wrap items-center justify-center gap-2 px-2 lg:px-4 py-2 lg:py-3 border-2 border-[#3333331A] rounded-xl text-[#606060] font-medium "
+        className="hover:bg-[#e2e2e260] transition-all cursor-pointer md:col-span-3 col-span-3 flex flex-wrap items-center justify-center gap-2  lg:px-4 py-2 lg:py-3 border-2 border-[#3333331A] md:rounded-xl rounded-lg text-[#606060] font-medium "
       >
-        <Filter className="w-4 h-4 text-[#2543B1]" />
-        <span className="">Filters</span>
+        <Filter className="sm:w-4 sm:h-4 w-5 h-5 text-[#2543B1]" />
+        <span className="md:block hidden">Filters</span>
       </button>
     </>
   );
 };
 
-const FilterPurchasedata = ({
-  setdata = () => {},
-  isOpen,
-  ref,
-  items,
-  setisOpen,
-}) => {
+const FilterSalesdata = ({ setData, isOpen, ref, setisOpen, currData }) => {
+  const [status, setstatus] = useState("All");
   const [amount, setamount] = useState("All");
-  const [itemName, setitemName] = useState("All");
   const [date, setdate] = useState("");
   const [financialYear, setfinancialYear] = useState("All");
   const [startMonth, setstartMonth] = useState("Default");
@@ -317,20 +354,20 @@ const FilterPurchasedata = ({
   const [sortByAmount, setsortByAmount] = useState("Default");
   const [sortByDate, setsortByDate] = useState("Default");
   const [sortByQuantity, setsortByQuantity] = useState("Default");
-  const [isApplyFilter, setisApplyFilter] = useState(false);
-  const [isResetFIlter, setisResetFIlter] = useState(false);
 
-  const { handelMultipleFilter, purchaseList } =
-    useContext(PurchaseListContext);
+  const [isResetFIlter, setisResetFIlter] = useState(false);
+  const [isApplyFilter, setisApplyFilter] = useState(false);
+
+  const { AllSalesList, handelMultipleFilter } = useContext(SalesContext);
 
   useEffect(() => {
     const handelIsResetFilters = async () => {
-      setdata(purchaseList);
+      setData(AllSalesList);
 
       setisResetFIlter(false);
 
+      setstatus("All");
       setamount("All");
-      setitemName("All");
 
       setdate("");
       setfinancialYear("All");
@@ -349,8 +386,8 @@ const FilterPurchasedata = ({
 
   const handelApplyFilter = async () => {
     const data = await handelMultipleFilter({
+      statusFilter: status,
       amountFilter: amount,
-      itemName: itemName,
       dateFilter: date.split("-").reverse().join("-"),
       financialYearFilter: financialYear,
       amountSort: sortByAmount,
@@ -360,7 +397,7 @@ const FilterPurchasedata = ({
       endMonth: endMonth,
     });
     // console.log(data)
-    setdata(data);
+    setData(data);
     setisOpen(false);
   };
 
@@ -399,7 +436,6 @@ const FilterPurchasedata = ({
       endMonth.toLowerCase() !== "default"
     ) {
       setfinancialYear("All");
-      setdate("");
     }
   }, [startMonth, endMonth]);
   //reset start and end month when filter by fy chages other than all
@@ -407,17 +443,8 @@ const FilterPurchasedata = ({
     if (financialYear.toLowerCase() != "all") {
       setstartMonth("Default");
       setendMonth("Default");
-      setdate("");
     }
   }, [financialYear]);
-  //reset start and end month and fc year when filter by date chages other than all
-  useEffect(() => {
-    if (date) {
-      setstartMonth("Default");
-      setendMonth("Default");
-      setfinancialYear("All");
-    }
-  }, [date]);
 
   return (
     <>
@@ -434,7 +461,7 @@ const FilterPurchasedata = ({
                 `}
       >
         <div className="mb-4 flex justify-between items-center">
-          <h2 className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-lg text-base text-[#4A4A4A] font-semibold mb-4">
+          <h2 className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-lg text-base text-[#4A4A4A] font-semibold ">
             Filters
           </h2>
           {/* close button  */}
@@ -449,29 +476,18 @@ const FilterPurchasedata = ({
           </button>
         </div>
 
-        {/* Amount Dropdown */}
+        {/* Status Dropdown */}
         <div className="mb-4">
           <InputField
-            value={amount}
-            setvalue={setamount}
+            value={status}
+            setvalue={setstatus}
             readOnly={true}
-            label={"Amount"}
+            label={"Status"}
             dropDownData={[
+              ...StatusFieldsDropDown,
               {
                 name: "All",
                 value: "All",
-              },
-              {
-                name: "₹0 - ₹5,000",
-                value: "₹0 - ₹5,000",
-              },
-              {
-                name: "₹5,000 - ₹10,000",
-                value: "₹5,000 - ₹10,000",
-              },
-              {
-                name: "₹10,000+",
-                value: "₹10,000+",
               },
             ]}
             placeholder={"All"}
@@ -479,20 +495,14 @@ const FilterPurchasedata = ({
           />
         </div>
 
-        {/* Item name Dropdown */}
+        {/* Amount Dropdown */}
         <div className="mb-4">
           <InputField
-            value={itemName}
-            setvalue={setitemName}
+            value={amount}
+            setvalue={setamount}
             readOnly={true}
-            label={"Item name"}
-            dropDownData={[
-              {
-                name: "All",
-                value: "All",
-              },
-              ...(items || []),
-            ]}
+            label={"Amount"}
+            dropDownData={[...amountDropdown, { name: "All", value: "All" }]}
             placeholder={"All"}
             hasDropDown={true}
           />
@@ -588,10 +598,6 @@ const FilterPurchasedata = ({
             label={"Amount"}
             dropDownData={[
               {
-                value: "Default",
-                name: "Default",
-              },
-              {
                 value: "High to low",
                 name: "High to low",
               },
@@ -599,8 +605,12 @@ const FilterPurchasedata = ({
                 value: "Low to High",
                 name: "Low to High",
               },
+              {
+                value: "Default",
+                name: "Default",
+              },
             ]}
-            placeholder={"High to Low"}
+            placeholder={"default"}
             hasDropDown={true}
           />
         </div>
@@ -614,10 +624,6 @@ const FilterPurchasedata = ({
             label={"Date"}
             dropDownData={[
               {
-                value: "Default",
-                name: "Default",
-              },
-              {
                 value: "Recent First",
                 name: "Recent First",
               },
@@ -625,8 +631,12 @@ const FilterPurchasedata = ({
                 value: "Oldest First",
                 name: "Oldest First",
               },
+              {
+                value: "Default",
+                name: "Default",
+              },
             ]}
-            placeholder={"Recent First"}
+            placeholder={"Default"}
             hasDropDown={true}
           />
         </div>
@@ -640,10 +650,6 @@ const FilterPurchasedata = ({
             label={"No of Items"}
             dropDownData={[
               {
-                value: "Default",
-                name: "Default",
-              },
-              {
                 value: "Descending",
                 name: "Descending",
               },
@@ -651,8 +657,12 @@ const FilterPurchasedata = ({
                 value: "Ascending",
                 name: "Ascending",
               },
+              {
+                value: "Default",
+                name: "Default",
+              },
             ]}
-            placeholder={"Ascending"}
+            placeholder={"Default"}
             hasDropDown={true}
           />
         </div>
@@ -681,45 +691,5 @@ const FilterPurchasedata = ({
         </div>
       </div>
     </>
-  );
-};
-
-const SearchPurchaseComponent = ({ setData }) => {
-  const [query, setquery] = useState(null);
-  const [isSeachNow, setisSeachNow] = useState(false);
-  const { searchPurchase, purchaseList } = useContext(PurchaseListContext);
-
-  const handelSearchPurchase = async () => {
-    console.log("searching");
-    if (!query) setData(purchaseList);
-
-    const searchData = await searchPurchase(query);
-    setData(searchData);
-    setisSeachNow(false);
-  };
-
-  useEffect(() => {
-    isSeachNow && handelSearchPurchase();
-  }, [isSeachNow]);
-
-  return (
-    <div className=" w-full sm:w-1/3 md:px-4 xl:px-6 md:py-2 lg:py-3 rounded-xl border-2 border-[#3333331A] flex items-center justify-between gap-2">
-      <Search className="md:w-4 xl:w-6 md:h-4 xl:h-6 text-[#2543B1] " />
-      <input
-        tabIndex={0}
-        value={query}
-        onChange={(e) => {
-          setquery(e.target.value);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            setisSeachNow(true);
-          }
-        }}
-        type="text"
-        placeholder="Search Purchases..."
-        className="w-11/12 placeholder:text-[#A4A4A4] text-[#464646] font-medium lg:text-sm text-xs xl:text-base outline-none"
-      />
-    </div>
   );
 };

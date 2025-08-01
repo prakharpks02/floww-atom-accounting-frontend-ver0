@@ -37,7 +37,7 @@ export const UserContextProvider = ({ children }) => {
         `${import.meta.env.VITE_BACKEND_URL}/api/auth/user/signup/`,
         {
           firebase_token: userData.firebaseToken,
-          phone_number: userData.mobileNumber,
+          phone_number: `+91${userData.mobileNumber}`,
           name: userData.name,
           email: userData.email,
         }
@@ -54,9 +54,9 @@ export const UserContextProvider = ({ children }) => {
       localStorage.setItem("token", res.data.token);
       setuserDetails({
         username: userData.name,
-        userId: res.data.user_id,
+        // userId: res.data.user_id,
         email: userData.email,
-        mobileNo: userData.mobileNumber,
+        mobileNo: `+91${userData.mobileNumber}`,
         image: undefined,
       });
       navigate("/");
@@ -80,7 +80,7 @@ export const UserContextProvider = ({ children }) => {
   const getUserDetails = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      showToast("Token no not found", 1);
+      // showToast("Token no not found", 1);
       setisAuthenticating(false);
       setuserDetails(null);
       return;
@@ -90,7 +90,9 @@ export const UserContextProvider = ({ children }) => {
       setisAuthenticating(true);
 
       const res = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/auth/user/user/details/`,
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/accounting/get-member-user-detail/`,
         {
           headers: {
             Authorization: token,
@@ -106,19 +108,29 @@ export const UserContextProvider = ({ children }) => {
       //   }
       // );
       console.log(res);
-      if (res.data.error || res.data.status?.toLowerCase() !== "success") {
+      if (
+        res.data.error ||
+        (res.data.status && res.data.status?.toLowerCase() !== "success")
+      ) {
         showToast(res.data.error || "Fail to create user", 1);
         setisAuthenticating(false);
         // navigate("/onBoarding");
         return;
       }
 
+      localStorage.setItem("companyid", res.data.data.member_company_id);
       setuserDetails({
-        userId: res.data.user.user_id,
-        name: res.data.user.name,
-        email: res.data.user.email,
-        image: res.data.user.icon_image,
-        mobileNo: res.data.user.phone_number,
+        // userId: res.data.data.user_id,
+        name: res.data.data.name,
+        email:
+          res.data.authType?.toLowerCase() === "member"
+            ? "Member"
+            : res.data.data.email,
+        image: res.data.data.profile_icon_url,
+        mobileNo:
+          res.data.authType?.toLowerCase() === "member"
+            ? "Member"
+            : res.data.data.emailres.data.data.phone_number,
       });
       // navigate("/");
       // showToast("User created successfully");
@@ -157,7 +169,7 @@ export const UserContextProvider = ({ children }) => {
         );
 
         console.log(res);
-        if (res.data?.message?.toLowerCase().includes("incorrect")) {
+        if (!res.data.token || res.data?.message?.toLowerCase().includes("incorrect")) {
           showToast(
             res.data?.message || "Somthing went wrong. Please try again",
             1
@@ -166,15 +178,10 @@ export const UserContextProvider = ({ children }) => {
         }
 
         showToast("Member logged in successfully");
-        localStorage.setItem("token", res.data.data.token);
-        localStorage.setItem("companyid", res.data.data.company_id);
-        setuserDetails({
-          userId: res.data.data.member_id,
-          name: res.data.data.username,
-          email: "Member",
-          image: res.data.data.profile_icon_url,
-          mobileNo: undefined,
-        });
+        localStorage.setItem("token", res.data.token);
+        // localStorage.setItem("companyid", res.data.data.company_id);
+        await getUserDetails()
+
         navigate("/");
       } catch (error) {
         console.log(error);
@@ -271,26 +278,27 @@ export const UserContextProvider = ({ children }) => {
     [auth, confirmation]
   );
 
-  const checkMobileNumber = useCallback(async (userData, setisLoading) => {
-    if (!userData.name || !userData.email || !userData.mobileNumber) {
-      showToast("Please fill all details", 1);
-      throw new Error("Please fill all details");
+  const checkMobileNumber = useCallback(async (mobileNo, setisLoading) => {
+    if (!mobileNo) {
+      showToast("Mobile No not found", 1);
+      throw new Error("Mobile No not found");
     }
 
     try {
       setisLoading(true);
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/auth/user/check-phone/`,
-        { phone_number: `+91${userData.mobileNumber}` }
+        { phone_number: `+91${mobileNo}` }
       );
 
       console.log(res);
 
-      if (res.data.user_registered) {
-        showToast("Mobile number already exist", 1);
-        setisLoading(false);
-        throw new Error("Mobile number already exist");
-      }
+      // if (res.data.user_registered) {
+      //   showToast("Mobile number already exist", 1);
+      //   setisLoading(false);
+      //   throw new Error("Mobile number already exist");
+      // }
+      return res;
     } catch (error) {
       console.log(error);
       showToast(
@@ -318,19 +326,25 @@ export const UserContextProvider = ({ children }) => {
         `${import.meta.env.VITE_BACKEND_URL}/api/auth/user/login/`,
         {
           firebase_token: userData.firebaseToken,
-          phone_number: userData.mobileNumber,
+          phone_number: `+91${userData.mobileNumber}`,
           // name: userData.name,
           // email: userData.email,
         }
       );
       console.log(res);
-      if (res.data.error || res.data.status?.toLowerCase() !== "success") {
-        showToast(res.data.error || "Fail to create user", 1);
+      if (
+        res.data.error ||
+        (res.data.status && res.data.status?.toLowerCase() !== "success")
+      ) {
+        showToast(res.data.error || "Fail to Login user", 1);
         setisLoading(false);
         // navigate("/onBoarding");
         return;
       }
+      localStorage.setItem("token", res.data.token);
       showToast("User login successfully");
+      navigate("/");
+      // window.location.reload();
     } catch (error) {
       console.log(error);
       showToast(
@@ -355,6 +369,7 @@ export const UserContextProvider = ({ children }) => {
     }
 
     try {
+      setisLoading(true);
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/auth/user/logout/`,
         {},
@@ -371,7 +386,8 @@ export const UserContextProvider = ({ children }) => {
       }
 
       localStorage.clear();
-      window.location.reload();
+
+      window.location.href = "/";
     } catch (error) {
       console.log(error);
       showToast(
@@ -380,6 +396,8 @@ export const UserContextProvider = ({ children }) => {
           "Somthing went wrong. Please try again",
         1
       );
+    } finally {
+      setisLoading(false);
     }
   }, []);
 
@@ -405,7 +423,7 @@ export const UserContextProvider = ({ children }) => {
   useEffect(() => {
     if (userDetails) {
       localStorage.setItem("username", userDetails.name);
-      localStorage.setItem("userId", userDetails.userId);
+      // localStorage.setItem("userId", userDetails.userId);
       localStorage.setItem("email", userDetails.email);
       localStorage.setItem("mobileNo", userDetails.mobileNo);
       localStorage.setItem("profileImg", userDetails.image);
@@ -455,7 +473,7 @@ export const UserContextProvider = ({ children }) => {
         verifyOtp,
         checkMobileNumber,
         userLogin,
-        userLogout
+        userLogout,
       }}
     >
       <div id="recaptcha-container" />

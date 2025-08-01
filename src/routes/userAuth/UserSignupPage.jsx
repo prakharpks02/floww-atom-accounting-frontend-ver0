@@ -18,12 +18,26 @@ export const UserSignupPage = () => {
   // send otp to mobile number
   const handleFormSubmit = useCallback(
     async (setisLoading) => {
+      if (!userData.email || !userData.mobileNumber || !userData.name) {
+        showToast("All fields are required", 1);
+        return;
+      }
       try {
         console.log(userData);
-        await checkMobileNumber(userData, setisLoading);
+        const res = await checkMobileNumber(
+          userData.mobileNumber,
+          setisLoading
+        );
+        if (res.data.user_registered) {
+          showToast("Mobile number already exist", 1);
+          setisLoading(false);
+          return;
+        }
         await sendOtp(userData.mobileNumber, setisLoading);
         setCurrentState("otp");
-      } catch (error) {}
+      } catch (error) {
+        console.log(error);
+      }
     },
     [userData]
   );
@@ -64,34 +78,34 @@ export const UserSignupPage = () => {
 
   return (
     <>
-    <ToastContainer/>
-    <div className="flex min-h-screen bg-[#FBFAFF]">
-      {/* Left Side: Gradient + Illustration + Text */}
-      <div className="hidden relative lg:flex w-1/2 bg-gradient-to-br from-[#7B5FFF] to-[#E3B3FF] text-white items-center justify-center overflow-hidden ">
-        <div className="z-10 text-center absolute w-full px-4 top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2">
-          <h1 className="text-5xl font-medium mb-4">Atom Books</h1>
-          <p className="text-xl font-medium mb-2">by gofloww</p>
-          <p className="text-base max-w-md mx-auto">
-            Where technology meets finance. Discover a smarter way to manage and
-            grow your accounts.
-          </p>
+      <ToastContainer />
+      <div className="flex min-h-screen bg-[#FBFAFF]">
+        {/* Left Side: Gradient + Illustration + Text */}
+        <div className="hidden relative lg:flex w-1/2 bg-gradient-to-br from-[#7B5FFF] to-[#E3B3FF] text-white items-center justify-center overflow-hidden ">
+          <div className="z-10 text-center absolute w-full px-4 top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2">
+            <h1 className="text-5xl font-medium mb-4">Atom Books</h1>
+            <p className="text-xl font-medium mb-2">by gofloww</p>
+            <p className="text-base max-w-md mx-auto">
+              Where technology meets finance. Discover a smarter way to manage
+              and grow your accounts.
+            </p>
+          </div>
+          <img
+            src="/loginPageimg.webp" // Replace with actual image path (like the one in your screenshot)
+            alt="Hero"
+            className="w-full h-full object-cover pointer-events-none"
+          />
+          {/* overlay  */}
+          <div className=" absolute w-full h-full top-0 left-0 bg-black/76" />
         </div>
-        <img
-          src="/loginPageimg.webp" // Replace with actual image path (like the one in your screenshot)
-          alt="Hero"
-          className="w-full h-full object-cover pointer-events-none"
-        />
-        {/* overlay  */}
-        <div className=" absolute w-full h-full top-0 left-0 bg-black/76" />
-      </div>
 
-      {/* Right Side: Login Form */}
-      <div className="flex-1 flex items-center justify-center px-4 sm:px-8">
-        <div className="bg-gradient-to-b from-transparent to-[#F0EFF6]  rounded-2xl w-[88%] px-8 py-8 sm:px-6">
-          {renderLoginForm()}
+        {/* Right Side: Login Form */}
+        <div className="flex-1 flex items-center justify-center px-4 sm:px-8">
+          <div className="bg-gradient-to-b from-transparent to-[#F0EFF6]  rounded-2xl w-[88%] px-8 py-8 sm:px-6">
+            {renderLoginForm()}
+          </div>
         </div>
       </div>
-    </div>
     </>
   );
 };

@@ -160,7 +160,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
       );
       console.log(res);
       // console.log(res);
-      if (res.data?.status.toLowerCase() !== "success") {
+      if (res.data.status && res.data.status.toLowerCase() !== "success") {
         showToast("Somthing went wrong. Please try again", 1);
         return;
       }
@@ -255,11 +255,11 @@ export const PurchaseOrderContextProvider = ({ children }) => {
         throw new Error("Company id not found");
       }
 
-      const userId =userDetails?.userId;
-      if (!userId) {
-        showToast("User ID not found", 1);
-        throw new Error("User ID not found");
-      }
+      // const userId =userDetails?.userId;
+      // if (!userId) {
+      //   showToast("User ID not found", 1);
+      //   throw new Error("User ID not found");
+      // }
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -274,7 +274,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
             import.meta.env.VITE_BACKEND_URL
           }/api/accounting/create-purchase-order/`,
           {
-            userId: userId,
+            // userId: userId,
             companyId: companyDetails.company_id,
             ...createPurchaseOrderForm,
           },
@@ -286,7 +286,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
         );
         console.log(res);
         // console.log(res);
-        if (res.data?.status.toLowerCase() !== "success") {
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
           showToast("Somthing went wrong. Please try again", 1);
           setisLoading(false);
           throw new Error("Somthing went wrong. Please try again");
@@ -342,11 +342,11 @@ export const PurchaseOrderContextProvider = ({ children }) => {
         throw new Error("Company ID not found");
       }
 
-      const userId = userDetails?.userId;
-      if (!userId) {
-        showToast("User ID not found", 1);
-        throw new Error("User ID not found");
-      }
+      // const userId = userDetails?.userId;
+      // if (!userId) {
+      //   showToast("User ID not found", 1);
+      //   throw new Error("User ID not found");
+      // }
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -361,7 +361,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
             import.meta.env.VITE_BACKEND_URL
           }/api/accounting/update-purchase-order-details/`,
           {
-            userId: userId,
+            // userId: userId,
             poId: purchaseid,
             purchaseTs: Date.now(),
             poNumber: "N/A",
@@ -376,7 +376,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
         );
         console.log(res);
         // console.log(res);
-        if (res.data?.status.toLowerCase() !== "success") {
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
           showToast("Somthing went wrong. Please try again", 1);
           setisLoading(false);
           throw new Error("Somthing went wrong. Please try again");

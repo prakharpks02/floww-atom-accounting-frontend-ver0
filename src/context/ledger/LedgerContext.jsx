@@ -55,7 +55,7 @@ export const LedgerContextProvider = ({ children }) => {
       );
 
       // console.log(res);
-      if (res.data?.status.toLowerCase() !== "success") {
+      if (res.data.status && res.data.status.toLowerCase() !== "success") {
         showToast("Somthing went wrong. Please try again", 1);
         return;
       }
