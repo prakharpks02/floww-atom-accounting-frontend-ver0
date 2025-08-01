@@ -33,23 +33,23 @@ export const validateFields = (formData) => {
       } else {
         const lowerPath = path.toLowerCase();
 
-        // if (lowerPath.includes("gst") && !regexMap.gst.test(data)) {
-        //   errorsObj[path] = "Invalid GST number.";
-        //   showToast("Enter a valid GST number", 1);
-        //   return;
-        // } else if (lowerPath.includes("pan") && !regexMap.pan.test(data)) {
-        //   errorsObj[path] = "Invalid PAN number.";
-        //   showToast("Enter a valid PAN number", 1);
-        //   return;
-        // } else if (lowerPath.includes("email") && !regexMap.email.test(data)) {
-        //   errorsObj[path] = "Invalid email address.";
-        //   showToast("Enter a valid email id", 1);
-        //   return;
-        // } else if (lowerPath.includes("cin") && !regexMap.cin.test(data)) {
-        //   errorsObj[path] = "Invalid CIN number.";
-        //   showToast("Enter a valid CIN number", 1);
-        //   return;
-        // }
+        if (lowerPath.includes("gst") && !regexMap.gst.test(data)) {
+          errorsObj[path] = "Invalid GST number.";
+          showToast("Enter a valid GST number", 1);
+          return;
+        } else if (lowerPath.includes("pan") && !regexMap.pan.test(data)) {
+          errorsObj[path] = "Invalid PAN number.";
+          showToast("Enter a valid PAN number", 1);
+          return;
+        } else if (lowerPath.includes("email") && !regexMap.email.test(data)) {
+          errorsObj[path] = "Invalid email address.";
+          showToast("Enter a valid email id", 1);
+          return;
+        } else if (lowerPath.includes("cin") && !regexMap.cin.test(data)) {
+          errorsObj[path] = "Invalid CIN number.";
+          showToast("Enter a valid CIN number", 1);
+          return;
+        }
       }
     }
   };
