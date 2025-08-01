@@ -125,15 +125,15 @@ export const PurchaseOrderDetails = () => {
 
           {/* Purchase info  */}
           {purchaseOrderDetails && (
-            <div className=" grid lg:grid-cols-10 grid-cols-1  gap-3">
+            <div className=" grid grid-cols-1  gap-3">
               <PurchaseOrderInfoLeftPart
-                className={"lg:col-span-6"}
+                // className={"lg:col-span-6"}
                 purchaseOrderDetails={purchaseOrderDetails}
               />
-              <PurchaseOrderInfoRightPart
+              {/* <PurchaseOrderInfoRightPart
                 className={"lg:col-span-4"}
                 purchaseOrderDetails={purchaseOrderDetails}
-              />
+              /> */}
             </div>
           )}
         </div>

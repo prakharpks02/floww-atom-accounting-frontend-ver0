@@ -30,7 +30,6 @@ export const MobileLogin = ({ onMobileSubmit, onSwitchToMember }) => {
 
   return (
     <>
-      <ToastContainer />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col items-center text-center">

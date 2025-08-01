@@ -1,7 +1,6 @@
 import { useContext, useState } from "react";
 import { User, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { showToast } from "../../utils/showToast";
-import { ToastContainer } from "react-toastify";
 
 export const MemberLogin = ({ onMemberLogin, onBack, loginMember }) => {
   const [username, setUsername] = useState("");
@@ -20,7 +19,6 @@ export const MemberLogin = ({ onMemberLogin, onBack, loginMember }) => {
 
   return (
     <>
-      <ToastContainer />
       <div className="login-card w-full relative">
         <button
           onClick={onBack}

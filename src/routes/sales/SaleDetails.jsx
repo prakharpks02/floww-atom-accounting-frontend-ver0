@@ -20,7 +20,7 @@ import {
   Loader2,
   IndianRupee,
 } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { FileIcon, defaultStyles } from "react-file-icon";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -32,47 +32,9 @@ import { ShowUploadedFiles } from "../../utils/ui/ShowUploadedFiles";
 import { ToastContainer } from "react-toastify";
 import { SalesContext } from "../../context/sales/salesContext";
 import { formatISODateToDDMMYYYY } from "../../utils/formateDate";
-
-const timelineData = [
-  {
-    user: "Admin",
-    time: "06 May 2025, 1:29 PM",
-    status: "Approved",
-    statusColor: "bg-green-100 text-green-700",
-    message: "Sale approved and invoice generated.",
-  },
-  {
-    user: "John Doe",
-    time: "29 Apr 2025, 3:52 PM",
-    status: "Sent",
-    statusColor: "bg-blue-100 text-blue-700",
-    message: "Sale proposal sent to customer.",
-  },
-  {
-    user: "Admin",
-    time: "29 Apr 2025, 1:40 PM",
-    status: "Creation",
-    statusColor: "bg-gray-200 text-gray-700",
-    message: "Sale created by ADMIN",
-  },
-  {
-    user: "Admin",
-    time: "29 Apr 2025, 1:40 PM",
-    status: "Partial Pay",
-    statusColor: "bg-yellow-100 text-yellow-700",
-    message: "Partial Payment is done by ADMIN",
-    file: {
-      name: "Partial Payment - 001.pdf",
-    },
-  },
-  {
-    user: "Admin",
-    time: "29 Apr 2025, 1:40 PM",
-    status: "Cancel",
-    statusColor: "bg-red-100 text-red-700",
-    message: "Sale cancelled by ADMIN",
-  },
-];
+import axios from "axios";
+import { UserContext } from "../../context/userContext/UserContext";
+import { CompanyContext } from "../../context/company/CompanyContext";
 
 export const SaleInfo = () => {
   const navigate = useNavigate();
@@ -94,10 +56,11 @@ export const SaleInfo = () => {
 
   if (!saleDetails) return;
 
-  console.log(saleDetails)
+  console.log(saleDetails);
 
   return (
     <>
+      <ToastContainer />
       <div className="p-6 md:px-4 xl:px-6 2xl:px-8  ">
         {/* header  */}
         <div className=" mb-6">
@@ -132,6 +95,8 @@ export const SaleInfo = () => {
             saleDetails={saleDetails}
           />
           <SaleInfoRightPart
+            setisLoading={setisLoading}
+            getSaleDetails={getSaleDetails}
             className={"lg:col-span-4 col-span-1"}
             saleDetails={saleDetails}
           />
@@ -153,8 +118,16 @@ const SaleInfoLeftPart = ({ className, saleDetails }) => {
   );
 };
 
-const SaleInfoRightPart = ({ className, saleDetails }) => {
+const SaleInfoRightPart = ({
+  className,
+  saleDetails,
+  setisLoading,
+  getSaleDetails,
+}) => {
   const [isModalOpen, setisModalOpen] = useState(false);
+  const [amountPaid, setamountPaid] = useState(
+    Number(saleDetails.total_amount)
+  );
   const iconMap = {
     Approved: <CheckCircle size={18} />,
     Sent: <Send size={18} />,
@@ -163,14 +136,66 @@ const SaleInfoRightPart = ({ className, saleDetails }) => {
     Cancel: <XCircle size={18} />,
   };
 
+  const getFileExtension = (filename) => {
+    return filename?.split(".").pop().toLowerCase();
+  };
+
+  const isImage = useCallback((ext) => {
+    return ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext);
+  }, []);
+
+  const getFilePreview = (file, ext) => {
+    if (isImage(ext)) {
+      return (
+        <img
+          src={file?.related_doc_url || "document image"}
+          alt={`preview ${file?.related_doc_name}`}
+          className="object-contain w-full text-[10px]"
+        />
+      );
+    } else {
+      return (
+        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+          <div className="w-12 h-12">
+            <FileIcon
+              extension={ext}
+              {...(defaultStyles[ext] || defaultStyles.doc)}
+            />
+          </div>
+        </div>
+      );
+    }
+  };
+
+  useEffect(() => {
+    const totalAmount = saleDetails.payment_transactions_list?.reduce(
+      (sum, txn) => {
+        return sum + parseFloat(txn.amount || "0");
+      },
+      0
+    );
+    setamountPaid(totalAmount);
+  }, [saleDetails]);
+
   return (
     <>
-      <UpdateTimeLineModal isOpen={isModalOpen} setisOpen={setisModalOpen} />
+      <UpdateTimeLineModal
+        amountPaid={amountPaid}
+        setisSaleDetailLoading={setisLoading}
+        getSaleDetails={getSaleDetails}
+        saleDetails={saleDetails}
+        isOpen={isModalOpen}
+        setisOpen={setisModalOpen}
+      />
       <div
         className={`h-fit w-full grid lg:grid-cols-1 grid-cols-2 gap-4 ${className}`}
       >
         {/* amount pie chart  */}
-        <AmountPieChart className={" h-fit"} />
+        <AmountPieChart
+          className={" h-fit"}
+          totalAmount={Number(saleDetails.total_amount)}
+          amountPaid={amountPaid}
+        />
         <div
           className={`rounded-lg w-full h-fit 2xl:p-8 xl:p-6 md:p-4 p-2 border-[1.5px] border-[#E8E8E8] `}
         >
@@ -187,7 +212,7 @@ const SaleInfoRightPart = ({ className, saleDetails }) => {
             >
               Update Timeline <History className="w-5 h-5 rotate-y-180" />
             </button>
-            <button
+            {/* <button
               onClick={() => {
                 setisModalOpen(true);
               }}
@@ -195,38 +220,43 @@ const SaleInfoRightPart = ({ className, saleDetails }) => {
           border-[#2543B1] border-2 text-[#2543B1] rounded-xl cursor-pointer transition-colors"
             >
               Update TDS
-            </button>
+            </button> */}
           </div>
           <div className="space-y-4">
-            {timelineData.map((item, idx) => (
-              <div
-                key={idx}
-                className="bg-gray-100 rounded-xl p-4 flex flex-col gap-2"
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center ${item.statusColor}`}
-                  >
-                    {iconMap[item.status]}
-                  </div>
-                  <p className="text-[#777777] font-medium xl:text-base md:text-sm text-xs">
-                    {item.message}
-                  </p>
-                </div>
-
-                {/* File box if present */}
-                {item.file && (
-                  <div className="ml-11 bg-white border-[#0000001A] border-1  shadow-sm rounded-lg flex items-center gap-3 px-4 py-2 w-fit text-sm">
-                    <div className="bg-[#FB3748] text-white px-2 py-2 rounded text-xs font-semibold">
-                      PDF
+            {saleDetails?.payment_transactions_list?.map((item, idx) => {
+              const ext = getFileExtension(item?.transaction_url);
+              return (
+                <div
+                  key={idx}
+                  className="bg-gray-100 rounded-xl p-4 flex flex-col gap-2 overflow-x-auto"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center ${item.statusColor}`}
+                    >
+                      {/* {iconMap[item.status]} */}
+                      <CheckCircle size={18} />
                     </div>
-                    <span className="text-[#606060] font-medium xl:text-base md:text-sm text-xs">
-                      {item.file.name}
-                    </span>
+                    <p className="text-[#777777] font-medium xl:text-base md:text-sm text-xs">
+                      {item.remark}
+                    </p>
                   </div>
-                )}
-              </div>
-            ))}
+
+                  {/* File box if present */}
+                  {item.transaction_url &&
+                    item.transaction_url.toLowerCase() != "n/a" && (
+                      <div className="ml-11 bg-white border-[#0000001A] border-1  shadow-sm rounded-lg flex items-center gap-3 px-2 py-2 w-fit text-sm">
+                        <div className=" text-white w-15 px-2 py-2 rounded text-xs font-semibold">
+                          {getFilePreview(item?.transaction_url, ext)}
+                        </div>
+                        <span className="text-[#606060] font-medium xl:text-base md:text-sm text-xs">
+                          {item.transaction_url}
+                        </span>
+                      </div>
+                    )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -234,22 +264,134 @@ const SaleInfoRightPart = ({ className, saleDetails }) => {
   );
 };
 
-const UpdateTimeLineModal = ({ isOpen, setisOpen }) => {
-  const [isConfirm, setisConfirm] = useState(false);
-  const [files, setfiles] = useState(null);
-  const [balance, setbalance] = useState("");
+const UpdateTimeLineModal = ({
+  amountPaid,
+  isOpen,
+  setisOpen,
+  saleDetails,
+  setisSaleDetailLoading,
+  getSaleDetails,
+}) => {
+  const [formData, setformData] = useState({
+    transaction_id: "N/A",
+    timestamp: Date.now(),
+    amount: "",
+    remark: "",
+    transaction_url: "",
+  });
+  const { userDetails } = useContext(UserContext);
+  const { companyDetails } = useContext(CompanyContext);
+  const [isLoading, setisLoading] = useState(false);
+  const { saleid } = useParams();
 
-  const handleSubmit = () => {
-    setisConfirm(true);
+  const handleSubmit = async () => {
+    await updateTimeLine();
   };
 
   const handelClose = () => {
-    setisConfirm(false);
     setisOpen(false);
-    setfiles(null);
   };
 
+  const updateTimeLine = useCallback(async () => {
+    // const userId = userDetails?.userId;
+    // if (!userId) {
+    //   showToast("user ID not found", 1);
+    //   return;
+    // }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      showToast("Token not found", 1);
+      return;
+    }
+    if (!formData.amount || !formData.transaction_url || !formData.remark) {
+      showToast("All fields are required", 1);
+      return;
+    }
+
+    if (
+      Number(formData.amount) >
+      Number(saleDetails.total_amount) - amountPaid
+    ) {
+      // console.log(
+      //   Number(saleDetails.total_amount) - amountPaid,
+      //   Number(formData.amount)
+      // );
+      showToast("Amount must less than leftover amount", 1);
+      return;
+    }
+
+    try {
+      setisLoading(true);
+      const res = await axios.post(
+        `${
+          import.meta.env.VITE_BACKEND_URL
+        }/api/accounting/update-sales-details/`,
+        {
+          salesTs: saleDetails.sales_ts,
+          invoiceId: saleDetails.invoice_id,
+          invoiceNumber: saleDetails.invoice_number,
+          listItems: saleDetails.list_items,
+          listToc: saleDetails.list_toc,
+          listStatus: saleDetails.list_status,
+          customerId: saleDetails.created_on,
+          notes: saleDetails.notes,
+          contactNo: saleDetails.contact_no,
+          email: saleDetails.email,
+          address: saleDetails.address,
+          invoiceUrl: saleDetails.invoice_url,
+          paymentNameList: saleDetails.payment_name_list,
+          invoiceDate: saleDetails.invoice_date,
+          invoiceDueBy: saleDetails.invoice_due_by,
+          quotationId: saleDetails.quotation_id,
+          purchaseOrderId: saleDetails.po_id,
+          paymentTransactionsList: [
+            ...saleDetails.payment_transactions_list,
+            formData,
+          ],
+          gstinNumber: saleDetails.gstin_number,
+          panNumber: saleDetails.pan_number,
+          subtotalAmount: saleDetails.subtotal_amount,
+          discountAmount: saleDetails.discount_amount,
+          tdsAmount: saleDetails.tds_amount,
+          adjustmentAmount: saleDetails.adjustment_amount,
+          totalAmount: saleDetails.total_amount,
+          status: saleDetails.status,
+          terms: saleDetails.terms,
+          customerName: saleDetails.customer_name,
+          tdsReason: saleDetails.tds_reason,
+          companyId: companyDetails.company_id,
+          // userId: userId,
+          salesId: saleDetails.sales_id,
+        },
+        {
+          headers: {
+            Authorization: token,
+          },
+        }
+      );
+      if (res.data?.status && res.data.status.toLowerCase() !== "success") {
+        showToast("Somthing went wrong. Please try again", 1);
+        setisLoading(false);
+        return;
+      }
+
+      console.log(res);
+      await getSaleDetails(saleid, setisSaleDetailLoading);
+      handelClose();
+    } catch (error) {
+      console.log(error);
+      showToast(
+        error.response?.data?.message || error.message || "Somthing went wrong",
+        1
+      );
+    } finally {
+      setisLoading(false);
+    }
+  }, [formData, userDetails, saleDetails, companyDetails]);
+
   if (!isOpen) return null;
+
+  console.log(formData);
 
   return (
     <>
@@ -279,8 +421,15 @@ const UpdateTimeLineModal = ({ isOpen, setisOpen }) => {
                 hasLabel={false}
                 inputType={"number"}
                 className={"inline-block flex-1"}
-                value={balance}
-                setvalue={setbalance}
+                value={formData.amount}
+                setvalue={(value) => {
+                  setformData((prev) => {
+                    return {
+                      ...prev,
+                      amount: value,
+                    };
+                  });
+                }}
                 label={""}
                 required={true}
                 placeholder={"Enter Balance"}
@@ -291,28 +440,43 @@ const UpdateTimeLineModal = ({ isOpen, setisOpen }) => {
           {/* remarks  */}
           <div>
             <InputField
+              value={formData.remark}
+              setvalue={(value) => {
+                setformData((prev) => {
+                  return {
+                    ...prev,
+                    remark: value,
+                  };
+                });
+              }}
               label={"Remarks"}
               placeholder={"Enter remarks related to payment"}
             />
           </div>
 
           {/* upload document  */}
-          <UploadDocuments />
+          <UploadDocuments setSelectedFile={setformData} />
 
           {/* buttons  */}
           <div className="grid grid-cols-2 gap-4 mt-4">
             <button
+              disabled={isLoading}
               onClick={handelClose}
               className="col-span-1 py-2 border-2 border-[#3333331A] rounded-xl hover:bg-gray-100 transition cursor-pointer text-[#777777] "
             >
               Cancel
             </button>
             <button
-              aria-label="Add Member"
+              disabled={isLoading}
+              aria-label="Update timeline"
               onClick={handleSubmit}
               className=" col-span-1 cursor-pointer flex items-center justify-center px-3 lg:px-5 py-1 lg:py-3 bg-[#2543B1] transition hover:bg-blue-900 border-2 border-[#3333331A] rounded-xl text-[#ffffff] font-medium "
             >
-              <span className="">Confirm</span>
+              {isLoading ? (
+                <Loader2 className=" w-5 animate-spin mx-auto" />
+              ) : (
+                <span className="">Confirm</span>
+              )}
             </button>
           </div>
         </div>
@@ -321,14 +485,22 @@ const UpdateTimeLineModal = ({ isOpen, setisOpen }) => {
   );
 };
 
-const UploadDocuments = () => {
+const UploadDocuments = ({ setSelectedFile }) => {
   const [files, setfiles] = useState(null);
+  useEffect(() => {
+    setSelectedFile((prev) => {
+      return {
+        ...prev,
+        transaction_url: files && files.length > 0 ? files[0].name : "",
+      };
+    });
+  }, [files]);
 
   return (
     <div className=" outline-[#00000029] rounded-lg px-3 py-5 border-2 border-[#00000033] border-dashed">
       {files && (
         <div>
-          <ShowUploadedFiles files={files} />
+          <ShowUploadedFiles files={files} setfiles={setfiles} />
           <div className=" flex flex-col gap-2 items-center my-5">
             <label
               htmlFor="upload-invoice"
@@ -392,10 +564,12 @@ const UploadDocuments = () => {
   );
 };
 
-const AmountPieChart = ({ className }) => {
-  const totalAmount = 1000000;
-  const amountPaid = 600000;
-  const amountLeft = totalAmount - amountPaid;
+const AmountPieChart = ({ className, totalAmount, amountPaid }) => {
+  // const totalAmount = amountPaid + amountLeft ;
+  // const amountPaid = 600000;
+  const amountLeft = Number((totalAmount - amountPaid).toFixed(2));
+
+  // console.log(totalAmount, amountPaid, amountLeft);
 
   const data = [
     { name: "Amount Left", value: amountLeft },
@@ -440,7 +614,7 @@ const AmountPieChart = ({ className }) => {
 
         <div className="absolute inset-0 flex flex-col items-center justify-center 2xl:text-3xl xl:text-2xl lg:text-xl md:text-lg text-base font-semibold text-[#4A4A4A]">
           <span className=" ">Total Amount</span>
-          <span className=" ">₹ 10,00,000</span>
+          <span className=" ">₹ {totalAmount}</span>
         </div>
       </div>
 
@@ -453,7 +627,7 @@ const AmountPieChart = ({ className }) => {
           <div>
             <span>Amount Paid</span>
             <br />
-            <span>₹ 6,00,0700</span>
+            <span>₹ {amountPaid}</span>
           </div>
         </div>
         <div className="flex items-center font-medium text-[#606060] ">
@@ -464,7 +638,13 @@ const AmountPieChart = ({ className }) => {
           <div>
             <span>Amount Left</span>
             <br />
-            <span>₹ 4,00,000</span>
+            <span>
+              ₹{" "}
+              {amountLeft.toLocaleString("en-IN", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2,
+              })}
+            </span>
           </div>
         </div>
       </div>
@@ -493,8 +673,8 @@ const SaleDetails = ({ saleDetails }) => {
             Total Payment
           </p>
           <span className="text-[#4A4A4A] font-medium 2xl:text-2xl xl:text-xl lg:text-lg md:text-base text-sm">
-            <IndianRupee className=" w-4.5 h-4.5 inline-block"/>
-            { Number(saleDetails?.total_amount).toFixed(2)}
+            <IndianRupee className=" w-4.5 h-4.5 inline-block" />
+            {Number(saleDetails?.total_amount).toFixed(2)}
           </span>
         </div>
         <div>

@@ -94,9 +94,9 @@ export default function TopBar() {
                   Login
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     // add your logout logic here
-                    userLogout(setisLoggingOut);
+                    await userLogout(setisLoggingOut);
                   }}
                   className="w-full cursor-pointer text-left text-sm px-3 py-2 hover:bg-gray-100 rounded text-red-600"
                 >

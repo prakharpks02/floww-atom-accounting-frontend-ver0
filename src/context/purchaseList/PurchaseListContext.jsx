@@ -56,9 +56,9 @@ export const initialPurchaseListState = {
   paymentTransactionsList: [
     {
       transaction_id: "N/A",
-      amount: "N/A",
-      timestamp: "N/A",
-      remark: "N/A",
+      amount: "0",
+      timestamp: Date.now(),
+      remark: "Purchase created by admin",
       transaction_url: "N/A",
     },
   ],
@@ -175,7 +175,7 @@ export const PurchaseListContextProvider = ({ children }) => {
       );
       console.log(res);
       // console.log(res);
-      if (res.data?.status.toLowerCase() !== "success") {
+      if (res.data.status && res.data.status.toLowerCase() !== "success") {
         showToast("Somthing went wrong. Please try again", 1);
         return;
       }
@@ -227,7 +227,7 @@ export const PurchaseListContextProvider = ({ children }) => {
           }
         );
         console.log(res);
-        if (res.data?.status.toLowerCase() !== "success") {
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
           showToast("Somthing went wrong. Please try again", 1);
           return;
         }
@@ -270,11 +270,11 @@ export const PurchaseListContextProvider = ({ children }) => {
         return;
       }
 
-      const userId =userDetails?.userId;
-      if (!userId) {
-        showToast("User ID not found", 1);
-        return;
-      }
+      // const userId =userDetails?.userId;
+      // if (!userId) {
+      //   showToast("User ID not found", 1);
+      //   return;
+      // }
       const token = localStorage.getItem("token");
       if (!token) {
         showToast("Token not found", 1);
@@ -285,7 +285,7 @@ export const PurchaseListContextProvider = ({ children }) => {
         const res = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/accounting/create-purchase/`,
           {
-            userId: userId,
+            // userId: userId,
             companyId: companyDetails.company_id,
             ...createPurchaseListForm,
           },
@@ -297,7 +297,7 @@ export const PurchaseListContextProvider = ({ children }) => {
         );
         console.log(res);
         // console.log(res);
-        if (res.data?.status.toLowerCase() !== "success") {
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
           showToast("Somthing went wrong. Please try again", 1);
           return;
         }
@@ -349,11 +349,11 @@ export const PurchaseListContextProvider = ({ children }) => {
         return;
       }
 
-      const userId =userDetails?.userId;
-      if (!userId) {
-        showToast("User ID not found", 1);
-        return;
-      }
+      // const userId =userDetails?.userId;
+      // if (!userId) {
+      //   showToast("User ID not found", 1);
+      //   return;
+      // }
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -368,7 +368,7 @@ export const PurchaseListContextProvider = ({ children }) => {
             import.meta.env.VITE_BACKEND_URL
           }/api/accounting/update-purchase-details/`,
           {
-            userId: userId,
+            // userId: userId,
             purchaseId: purchaseid,
             purchaseTs: Date.now(),
             companyId: companyDetails.company_id,
@@ -382,7 +382,7 @@ export const PurchaseListContextProvider = ({ children }) => {
         );
         console.log(res);
         // console.log(res);
-        if (res.data?.status.toLowerCase() !== "success") {
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
           showToast("Somthing went wrong. Please try again", 1);
           return;
         }

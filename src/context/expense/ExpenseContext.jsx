@@ -123,7 +123,7 @@ export const ExpenseContextprovider = ({ children }) => {
       );
 
       // console.log(res);
-      if (res.data?.status.toLowerCase() !== "success") {
+      if (res.data.status && res.data.status.toLowerCase() !== "success") {
         showToast("Somthing went wrong. Please try again", 1);
         return;
       }
@@ -213,11 +213,11 @@ export const ExpenseContextprovider = ({ children }) => {
         return;
       }
 
-      const userId = userDetails?.userId;
-      if (!userId) {
-        showToast("User ID not found", 1);
-        return;
-      }
+      // const userId = userDetails?.userId;
+      // if (!userId) {
+      //   showToast("User ID not found", 1);
+      //   return;
+      // }
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -232,11 +232,11 @@ export const ExpenseContextprovider = ({ children }) => {
         const res = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/accounting/create-expense/`,
           {
-            userId: userId,
+            // userId: userId,
             companyId: companyDetails.company_id,
             uploadedBy: userDetails?.name || "Unknown",
             email: userDetails?.email || "Member",
-            createdByMemberId: "userId",
+            createdByMemberId: "user",
             createdByMemberName: userDetails?.name || "Unknown",
             createdByProfileIconUrl:
               userDetails?.image || "https://example.com/profile.jpg",
@@ -250,7 +250,7 @@ export const ExpenseContextprovider = ({ children }) => {
         );
         console.log(res);
         // console.log(res);
-        if (res.data?.status.toLowerCase() !== "success") {
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
           showToast("Somthing went wrong. Please try again", 1);
           return;
         }
@@ -298,11 +298,11 @@ export const ExpenseContextprovider = ({ children }) => {
         throw new Error("Company ID not found");
       }
 
-      const userId = userDetails?.userId;
-      if (!userId) {
-        showToast("User ID not found", 1);
-        throw new Error("User ID not found");
-      }
+      // const userId = userDetails?.userId;
+      // if (!userId) {
+      //   showToast("User ID not found", 1);
+      //   throw new Error("User ID not found");
+      // }
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -318,7 +318,7 @@ export const ExpenseContextprovider = ({ children }) => {
           }/api/accounting/update-expense-details/`,
           {
             ...data,
-            userId: userId,
+            // userId: userId,
             expenseId: data.expense_id,
             companyId: companyDetails.company_id,
           },
@@ -330,7 +330,7 @@ export const ExpenseContextprovider = ({ children }) => {
         );
         console.log(res);
         // console.log(res);
-        if (res.data?.status.toLowerCase() !== "success") {
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
           showToast("Somthing went wrong. Please try again", 1);
           setisLoading(false);
           throw new Error("Somthing went wrong. Please try again");

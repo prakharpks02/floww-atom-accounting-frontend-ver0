@@ -82,9 +82,9 @@ export const initialSalesState = {
   paymentTransactionsList: [
     {
       transaction_id: "N/A",
-      amount: "N/A",
-      timestamp: "N/A",
-      remark: "N/A",
+      amount: "0",
+      timestamp: Date.now(),
+      remark: "Sale created by ADMIN",
       transaction_url: "N/A",
     },
   ],
@@ -149,56 +149,58 @@ export const SalesContextProvider = ({ children }) => {
 
   const { pathname } = useLocation();
   const { companyDetails } = useContext(CompanyContext);
-    const {userDetails} = useContext(UserContext)
+  const { userDetails } = useContext(UserContext);
 
   const navigate = useNavigate();
 
   //  function to get all sales list
   const getAllSales = useCallback(
     async (setisLoading = () => {}) => {
-    if (!companyDetails) {
-      showToast("No company details found", 1);
-      return;
-    }
-    const token = localStorage.getItem("token");
-    if (!token) {
-      showToast("Token not found", 1);
-      return;
-    }
-    try {
-      setisLoading(true);
-      const res = await axios.get(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/accounting/get-list-sales/?companyId=${
-          companyDetails.company_id
-        }`,
-        {
-          headers: {
-            Authorization: token,
-          },
-        }
-      );
-
-      if (res.data?.status.toLowerCase() !== "success") {
-        showToast("Somthing went wrong. Please try again", 1);
-        setisLoading(false);
+      if (!companyDetails) {
+        showToast("No company details found", 1);
         return;
       }
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Token not found", 1);
+        return;
+      }
+      try {
+        setisLoading(true);
+        const res = await axios.get(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/accounting/get-list-sales/?companyId=${
+            companyDetails.company_id
+          }`,
+          {
+            headers: {
+              Authorization: token,
+            },
+          }
+        );
 
-      setAllSalesList(res.data.data);
-    } catch (error) {
-      console.log(error);
-      showToast(
-        error.response?.data?.message ||
-          error.message ||
-          "Somthing went wrong. Please try again",
-        1
-      );
-    } finally {
-      setisLoading(false);
-    }
-  }, [userDetails]);
+        if (res.data?.status && res.data.status.toLowerCase() !== "success") {
+          showToast("Somthing went wrong. Please try again", 1);
+          setisLoading(false);
+          return;
+        }
+
+        setAllSalesList(res.data.data);
+      } catch (error) {
+        console.log(error);
+        showToast(
+          error.response?.data?.message ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+      } finally {
+        setisLoading(false);
+      }
+    },
+    [userDetails]
+  );
 
   // get total sales for dashboard
   const getTotalSales = async () => {
@@ -290,7 +292,7 @@ export const SalesContextProvider = ({ children }) => {
 
       return filteredSales;
     },
-    [AllSalesList,userDetails]
+    [AllSalesList, userDetails]
   );
 
   //create new sales
@@ -311,11 +313,11 @@ export const SalesContextProvider = ({ children }) => {
         return;
       }
 
-      const userId = userDetails?.userId;
-      if (!userId) {
-        showToast("user ID not found", 1);
-        return;
-      }
+      // const userId = userDetails?.userId;
+      // if (!userId) {
+      //   showToast("user ID not found", 1);
+      //   return;
+      // }
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -329,7 +331,7 @@ export const SalesContextProvider = ({ children }) => {
           `${import.meta.env.VITE_BACKEND_URL}/api/accounting/create-sales/`,
           {
             companyId: companyDetails.company_id,
-            userId: userId,
+            // userId: userId,
             ...createSaleForm,
           },
           {
@@ -340,7 +342,7 @@ export const SalesContextProvider = ({ children }) => {
         );
 
         console.log(res);
-        if (res.data?.status.toLowerCase() !== "success") {
+        if (res.data?.status && res.data.status.toLowerCase() !== "success") {
           showToast("Somthing went wrong. Please try again", 1);
           setisLoading(false);
           return;
@@ -362,7 +364,7 @@ export const SalesContextProvider = ({ children }) => {
         setisLoading(false);
       }
     },
-    [createSaleForm,userDetails]
+    [createSaleForm, userDetails]
   );
 
   //get sales details
@@ -431,11 +433,11 @@ export const SalesContextProvider = ({ children }) => {
         showToast("Sales ID not found", 1);
         return;
       }
-      const userId = userDetails?.userId;
-      if (!userId) {
-        showToast("user ID not found", 1);
-        return;
-      }
+      // const userId = userDetails?.userId;
+      // if (!userId) {
+      //   showToast("user ID not found", 1);
+      //   return;
+      // }
       const token = localStorage.getItem("token");
       if (!token) {
         showToast("Token not found", 1);
@@ -450,7 +452,7 @@ export const SalesContextProvider = ({ children }) => {
           {
             ...createSaleForm,
             companyId: companyDetails.company_id,
-            userId: userId,
+            // userId: userId,
             salesId: saleid,
           },
           {
@@ -460,7 +462,7 @@ export const SalesContextProvider = ({ children }) => {
           }
         );
         console.log(res);
-        if (res.data?.status.toLowerCase() !== "success") {
+        if (res.data?.status && res.data.status.toLowerCase() !== "success") {
           showToast("Somthing went wrong. Please try again", 1);
           setisLoading(false);
           return;
@@ -482,7 +484,7 @@ export const SalesContextProvider = ({ children }) => {
         setisLoading(false);
       }
     },
-    [createSaleForm , userDetails]
+    [createSaleForm, userDetails]
   );
 
   // reset the create sale form to intial value when not in addSales page

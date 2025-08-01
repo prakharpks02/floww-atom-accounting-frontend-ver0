@@ -90,7 +90,7 @@ export const CompanyContextProvider = ({ children }) => {
       console.log(res);
       if (
         res.data.error_message?.toLowerCase() !== "na" ||
-        res.data.status?.toLowerCase() !== "success"
+        (res.data.status && res.data.status.toLowerCase() !== "success")
       ) {
         setisAuthenticating(false);
         // navigate("/onBoarding");
@@ -144,11 +144,11 @@ export const CompanyContextProvider = ({ children }) => {
       }
 
       setErrors({});
-      const userid = userDetails?.userId;
-      if (!userid) {
-        showToast("User ID not found", 1);
-        return;
-      }
+      // const userid = userDetails?.userId;
+      // if (!userid) {
+      //   showToast("User ID not found", 1);
+      //   return;
+      // }
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -163,7 +163,7 @@ export const CompanyContextProvider = ({ children }) => {
             import.meta.env.VITE_BACKEND_URL
           }/api/accounting/create-company-accounting/`,
           {
-            userId: userid,
+            // userId: userid,
             ...companyForm,
             companyAddress: `${companyForm.companyStreet}, ${companyForm.companyLandmark}, ${companyForm.companyState}, ${companyForm.companyZIP}`,
           },
@@ -175,7 +175,7 @@ export const CompanyContextProvider = ({ children }) => {
         );
 
         console.log(res);
-        if (res.data?.status.toLowerCase() !== "success") {
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
           showToast("Somthing went wrong. Please try again", 1);
           return;
         }
@@ -205,14 +205,14 @@ export const CompanyContextProvider = ({ children }) => {
     async (setisLoading = () => {}) => {
       // if (!companyDetails) return;
 
-      const userId =
-        localStorage.getItem("userId") || userDetails?.userId || undefined;
+      // const userId = userDetails?.userId || undefined;
+
       // console.log(companyId)
-      if (!userId) {
-        showToast("User not found. Please login first.", 1);
-        setisAuthenticating(false);
-        return;
-      }
+      // if (!userId) {
+      //   showToast("User not found. Please login first.", 1);
+      //   setisAuthenticating(false);
+      //   return;
+      // }
 
       const token = localStorage.getItem("token");
       if (!token) {
@@ -225,7 +225,10 @@ export const CompanyContextProvider = ({ children }) => {
         const res = await axios.get(
           `${
             import.meta.env.VITE_BACKEND_URL
-          }/api/accounting/get-list-companies-accounting/?userId=${userId}`,
+          }/api/accounting/get-list-companies-accounting/`,
+          // `${
+          //   import.meta.env.VITE_BACKEND_URL
+          // }/api/accounting/get-list-companies-accounting/?userId=${userId}`,
           {
             headers: {
               Authorization: token,
@@ -291,7 +294,7 @@ export const CompanyContextProvider = ({ children }) => {
 
   console.log(companyList);
 
-  if (!companyDetails ) {
+  if (!companyDetails) {
     return (
       <>
         <ToastContainer />

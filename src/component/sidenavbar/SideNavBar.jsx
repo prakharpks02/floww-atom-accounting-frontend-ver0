@@ -17,6 +17,7 @@ import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { CompanyContext } from "../../context/company/CompanyContext";
 import { AnimatePresence, motion } from "framer-motion";
+import { UserContext } from "../../context/userContext/UserContext";
 
 const navbarRoutes = [
   {
@@ -87,6 +88,10 @@ const dropDownDataList = {
       label: "Add Sales",
       href: "/sales/addSales/new",
     },
+    // {
+    //   label: "Invoice List",
+    //   href: "/sales/allInvoiceList",
+    // },
     {
       label: "Create Invoice",
       href: "/sales/createInvoice",
@@ -155,6 +160,7 @@ const dropDownDataList = {
 export default function SideNavbar() {
   const [isPanelClosed, setisPanelClosed] = useState(false);
   const { pathname } = useLocation();
+  const { userDetails } = useContext(UserContext);
   console.log(pathname);
 
   return (
@@ -207,14 +213,19 @@ export default function SideNavbar() {
           <SwitchCompanyButton />
           {navbarRoutes.map((item, index) => {
             return (
-              <SidebarLink
-                key={index}
-                icon={item.icon}
-                href={item.href}
-                label={item.label}
-                isPanelClosed={isPanelClosed}
-                hasDropDown={item.hasDropDown}
-              />
+              !(
+                item.label?.toLowerCase().includes("member") &&
+                userDetails.email?.toLowerCase().includes("member")
+              ) && (
+                <SidebarLink
+                  key={index}
+                  icon={item.icon}
+                  href={item.href}
+                  label={item.label}
+                  isPanelClosed={isPanelClosed}
+                  hasDropDown={item.hasDropDown}
+                />
+              )
             );
           })}
         </nav>
@@ -372,6 +383,7 @@ const SwitchCompanyButton = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const [isLoading, setisLoading] = useState(true);
+  const { userDetails } = useContext(UserContext);
 
   console.log(companyList);
 
@@ -392,7 +404,9 @@ const SwitchCompanyButton = () => {
   };
 
   useEffect(() => {
-    getCompanyList(setisLoading);
+    userDetails.email &&
+      userDetails.email?.toLowerCase() != "member" &&
+      getCompanyList(setisLoading);
   }, []);
 
   return (
