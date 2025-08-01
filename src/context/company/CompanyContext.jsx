@@ -183,7 +183,9 @@ export const CompanyContextProvider = ({ children }) => {
         showToast("Company created");
         localStorage.setItem("companyid", res.data.data.company_id);
         navigate("/");
-        window.location.reload();
+
+        await getCompanyList()
+        // window.location.reload();
       } catch (error) {
         console.log(error);
         showToast(
