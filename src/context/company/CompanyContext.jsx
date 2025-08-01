@@ -15,6 +15,7 @@ import { LogoAnimation } from "../../component/logo-animation";
 import { OnBoardingPage } from "../../routes/onBoarding/OnBoarding";
 import { validateFields } from "../../utils/checkFormValidation";
 import { UserContext } from "../userContext/UserContext";
+import { uploadFile } from "../../utils/uploadFiles";
 
 export const CompanyContext = createContext();
 
@@ -158,6 +159,14 @@ export const CompanyContextProvider = ({ children }) => {
 
       try {
         setisLoading(true);
+
+        // upload documens
+        const file = companyForm.companyLogo;
+        const response = await uploadFile(file.fileName, file.fileBlob, token);
+        console.log(response);
+        companyForm.companyLogo = response.doc_url;
+        console.log("company iconimage uploaded");
+
         const res = await axios.post(
           `${
             import.meta.env.VITE_BACKEND_URL
@@ -182,9 +191,8 @@ export const CompanyContextProvider = ({ children }) => {
 
         showToast("Company created");
         localStorage.setItem("companyid", res.data.data.company_id);
+        await getCompanyDetails();
         navigate("/");
-
-        await getCompanyList()
         // window.location.reload();
       } catch (error) {
         console.log(error);
@@ -205,6 +213,7 @@ export const CompanyContextProvider = ({ children }) => {
   //get company list
   const getCompanyList = useCallback(
     async (setisLoading = () => {}) => {
+      console.log("aniran dasa");
       // if (!companyDetails) return;
 
       // const userId = userDetails?.userId || undefined;
@@ -273,13 +282,17 @@ export const CompanyContextProvider = ({ children }) => {
         setisLoading(false);
       }
     },
-    [userDetails]
+    [userDetails, companyDetails]
   );
 
   useEffect(() => {
-    if (localStorage.getItem("companyid").toString() == "null")
+    if (!localStorage.getItem("companyid") || localStorage.getItem("companyid").toString() == "null") {
+      console.log("ngfnhgfhbfghgfhfghfghull");
       getCompanyList();
-    else getCompanyDetails();
+    } else {
+      console.log("ngfnhgfhbfghgfhfghfghull");
+      getCompanyDetails();
+    }
 
     // !companyDetails && getCompanyList();
   }, []);

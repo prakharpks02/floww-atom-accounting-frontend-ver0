@@ -145,7 +145,7 @@ const RelatedDocuments = ({ expenseDetails }) => {
         <h2 className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-base text-sm font-semibold text-[#4A4A4A]">
           Documents Related to Expense
         </h2>
-        <button
+        {/* <button
           onClick={downloadAllFiles}
           tabIndex={0}
           disabled={isZipping}
@@ -161,12 +161,12 @@ const RelatedDocuments = ({ expenseDetails }) => {
               <Download className="w-4 h-4" /> Download all
             </>
           )}
-        </button>
+        </button> */}
       </div>
 
       <div className="flex flex-wrap items-center justify-start gap-2 mb-4 max-h-[250px] overflow-auto">
         {files && files.length > 0 ? (
-          <ShowUploadedFiles files={files} />
+          <ShowFiles files={files} />
         ) : (
           <div className=" w-full flex flex-col items-center gap-4">
             <div className="text-[#2543B1] bg-[#0033661A] rounded-lg p-2 justify-center flex text-sm">
@@ -176,6 +176,66 @@ const RelatedDocuments = ({ expenseDetails }) => {
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+const ShowFiles = ({ files }) => {
+  const getFileExtension = (filename) => {
+    return filename?.split(".").pop().toLowerCase();
+  };
+
+  const isImage = (ext) => {
+    return ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext);
+  };
+
+  const getFilePreview = (file, ext) => {
+    if (isImage(ext)) {
+      return (
+        <img
+          src={file?.related_doc_url || "document image"}
+          alt={`preview ${file?.related_doc_name}`}
+          className="object-cover w-full h-full text-[10px]"
+        />
+      );
+    } else {
+      return (
+        <div className="w-full h-full flex items-center justify-center bg-gray-100">
+          <div className="w-12 h-12">
+            <FileIcon
+              extension={ext}
+              {...(defaultStyles[ext] || defaultStyles.doc)}
+            />
+          </div>
+        </div>
+      );
+    }
+  };
+
+  return (
+    <div className="max-h-[200px] w-full overflow-auto flex flex-wrap justify-center gap-3 pt-5">
+      {files.map((file, index) => {
+        const ext = getFileExtension(file?.related_doc_name);
+        return (
+          <div
+            key={index}
+            className="relative w-[100px] flex flex-col items-center gap-1"
+          >
+            <div
+              className="w-[100px] h-[100px] bg-gray-100 rounded-xl border border-gray-300 cursor-pointer flex items-center justify-center overflow-hidden"
+              onClick={(e) => {
+                e.preventDefault();
+                window.open(file?.related_doc_url, "_blank");
+              }}
+            >
+              {getFilePreview(file, ext)}
+            </div>
+            <p className="text-[#606060] text-xs text-center w-full truncate">
+              {file?.related_doc_name}
+            </p>
+          </div>
+        );
+      })}
     </div>
   );
 };

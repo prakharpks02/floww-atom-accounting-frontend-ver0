@@ -47,7 +47,10 @@ const AddMemberModal = ({
       addMemberFormdispatch({
         type: "UPDATE_FIELD",
         field: "profileIconUrl",
-        value: file.name,
+        value: {
+          fileBlob: file || "N/A",
+          fileName: file.name || "N/A",
+        },
       });
     }
   };

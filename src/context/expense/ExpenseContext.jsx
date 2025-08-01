@@ -21,6 +21,7 @@ import {
   SortDataOnExpenseDate,
 } from "../../utils/filterData";
 import { UserContext } from "../userContext/UserContext";
+import { uploadFile } from "../../utils/uploadFiles";
 
 export const ExpenseContext = createContext();
 
@@ -229,6 +230,19 @@ export const ExpenseContextprovider = ({ children }) => {
 
       try {
         setisLoading(true);
+
+        // upload documens
+        for (let i = 0; i < createExpenseForm.attachments.length; i++) {
+          const file = createExpenseForm.attachments[i];
+          const res = await uploadFile(file.fileName, file.fileBlob, token);
+          console.log(res);
+          createExpenseForm.attachments[i] = {
+            related_doc_name: res.file_name,
+            related_doc_url: res.doc_url,
+          };
+        }
+        console.log("file uploaded");
+
         const res = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/accounting/create-expense/`,
           {
@@ -312,6 +326,24 @@ export const ExpenseContextprovider = ({ children }) => {
 
       try {
         setisLoading(true);
+
+        // upload documens
+        for (let i = 0; i < createExpenseForm.attachments.length; i++) {
+          if (
+            createExpenseForm.attachments[i].related_doc_url.toLowerCase() !=
+            "n/a"
+          )
+            continue;
+          const file = createExpenseForm.attachments[i];
+          const res = await uploadFile(file.fileName, file.fileBlob, token);
+          console.log(res);
+          createExpenseForm.attachments[i] = {
+            related_doc_name: res.file_name,
+            related_doc_url: res.doc_url,
+          };
+        }
+        console.log("file uploaded");
+
         const res = await axios.post(
           `${
             import.meta.env.VITE_BACKEND_URL

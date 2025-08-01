@@ -21,6 +21,8 @@ import {
   SortDataOnQuantity,
 } from "../../utils/filterData";
 import { UserContext } from "../userContext/UserContext";
+import { formatISODateToDDMMYYYY } from "../../utils/formateDate";
+import { uploadFile } from "../../utils/uploadFiles";
 
 export const PurchaseOrderContext = createContext();
 
@@ -123,61 +125,63 @@ export const PurchaseOrderContextProvider = ({ children }) => {
     PurchaseOrderReducer,
     initialPurchaseOrderState
   );
-    const {userDetails} = useContext(UserContext)
+  const { userDetails } = useContext(UserContext);
 
   const navigate = useNavigate();
 
   //get purchase order list
   const getPurchaseOrderList = useCallback(
     async (setisLoading = () => {}) => {
-    if (!companyDetails) {
-      showToast("Company details not found", 1);
-      return;
-    }
-    if (!companyDetails.company_id) {
-      showToast("Company details not found", 1);
-      return;
-    }
-    const token = localStorage.getItem("token");
-    if (!token) {
-      showToast("Token not found", 1);
-      return;
-    }
-
-    try {
-      setisLoading(true);
-      const res = await axios.get(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/accounting/get-all-purchase-orders/?companyId=${
-          companyDetails.company_id
-        }`,
-        {
-          headers: {
-            Authorization: token,
-          },
-        }
-      );
-      console.log(res);
-      // console.log(res);
-      if (res.data.status && res.data.status.toLowerCase() !== "success") {
-        showToast("Somthing went wrong. Please try again", 1);
+      if (!companyDetails) {
+        showToast("Company details not found", 1);
+        return;
+      }
+      if (!companyDetails.company_id) {
+        showToast("Company details not found", 1);
+        return;
+      }
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Token not found", 1);
         return;
       }
 
-      setpurchaseOrderList(res.data.data);
-    } catch (error) {
-      console.log(error);
-      showToast(
-        error.response?.data?.message ||
-          error.message ||
-          "Somthing went wrong. Please try again",
-        1
-      );
-    } finally {
-      setisLoading(false);
-    }
-  }, [userDetails]);
+      try {
+        setisLoading(true);
+        const res = await axios.get(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/accounting/get-all-purchase-orders/?companyId=${
+            companyDetails.company_id
+          }`,
+          {
+            headers: {
+              Authorization: token,
+            },
+          }
+        );
+        console.log(res);
+        // console.log(res);
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
+          showToast("Somthing went wrong. Please try again", 1);
+          return;
+        }
+
+        setpurchaseOrderList(res.data.data);
+      } catch (error) {
+        console.log(error);
+        showToast(
+          error.response?.data?.message ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+      } finally {
+        setisLoading(false);
+      }
+    },
+    [userDetails]
+  );
 
   // get purchase order details
   const getPurchaseOrderDetails = useCallback(
@@ -233,9 +237,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
       e.preventDefault();
 
       if (
-        !createPurchaseOrderForm.poUrl ||
-        createPurchaseOrderForm.poUrl.length == 0 ||
-        createPurchaseOrderForm.poUrl[0]?.invoice_url == "N/A"
+        createPurchaseOrderForm.poUrl[0]?.invoice_url.toLowerCase() != "n/a"
       ) {
         const validationErrors = validateFields(createPurchaseOrderForm);
 
@@ -269,6 +271,21 @@ export const PurchaseOrderContextProvider = ({ children }) => {
 
       try {
         setisLoading(true);
+
+        // upload documens
+        for (let i = 0; i < createPurchaseOrderForm.poUrl.length; i++) {
+          const file = createPurchaseOrderForm.poUrl[i];
+          const response = await uploadFile(
+            file.fileName,
+            file.fileBlob,
+            token
+          );
+          console.log(response);
+          createPurchaseOrderForm.poUrl[i] = { invoice_url: response.doc_url };
+        }
+
+        console.log("file uploaded");
+
         const res = await axios.post(
           `${
             import.meta.env.VITE_BACKEND_URL
@@ -277,6 +294,9 @@ export const PurchaseOrderContextProvider = ({ children }) => {
             // userId: userId,
             companyId: companyDetails.company_id,
             ...createPurchaseOrderForm,
+            poDate:
+              createPurchaseOrderForm.poDate ||
+              formatISODateToDDMMYYYY(Date.now() / 1000),
           },
           {
             headers: {
@@ -314,7 +334,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
         setisLoading(false);
       }
     },
-    [createPurchaseOrderForm , userDetails]
+    [createPurchaseOrderForm, userDetails]
   );
 
   //update purchase order
@@ -402,7 +422,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
         setisLoading(false);
       }
     },
-    [createPurchaseOrderForm , userDetails]
+    [createPurchaseOrderForm, userDetails]
   );
 
   // search on purchase list
@@ -456,7 +476,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
 
       return filteredPurchaseOrder;
     },
-    [purchaseOrderList , userDetails]
+    [purchaseOrderList, userDetails]
   );
 
   //handel multiple filter
@@ -492,7 +512,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
 
       return result;
     },
-    [purchaseOrderList , userDetails]
+    [purchaseOrderList, userDetails]
   );
   console.log(createPurchaseOrderForm);
 

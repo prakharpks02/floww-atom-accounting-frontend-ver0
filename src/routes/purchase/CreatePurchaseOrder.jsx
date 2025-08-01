@@ -32,6 +32,7 @@ import { VendorContext } from "../../context/vendor/VendorContext";
 import { CustomerContext } from "../../context/customer/customerContext";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { saveAs } from "file-saver";
+import { showToast } from "../../utils/showToast";
 
 export const CreatePurchaseOrder = () => {
   const [activeTab, setActiveTab] = useState("create");
@@ -64,38 +65,40 @@ export const CreatePurchaseOrder = () => {
           </div>
 
           {/* Tabs */}
-          <div className="mb-4 flex rounded-lg bg-[#0033661A] overflow-hidden xl:py-2 xl:px-3 p-1 w-full">
-            <button
-              tabIndex={0}
-              className={`w-1/2 cursor-pointer py-2 rounded-lg 2xl:text-xl xl:text-lg lg:text-base md:text-sm font-medium transition-all 
+          {purchaseorderid == "new" && (
+            <div className="mb-4 flex rounded-lg bg-[#0033661A] overflow-hidden xl:py-2 xl:px-3 p-1 w-full">
+              <button
+                tabIndex={0}
+                className={`w-1/2 cursor-pointer py-2 rounded-lg 2xl:text-xl xl:text-lg lg:text-base md:text-sm font-medium transition-all 
                ${
                  activeTab === "create"
                    ? "bg-white text-black"
                    : "text-[#777777]"
                }`}
-              onClick={() => setActiveTab("create")}
-            >
-              Create new purchase order
-            </button>
-            <button
-              tabIndex={0}
-              className={`w-1/2 cursor-pointer py-2 rounded-lg 2xl:text-xl xl:text-lg lg:text-base md:text-sm font-medium transition-all
+                onClick={() => setActiveTab("create")}
+              >
+                Create new purchase order
+              </button>
+              <button
+                tabIndex={0}
+                className={`w-1/2 cursor-pointer py-2 rounded-lg 2xl:text-xl xl:text-lg lg:text-base md:text-sm font-medium transition-all
                ${
                  activeTab === "upload"
                    ? "bg-white text-black"
                    : "text-[#777777]"
                }`}
-              onClick={() => setActiveTab("upload")}
-            >
-              Upload existing purchase order
-            </button>
-          </div>
+                onClick={() => setActiveTab("upload")}
+              >
+                Upload existing purchase order
+              </button>
+            </div>
+          )}
 
           {/* main content */}
           {activeTab === "create" && (
             <PurchaseOrderForm purchaseOrderDetails={purchaseOrderDetails} />
           )}
-          {activeTab === "upload" && (
+          {purchaseorderid == "new" && activeTab === "upload" && (
             <UploadPurchaseOrder purchaseOrderDetails={purchaseOrderDetails} />
           )}
         </div>
@@ -804,7 +807,7 @@ const PurchaseOrderRightPart = ({
       <div className="py-6 px-4 2xl:rounded-2xl xl:rounded-xl h-fit rounded-lg border-[1.5px] border-[#E8E8E8]">
         {/* header  */}
         <div className="flex gap-3 items-center justify-between mb-10">
-          <h1 className=" max-w-1/2 xl:text-3xl lg:text-2xl md:text-xl text-lg font-semibold text-[#4A4A4A]">
+          <h1 className=" max-w-1/2 xl:text-2xl lg:text-xl md:text-lg text-base font-semibold text-[#4A4A4A]">
             Purchase Order Review
           </h1>
           <button
@@ -1397,18 +1400,30 @@ const UploadPurchaseOrder = ({ purchaseOrderDetails }) => {
   const {
     createPurchaseOrderFormDispatch,
     createPurchaseOrder,
-    createPurchaseOrderForm,
   } = useContext(PurchaseOrderContext);
 
   useEffect(() => {
     createPurchaseOrderFormDispatch({
+      type: "RESET",
+    });
+
+    createPurchaseOrderFormDispatch({
       type: "UPDATE_FIELD",
       field: "poUrl",
-      value: (files || []).map((item) => {
-        return {
-          invoice_url: item.name,
-        };
-      }),
+      value:
+        files && files.length > 0
+          ? (files || []).map((item) => {
+              return {
+                fileBlob: item || "N/A",
+                fileName: item.name || "N/A",
+                invoice_url: item.related_doc_url || "N/A",
+              };
+            })
+          : [
+              {
+                invoice_url: "N/A",
+              },
+            ],
     });
   }, [files]);
 
@@ -1490,16 +1505,20 @@ const UploadPurchaseOrder = ({ purchaseOrderDetails }) => {
       <div className="flex sm:flex-row flex-col sm:items-center gap-4">
         <button
           disabled={isLoading}
-          onClick={(e) => {
-            if (
-              !createPurchaseOrderForm.poUrl ||
-              createPurchaseOrderForm.poUrl.length == 0 ||
-              createPurchaseOrderForm.poUrl[0]?.invoice_url == "N/A"
-            ) {
-              showToast("Please select atleast one file", 1);
+          onClick={async (e) => {
+            if (!files || files.length == 0) {
+              showToast("Select atleast 1 file", 1);
               return;
             }
             createPurchaseOrder(e, setisLoading);
+            try {
+              await createPurchaseOrder(e, setisLoading);
+              createPurchaseOrderFormDispatch({
+                type: "RESET",
+              });
+            } catch (error) {
+              console.log(error);
+            }
           }}
           className="2xl:text-xl xl:text-lg lg:text-base md:text-sm xl:rounded-2xl rounded-xl xl:px-6 px-4 xl:py-4 py-3 cursor-pointer bg-[#2543B1] border-2 border-[#3333331A] text-white hover:bg-[#252eb1]"
         >
