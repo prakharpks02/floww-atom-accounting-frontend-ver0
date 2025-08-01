@@ -11,6 +11,11 @@ export const UserSignupPage = () => {
     name: "",
     email: "",
     mobileNumber: "",
+    imageUrl: {
+      fileBlob: "N/A",
+      fileName: "N/A",
+      url: "/user.png",
+    },
   });
 
   const { sendOtp, checkMobileNumber } = useContext(UserContext);
@@ -18,10 +23,16 @@ export const UserSignupPage = () => {
   // send otp to mobile number
   const handleFormSubmit = useCallback(
     async (setisLoading) => {
-      if (!userData.email || !userData.mobileNumber || !userData.name) {
+      if (
+        !userData.email ||
+        !userData.mobileNumber ||
+        !userData.name ||
+        !userData.imageUrl.url
+      ) {
         showToast("All fields are required", 1);
         return;
       }
+      
       try {
         console.log(userData);
         const res = await checkMobileNumber(
@@ -41,10 +52,6 @@ export const UserSignupPage = () => {
     },
     [userData]
   );
-
-  const handleMemberLogin = (username, password) => {
-    showToast("Welcome to Atom Books!");
-  };
 
   const handleBack = () => {
     setCurrentState("signup");

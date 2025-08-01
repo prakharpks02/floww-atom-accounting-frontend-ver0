@@ -48,12 +48,15 @@ export default function TopBar() {
             className="flex items-center gap-3 cursor-pointer select-none"
             onClick={toggleDropdown}
           >
-            <img
+            {/* <img
               loading="lazy"
               src={userDetails.image}
               alt="Profile image"
               className="w-10 h-10 text-xs rounded-full object-cover"
-            />
+            /> */}
+            <div className=" text-2xl font-semibold flex items-center justify-center w-10 h-10 rounded-full bg-[#0a4f67] text-white">
+              {(userDetails.name || "").split(" ")[0]?.trim()[0]}
+            </div>
             <div className="text-left poppins font-normal flex flex-col justify-between">
               <p className="text-xs font-medium text-[#4A4A4A]">
                 {userDetails.name}
@@ -84,15 +87,17 @@ export default function TopBar() {
                 >
                   Create company
                 </button>
-                <button
-                  onClick={() => {
-                    navigate("/login");
-                    setOpen(false);
-                  }}
-                  className="w-full cursor-pointer text-left text-sm px-3 py-2 hover:bg-gray-100 rounded"
-                >
-                  Login
-                </button>
+                {/* {userDetails && (
+                  <button
+                    onClick={() => {
+                      navigate("/login");
+                      setOpen(false);
+                    }}
+                    className="w-full cursor-pointer text-left text-sm px-3 py-2 hover:bg-gray-100 rounded"
+                  >
+                    Login
+                  </button>
+                )} */}
                 <button
                   onClick={async () => {
                     // add your logout logic here

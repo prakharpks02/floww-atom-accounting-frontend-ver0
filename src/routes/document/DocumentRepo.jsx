@@ -13,14 +13,40 @@ import { InputField } from "../../utils/ui/InputField";
 import { showToast } from "../../utils/showToast";
 import { DocumentContext } from "../../context/document/DocumentContext";
 import { formatISODateToDDMMYYYY } from "../../utils/formateDate";
+import { downloadFile } from "../../utils/downloadFile";
 
 export const DocumentRepo = () => {
   const [isModalOpen, setisModalOpen] = useState(false);
+  const [tempAllDocumentList, settempAllDocumentList] = useState([]);
+  const [isLoading, setisLoading] = useState(true);
+  const { allDocumentList, getAllDocumentList } = useContext(DocumentContext);
+
+  useEffect(() => {
+    getAllDocumentList(setisLoading);
+  }, []);
+
+  useEffect(() => {
+    settempAllDocumentList(allDocumentList);
+  }, [allDocumentList]);
+
+  if (isLoading) {
+    return (
+      <div className=" flex-1 flex justify-center items-center py-8 px-4 min-h-[200px]">
+        <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
+      </div>
+    );
+  }
+
+  console.log(tempAllDocumentList);
 
   return (
     <>
       <ToastContainer />
-      <UpdateDocumentModal isOpen={isModalOpen} setisOpen={setisModalOpen} />
+      <UpdateDocumentModal
+        setisDocumentLoading={setisLoading}
+        isOpen={isModalOpen}
+        setisOpen={setisModalOpen}
+      />
 
       <div className="p-6 md:px-4 xl:px-6 2xl:px-8 space-y-5 ">
         {/* header  */}
@@ -52,12 +78,12 @@ export const DocumentRepo = () => {
         <SummarySection />
 
         {/* upload documents  */}
-        <div className="p-4 2xl:rounded-2xl rounded-xl border-2 border-[#0000001A]">
+        {/* <div className="p-4 2xl:rounded-2xl rounded-xl border-2 border-[#0000001A]">
           <UploadDocuments />
-        </div>
+        </div> */}
 
         {/* DocumentLibrery */}
-        <DocumentLibrery />
+        <DocumentLibrery tempAllDocumentList={tempAllDocumentList} />
       </div>
     </>
   );
@@ -73,16 +99,18 @@ const UploadDocuments = ({ isModal, prevFiles = [] }) => {
     //update form
     const modifiedArray = (files || []).map((file) => {
       return {
-        related_doc_name: file.name || "Unknown",
-        related_doc_url: file.name || "Unknown",
+        fileBlob: file || "N/A",
+        fileName: file.name || "N/A",
+        related_doc_name: file.name || "N/A",
+        related_doc_url: file.name || "N/A",
         doc_size: ((file.size || 0) / (1024 * 1024)).toFixed(2),
       };
     });
-    documentFormdispatch({
-      type: "UPDATE_FIELD",
-      field: "documentUrl",
-      value: modifiedArray,
-    });
+    // documentFormdispatch({
+    //   type: "UPDATE_FIELD",
+    //   field: "documentUrl",
+    //   value: modifiedArray,
+    // });
     documentFormdispatch({
       type: "UPDATE_FIELD",
       field: "documentUrl",
@@ -178,29 +206,7 @@ const UploadDocuments = ({ isModal, prevFiles = [] }) => {
   );
 };
 
-const DocumentLibrery = ({ className }) => {
-  const [tempAllDocumentList, settempAllDocumentList] = useState([]);
-  const [isLoading, setisLoading] = useState(true);
-  const { allDocumentList, getAllDocumentList } = useContext(DocumentContext);
-
-  useEffect(() => {
-    getAllDocumentList(setisLoading);
-  }, []);
-
-  useEffect(() => {
-    settempAllDocumentList(allDocumentList);
-  }, [allDocumentList]);
-
-  if (isLoading) {
-    return (
-      <div className=" flex-1 flex justify-center items-center py-8 px-4 min-h-[200px]">
-        <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
-      </div>
-    );
-  }
-
-  console.log(tempAllDocumentList);
-
+const DocumentLibrery = ({ className, tempAllDocumentList }) => {
   return (
     <div
       className={`p-4 2xl:rounded-2xl rounded-xl border-2 border-[#0000001A] ${className}`}
@@ -211,9 +217,13 @@ const DocumentLibrery = ({ className }) => {
 
       {/* show all documents  */}
       <div className="grid lg:gap-6 gap-2 md:grid-cols-2">
-        {tempAllDocumentList?.map((file, idx) => (
-          <DocumentCard key={idx} document={file} />
-        ))}
+        {tempAllDocumentList?.map((file, idx) => {
+          return file.document_url?.map((doc, index) => {
+            return (
+              <DocumentCard key={`${idx}-${index}`} document={file} doc={doc} />
+            );
+          });
+        })}
       </div>
     </div>
   );
@@ -241,7 +251,7 @@ const SummarySection = ({ className }) => {
       <SummaryCard
         icon={Archive}
         iconColor="text-[#2543B1]"
-        count={`${totalSize} MB`}
+        count={`${totalSize.toFixed(2)} MB`}
         label="Storage Used"
       />
       <SummaryCard
@@ -254,76 +264,88 @@ const SummarySection = ({ className }) => {
   );
 };
 
-const DocumentCard = ({ document = {} }) => {
+const DocumentCard = ({ document = {}, doc = {} }) => {
   const badgeColors = {
     "Financial Reports": "bg-[#2ECC711A] text-[#2ECC71]",
     Invoices: "bg-[#0033661A] text-[#2543B1]",
     "Legal Documents": "bg-[#F6E3FF] text-[#BB27FF]",
   };
+  const [isDownloading, setisDownloading] = useState(false);
 
   return (
     <>
-      {document.document_url?.map((doc, index) => {
-        return (
-          <div
-            key={index}
-            className="border-2 border-[#0000001A] rounded-xl p-4 flex flex-col gap-3"
-          >
-            <div className="flex items-center gap-5">
-              <FileText className="text-blue-800 w-6 h-8" />
-              <div className=" w-[95%] overflow-auto hide-scrollbar">
-                <h3 className="font-medium text-[#333333] 2xl:text-xl xl:text-lg lg:text-base text-sm ">
-                  {document.document_name}
-                </h3>
-                <p className="text-sm 2xl:text-base  text-[#777777]">
-                  {doc.doc_size}
-                </p>
-              </div>
-            </div>
+      <div className="border-2 border-[#0000001A] rounded-xl p-4 flex flex-col gap-3">
+        <div className="flex items-center gap-5">
+          <FileText className="text-blue-800 w-6 h-8" />
+          <div className=" w-[95%] overflow-auto hide-scrollbar">
+            <h3 className="font-medium text-[#333333] 2xl:text-xl xl:text-lg lg:text-base text-sm ">
+              {document.document_name}
+            </h3>
+            <p className="text-sm 2xl:text-base  text-[#777777]">
+              {doc.doc_size}
+            </p>
+          </div>
+        </div>
 
+        <span
+          className={`w-fit px-4 mb-3 py-2 text-sm rounded-2xl font-normal ${
+            badgeColors[document.document_category] ||
+            "bg-gray-200 text-gray-800"
+          }`}
+        >
+          {document.document_category}
+        </span>
+
+        <div className="flex flex-wrap gap-2">
+          {document?.document_tags?.map((tag, ind) => (
             <span
-              className={`w-fit px-4 mb-3 py-2 text-sm rounded-2xl font-normal ${
-                badgeColors[document.document_category] ||
-                "bg-gray-200 text-gray-800"
-              }`}
+              key={ind}
+              className="bg-[#E8E8E8] px-4 py-2 text-sm rounded-lg text-[#4A4A4A]"
             >
-              {document.document_category}
+              {tag?.tag_name}
             </span>
+          ))}
+        </div>
 
-            <div className="flex flex-wrap gap-2">
-              {document?.document_tags?.map((tag, ind) => (
-                <span
-                  key={ind}
-                  className="bg-[#E8E8E8] px-4 py-2 text-sm rounded-lg text-[#4A4A4A]"
-                >
-                  {tag?.tag_name}
-                </span>
-              ))}
-            </div>
+        <p className="text-sm text-[#777777]">
+          Uploaded:{" "}
+          {formatISODateToDDMMYYYY(Number(document?.uploaded_on) || 0)}
+        </p>
+        <p className="text-sm text-[#777777]">
+          By: {document.uploaded_by || document.user_id}
+        </p>
 
-            <p className="text-sm text-[#777777]">
-              Uploaded:{" "}
-              {formatISODateToDDMMYYYY(Number(document?.uploaded_on) || 0)}
-            </p>
-            <p className="text-sm text-[#777777]">
-              By: {document.uploaded_by || document.user_id}
-            </p>
-
-            <div className="flex gap-2">
-              {/* <button className="flex-1 cursor-pointer hover:bg-gray-50 transition border-1 border-[#0000001A] px-4 py-2 rounded-lg text-sm text-[#4A4A4A]">
+        <div className="flex gap-2">
+          {/* <button className="flex-1 cursor-pointer hover:bg-gray-50 transition border-1 border-[#0000001A] px-4 py-2 rounded-lg text-sm text-[#4A4A4A]">
                 View
               </button> */}
-              <button
-                aria-label="download document"
-                className="w-full px-3 py-2 cursor-pointer  transition rounded-lg border-1 border-[#0000001A] text-gray-800 "
-              >
+          <button
+            disabled={isDownloading}
+            onClick={async (e) => {
+              e.preventDefault();
+              try {
+                setisDownloading(true);
+                await downloadFile(doc.related_doc_url, doc.related_doc_name);
+              } catch (error) {
+                console.log(error);
+              } finally {
+                setisDownloading(false);
+              }
+            }}
+            aria-label="download document"
+            className="w-full px-3 py-2 cursor-pointer disabled:cursor-wait transition rounded-lg border-1 border-[#0000001A] text-gray-800 "
+          >
+            {isDownloading ? (
+              <Loader2 className=" mx-auto w-5 animate-spin" />
+            ) : (
+              <>
                 Download
-                <Download className="w-4 h-4 inline-block hover:bg-gray-50 text-[#4A4A4A]" />
-              </button>
-            </div>
-          </div>
-        );
-      })}
+                <Download className="w-4 h-4 ml-2 -translate-y-0.5 inline-block hover:bg-gray-50 text-[#4A4A4A]" />
+              </>
+            )}
+          </button>
+        </div>
+      </div>
     </>
   );
 };
@@ -342,13 +364,17 @@ const SummaryCard = ({ icon: Icon, iconColor, count, label }) => {
   );
 };
 
-const UpdateDocumentModal = ({ isOpen, setisOpen }) => {
+const UpdateDocumentModal = ({ isOpen, setisOpen, setisDocumentLoading }) => {
   const [title, settitle] = useState("");
   const [category, setcategory] = useState("");
   const [tag, settag] = useState("");
   const [isLoading, setisLoading] = useState(false);
-  const { allUploadedDocuments, documentFormdispatch, createDocument } =
-    useContext(DocumentContext);
+  const {
+    allUploadedDocuments,
+    documentFormdispatch,
+    createDocument,
+    getAllDocumentList,
+  } = useContext(DocumentContext);
 
   const handelClose = () => {
     documentFormdispatch({
@@ -446,8 +472,14 @@ const UpdateDocumentModal = ({ isOpen, setisOpen }) => {
             <button
               disabled={isLoading}
               aria-label="Add Member"
-              onClick={() => {
-                createDocument(setisLoading);
+              onClick={async () => {
+                try {
+                  await createDocument(setisLoading);
+                  await getAllDocumentList(setisDocumentLoading);
+                  setisOpen(false);
+                } catch (error) {
+                  console.log(error);
+                }
               }}
               className=" col-span-1 cursor-pointer flex items-center justify-center px-3 lg:px-5 py-1 lg:py-3 bg-[#2543B1] transition hover:bg-blue-900 border-2 border-[#3333331A] rounded-xl text-[#ffffff] font-medium "
             >

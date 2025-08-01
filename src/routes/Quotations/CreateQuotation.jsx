@@ -66,38 +66,40 @@ export const CreateQuotation = () => {
           </div>
 
           {/* Tabs */}
-          <div className="mb-4 flex rounded-lg bg-[#0033661A] overflow-hidden xl:py-2 xl:px-3 p-1 w-full">
-            <button
-              tabIndex={0}
-              className={`w-1/2 cursor-pointer py-2 rounded-lg 2xl:text-xl xl:text-lg lg:text-base md:text-sm font-medium transition-all 
+          {quotationid == "new" && (
+            <div className="mb-4 flex rounded-lg bg-[#0033661A] overflow-hidden xl:py-2 xl:px-3 p-1 w-full">
+              <button
+                tabIndex={0}
+                className={`w-1/2 cursor-pointer py-2 rounded-lg 2xl:text-xl xl:text-lg lg:text-base md:text-sm font-medium transition-all 
                ${
                  activeTab === "create"
                    ? "bg-white text-black"
                    : "text-[#777777]"
                }`}
-              onClick={() => setActiveTab("create")}
-            >
-              Create new Quotation
-            </button>
-            <button
-              tabIndex={0}
-              className={`w-1/2 cursor-pointer py-2 rounded-lg 2xl:text-xl xl:text-lg lg:text-base md:text-sm font-medium transition-all
+                onClick={() => setActiveTab("create")}
+              >
+                Create new Quotation
+              </button>
+              <button
+                tabIndex={0}
+                className={`w-1/2 cursor-pointer py-2 rounded-lg 2xl:text-xl xl:text-lg lg:text-base md:text-sm font-medium transition-all
                ${
                  activeTab === "upload"
                    ? "bg-white text-black"
                    : "text-[#777777]"
                }`}
-              onClick={() => setActiveTab("upload")}
-            >
-              Upload new Quotation
-            </button>
-          </div>
+                onClick={() => setActiveTab("upload")}
+              >
+                Upload new Quotation
+              </button>
+            </div>
+          )}
 
           {/* main content */}
           {activeTab === "create" && (
             <QuotationForm quotationDetails={quotationDetails} />
           )}
-          {activeTab === "upload" && (
+          {quotationid == "new" && activeTab === "upload" && (
             <UploadQuotation quotationDetails={quotationDetails} />
           )}
         </div>
@@ -1144,73 +1146,140 @@ const CustomerNameInputField = ({ className, quotationDetails }) => {
 };
 
 const UploadQuotation = ({ quotationDetails }) => {
-  const [files, setfiles] = useState(null);
+  const [files, setfiles] = useState([]);
+  const [isLoading, setisLoading] = useState(false);
+  const { createQuotation, createQuotationFormDispatch } =
+    useContext(QuotationContext);
+
+  useEffect(() => {
+    // if (!files || files.length == 0) {
+    //   createQuotationFormDispatch({
+    //     type: "RESET",
+    //   });
+    // }
+
+    createQuotationFormDispatch({
+      type: "RESET",
+    });
+    createQuotationFormDispatch({
+      type: "UPDATE_FIELD",
+      field: "quotationUrl",
+      value:
+        files && files.length > 0
+          ? (files || []).map((item) => {
+              return {
+                fileBlob: item || "N/A",
+                fileName: item.name || "N/A",
+                invoice_url: item.related_doc_url || "N/A",
+              };
+            })
+          : [
+              {
+                invoice_url: "N/A",
+              },
+            ],
+    });
+  }, [files]);
 
   return (
-    <div className=" outline-[#00000029] rounded-lg px-3 py-6 border-2 border-[#00000033] border-dashed">
-      {files && (
-        <div>
-          <ShowUploadedFiles files={files} />
-          <div className=" flex flex-col gap-2 items-center my-5">
-            <label
-              htmlFor="upload-invoice"
-              className="bg-black cursor-pointer py-3 px-6 text-sm xl:text-base text-white rounded-lg "
-            >
-              Browse files
-            </label>
+    <>
+      <div className=" mb-6 outline-[#00000029] rounded-lg px-3 py-6 border-2 border-[#00000033] border-dashed">
+        {files && files.length > 0 && (
+          <div>
+            <ShowUploadedFiles files={files} setfiles={setfiles} />
+            <div className=" flex flex-col gap-2 items-center my-5">
+              <label
+                htmlFor="upload-invoice"
+                className="bg-black cursor-pointer py-3 px-6 text-sm xl:text-base text-white rounded-lg "
+              >
+                Browse files
+              </label>
+              <p className="text-[#00000080] text-xs ">
+                Supported formats: PDF, JPG, PNG, DOC (Max 10MB)
+              </p>
+            </div>
+          </div>
+        )}
+
+        {(!files || files.length == 0) && (
+          <label
+            tabIndex={0}
+            htmlFor="upload-invoice"
+            className="flex flex-col items-center cursor-pointer"
+          >
+            <Upload className=" w-10 h-8 text-[#000000] mb-3" />
+            <p className="font-medium xl:text-base md:text-sm mb-1">
+              Upload invoices, receipts, or related documents
+            </p>
             <p className="text-[#00000080] text-xs ">
               Supported formats: PDF, JPG, PNG, DOC (Max 10MB)
             </p>
-          </div>
-        </div>
-      )}
+          </label>
+        )}
 
-      {!files && (
-        <label
-          tabIndex={0}
-          htmlFor="upload-invoice"
-          className="flex flex-col items-center cursor-pointer"
-        >
-          <Upload className=" w-10 h-8 text-[#000000] mb-3" />
-          <p className="font-medium xl:text-base md:text-sm mb-1">
-            Upload invoices, receipts, or related documents
-          </p>
-          <p className="text-[#00000080] text-xs ">
-            Supported formats: PDF, JPG, PNG, DOC (Max 10MB)
-          </p>
-        </label>
-      )}
+        <input
+          type="file"
+          multiple
+          accept=".pdf, .jpg, .jpeg, .png, .doc, .docx"
+          id="upload-invoice"
+          onChange={(e) => {
+            const maxSizeMB = 10;
+            const validFiles = [];
+            const invalidFiles = [];
 
-      <input
-        type="file"
-        accept=".pdf, .jpg, .jpeg, .png, .doc, .docx"
-        id="upload-invoice"
-        onChange={(e) => {
-          const maxSizeMB = 10;
-          const validFiles = [];
-          const invalidFiles = [];
+            const files = Array.from(e.target.files);
 
-          const files = Array.from(e.target.files);
+            files.forEach((file) => {
+              if (file.size <= maxSizeMB * 1024 * 1024) {
+                validFiles.push(file);
+              } else {
+                invalidFiles.push(file.name);
+                showToast(`"${file.name}" is too large. Max size is 10MB.`, 1);
+              }
+            });
 
-          files.forEach((file) => {
-            if (file.size <= maxSizeMB * 1024 * 1024) {
-              validFiles.push(file);
-            } else {
-              invalidFiles.push(file.name);
-              showToast(`"${file.name}" is too large. Max size is 10MB.`, 1);
+            // Do something with the valid files (e.g. store them in state)
+            console.log("Valid files:", validFiles);
+            setfiles(validFiles);
+
+            // Clear the input to allow re-uploading the same files
+            e.target.value = "";
+          }}
+          className="hidden"
+        />
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex items-center space-x-4">
+        <button
+          disabled={isLoading}
+          onClick={async (e) => {
+            if (!files || files.length == 0) {
+              showToast("Select atleast 1 file", 1);
+              return;
             }
-          });
-
-          // Do something with the valid files (e.g. store them in state)
-          console.log("Valid files:", validFiles);
-          setfiles(validFiles);
-
-          // Clear the input to allow re-uploading the same files
-          e.target.value = "";
-        }}
-        className="hidden"
-      />
-    </div>
+            try {
+              await createQuotation(e, setisLoading);
+              createQuotationFormDispatch({
+                type: "RESET",
+              });
+            } catch (error) {
+              console.log(error);
+            }
+          }}
+          className="2xl:text-xl xl:text-lg lg:text-base md:text-sm xl:rounded-2xl md:rounded-xl xl:px-6 px-4 xl:py-4 py-3 cursor-pointer bg-[#2543B1] border-2 border-[#3333331A] text-white hover:bg-[#252eb1]"
+        >
+          {isLoading ? (
+            <Loader2 className=" animate-spin w-5 h-5 text-white" />
+          ) : (
+            "Save Quotation"
+          )}
+        </button>
+        <button className="2xl:text-xl xl:text-lg lg:text-base md:text-sm xl:rounded-2xl md:rounded-xl xl:px-6 px-4 xl:py-4 py-3 cursor-pointer border-2 border-[#3333331A] text-[#4A4A4A] hover:bg-gray-50">
+          Cancel
+        </button>
+      </div>
+    </>
   );
 };
 

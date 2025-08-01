@@ -21,6 +21,8 @@ import {
   SortDataOnQuantity,
 } from "../../utils/filterData";
 import { UserContext } from "../userContext/UserContext";
+import { uploadFile } from "../../utils/uploadFiles";
+import { formatISODateToDDMMYYYY } from "../../utils/formateDate";
 
 export const QuotationContext = createContext();
 
@@ -122,60 +124,62 @@ export const QuotationContextProvider = ({ children }) => {
     QuotationReducer,
     initialQuotationState
   );
-    const {userDetails} = useContext(UserContext)
+  const { userDetails } = useContext(UserContext);
 
   const navigate = useNavigate();
 
   //get quotation list
   const getQuotationList = useCallback(
     async (setisLoading = () => {}) => {
-    if (!companyDetails) {
-      showToast("Company details not found", 1);
-      return;
-    }
-    if (!companyDetails.company_id) {
-      showToast("Company details not found", 1);
-      return;
-    }
-    const token = localStorage.getItem("token");
-    if (!token) {
-      showToast("Token not found", 1);
-      return;
-    }
-    try {
-      setisLoading(true);
-      const res = await axios.get(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/accounting/get-list-quotation/?companyId=${
-          companyDetails.company_id
-        }`,
-        {
-          headers: {
-            Authorization: token,
-          },
-        }
-      );
-      console.log(res);
-      // console.log(res);
-      if (res.data.status && res.data.status.toLowerCase() !== "success") {
-        showToast("Somthing went wrong. Please try again", 1);
+      if (!companyDetails) {
+        showToast("Company details not found", 1);
         return;
       }
+      if (!companyDetails.company_id) {
+        showToast("Company details not found", 1);
+        return;
+      }
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Token not found", 1);
+        return;
+      }
+      try {
+        setisLoading(true);
+        const res = await axios.get(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/accounting/get-list-quotation/?companyId=${
+            companyDetails.company_id
+          }`,
+          {
+            headers: {
+              Authorization: token,
+            },
+          }
+        );
+        console.log(res);
+        // console.log(res);
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
+          showToast("Somthing went wrong. Please try again", 1);
+          return;
+        }
 
-      setquotationList(res.data.data);
-    } catch (error) {
-      console.log(error);
-      showToast(
-        error.response?.data?.message ||
-          error.message ||
-          "Somthing went wrong. Please try again",
-        1
-      );
-    } finally {
-      setisLoading(false);
-    }
-  }, [userDetails]);
+        setquotationList(res.data.data);
+      } catch (error) {
+        console.log(error);
+        showToast(
+          error.response?.data?.message ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+      } finally {
+        setisLoading(false);
+      }
+    },
+    [userDetails]
+  );
 
   // get quotation details
   const getQuotationDetails = useCallback(
@@ -229,12 +233,17 @@ export const QuotationContextProvider = ({ children }) => {
     async (e, setisLoading = () => {}) => {
       e.preventDefault();
 
-      const validationErrors = validateFields(createQuotationForm);
+      //check only for form submision
+      if (
+        createQuotationForm.quotationUrl[0]?.invoice_url.toLowerCase() != "n/a"
+      ) {
+        const validationErrors = validateFields(createQuotationForm);
 
-      if (Object.keys(validationErrors).length > 0) {
-        console.log(validationErrors);
-        showToast("All fields are required", 1);
-        throw new Error("All fields are required");
+        if (Object.keys(validationErrors).length > 0) {
+          console.log(validationErrors);
+          showToast("All fields are required", 1);
+          throw new Error("All fields are required");
+        }
       }
 
       if (!companyDetails) {
@@ -260,6 +269,17 @@ export const QuotationContextProvider = ({ children }) => {
 
       try {
         setisLoading(true);
+
+        // upload documens
+        for (let i = 0; i < createQuotationForm.quotationUrl.length; i++) {
+          const file = createQuotationForm.quotationUrl[i];
+          const res = await uploadFile(file.fileName, file.fileBlob, token);
+          console.log(res);
+          createQuotationForm.quotationUrl[i] = { invoice_url: res.doc_url };
+        }
+
+        console.log("file uploaded");
+
         const res = await axios.post(
           `${
             import.meta.env.VITE_BACKEND_URL
@@ -268,6 +288,9 @@ export const QuotationContextProvider = ({ children }) => {
             // userId: userId,
             companyId: companyDetails.company_id,
             ...createQuotationForm,
+            quotationDate:
+              createQuotationForm.quotationDate ||
+              formatISODateToDDMMYYYY(Date.now() / 1000),
           },
           {
             headers: {
@@ -307,7 +330,7 @@ export const QuotationContextProvider = ({ children }) => {
         setisLoading(false);
       }
     },
-    [createQuotationForm , userDetails]
+    [createQuotationForm, userDetails]
   );
 
   //update quotation order
@@ -396,7 +419,7 @@ export const QuotationContextProvider = ({ children }) => {
         setisLoading(false);
       }
     },
-    [createQuotationForm , userDetails]
+    [createQuotationForm, userDetails]
   );
 
   //handel multiple filter
@@ -481,7 +504,7 @@ export const QuotationContextProvider = ({ children }) => {
 
       return filteredQuoation;
     },
-    [quotationList , userDetails]
+    [quotationList, userDetails]
   );
 
   console.log(createQuotationForm);

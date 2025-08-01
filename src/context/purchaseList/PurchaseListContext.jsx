@@ -21,6 +21,7 @@ import {
   SortDataOnQuantity,
 } from "../../utils/filterData";
 import { UserContext } from "../userContext/UserContext";
+import { uploadFile } from "../../utils/uploadFiles";
 
 export const PurchaseListContext = createContext();
 
@@ -144,55 +145,57 @@ export const PurchaseListContextProvider = ({ children }) => {
   //get purchase list
   const getPurchaseList = useCallback(
     async (setisLoading = () => {}) => {
-    if (!companyDetails) {
-      showToast("Company details not found", 1);
-      return;
-    }
-    if (!companyDetails.company_id) {
-      showToast("Company details not found", 1);
-      return;
-    }
-
-    const token = localStorage.getItem("token");
-    if (!token) {
-      showToast("Token not found", 1);
-      return;
-    }
-
-    try {
-      setisLoading(true);
-      const res = await axios.get(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/accounting/get-list-purchases/?companyId=${
-          companyDetails.company_id
-        }`,
-        {
-          headers: {
-            Authorization: token,
-          },
-        }
-      );
-      console.log(res);
-      // console.log(res);
-      if (res.data.status && res.data.status.toLowerCase() !== "success") {
-        showToast("Somthing went wrong. Please try again", 1);
+      if (!companyDetails) {
+        showToast("Company details not found", 1);
+        return;
+      }
+      if (!companyDetails.company_id) {
+        showToast("Company details not found", 1);
         return;
       }
 
-      setpurchaseList(res.data.data);
-    } catch (error) {
-      console.log(error);
-      showToast(
-        error.response?.data?.message ||
-          error.message ||
-          "Somthing went wrong. Please try again",
-        1
-      );
-    } finally {
-      setisLoading(false);
-    }
-  }, [userDetails]);
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Token not found", 1);
+        return;
+      }
+
+      try {
+        setisLoading(true);
+        const res = await axios.get(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/accounting/get-list-purchases/?companyId=${
+            companyDetails.company_id
+          }`,
+          {
+            headers: {
+              Authorization: token,
+            },
+          }
+        );
+        console.log(res);
+        // console.log(res);
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
+          showToast("Somthing went wrong. Please try again", 1);
+          return;
+        }
+
+        setpurchaseList(res.data.data);
+      } catch (error) {
+        console.log(error);
+        showToast(
+          error.response?.data?.message ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+      } finally {
+        setisLoading(false);
+      }
+    },
+    [userDetails]
+  );
 
   // get purchase details
   const getPurchaseListDetails = useCallback(
@@ -282,6 +285,21 @@ export const PurchaseListContextProvider = ({ children }) => {
       }
       try {
         setisLoading(true);
+
+        // upload documens
+        for (let i = 0; i < createPurchaseListForm.attachments.length; i++) {
+          const file = createPurchaseListForm.attachments[i];
+          const res = await uploadFile(file.fileName, file.fileBlob, token);
+          console.log(res);
+          createPurchaseListForm.attachments[i] = {
+            related_doc_name: res.file_name,
+            related_doc_url: res.doc_url,
+          };
+        }
+        console.log("file uploaded");
+
+        console.log("file uploaded");
+
         const res = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/accounting/create-purchase/`,
           {
@@ -321,7 +339,7 @@ export const PurchaseListContextProvider = ({ children }) => {
         setisLoading(false);
       }
     },
-    [createPurchaseListForm , userDetails]
+    [createPurchaseListForm, userDetails]
   );
 
   //update purchase
@@ -363,6 +381,25 @@ export const PurchaseListContextProvider = ({ children }) => {
 
       try {
         setisLoading(true);
+
+        // upload documens
+        for (let i = 0; i < createPurchaseListForm.attachments.length; i++) {
+          if (
+            createPurchaseListForm.attachments[
+              i
+            ].related_doc_url.toLowerCase() != "n/a"
+          )
+            continue;
+          const file = createPurchaseListForm.attachments[i];
+          const res = await uploadFile(file.fileName, file.fileBlob, token);
+          console.log(res);
+          createPurchaseListForm.attachments[i] = {
+            related_doc_name: res.file_name,
+            related_doc_url: res.doc_url,
+          };
+        }
+        console.log("file uploaded");
+
         const res = await axios.post(
           `${
             import.meta.env.VITE_BACKEND_URL
@@ -405,7 +442,7 @@ export const PurchaseListContextProvider = ({ children }) => {
         setisLoading(false);
       }
     },
-    [createPurchaseListForm , userDetails]
+    [createPurchaseListForm, userDetails]
   );
 
   //handel multiple filter
@@ -490,7 +527,7 @@ export const PurchaseListContextProvider = ({ children }) => {
 
       return filteredPurchase;
     },
-    [purchaseList , userDetails]
+    [purchaseList, userDetails]
   );
 
   console.log(purchaseList);

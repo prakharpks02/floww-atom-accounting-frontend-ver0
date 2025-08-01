@@ -223,40 +223,42 @@ const SaleInfoRightPart = ({
             </button> */}
           </div>
           <div className="space-y-4">
-            {saleDetails?.payment_transactions_list?.map((item, idx) => {
-              const ext = getFileExtension(item?.transaction_url);
-              return (
-                <div
-                  key={idx}
-                  className="bg-gray-100 rounded-xl p-4 flex flex-col gap-2 overflow-x-auto"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center ${item.statusColor}`}
-                    >
-                      {/* {iconMap[item.status]} */}
-                      <CheckCircle size={18} />
-                    </div>
-                    <p className="text-[#777777] font-medium xl:text-base md:text-sm text-xs">
-                      {item.remark}
-                    </p>
-                  </div>
-
-                  {/* File box if present */}
-                  {item.transaction_url &&
-                    item.transaction_url.toLowerCase() != "n/a" && (
-                      <div className="ml-11 bg-white border-[#0000001A] border-1  shadow-sm rounded-lg flex items-center gap-3 px-2 py-2 w-fit text-sm">
-                        <div className=" text-white w-15 px-2 py-2 rounded text-xs font-semibold">
-                          {getFilePreview(item?.transaction_url, ext)}
-                        </div>
-                        <span className="text-[#606060] font-medium xl:text-base md:text-sm text-xs">
-                          {item.transaction_url}
-                        </span>
+            {saleDetails?.payment_transactions_list
+              ?.reverse()
+              ?.map((item, idx) => {
+                const ext = getFileExtension(item?.transaction_url);
+                return (
+                  <div
+                    key={idx}
+                    className="bg-gray-100 rounded-xl p-4 flex flex-col gap-2 overflow-x-auto"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center ${item.statusColor}`}
+                      >
+                        {/* {iconMap[item.status]} */}
+                        <CheckCircle size={18} />
                       </div>
-                    )}
-                </div>
-              );
-            })}
+                      <p className="text-[#777777] font-medium xl:text-base md:text-sm text-xs">
+                        {item.remark}
+                      </p>
+                    </div>
+
+                    {/* File box if present */}
+                    {item.transaction_url &&
+                      item.transaction_url.toLowerCase() != "n/a" && (
+                        <div className="ml-11 bg-white border-[#0000001A] border-1  shadow-sm rounded-lg flex items-center gap-3 px-2 py-2 w-fit text-sm">
+                          <div className=" text-white w-15 px-2 py-2 rounded text-xs font-semibold">
+                            {getFilePreview(item?.transaction_url, ext)}
+                          </div>
+                          <span className="text-[#606060] font-medium xl:text-base md:text-sm text-xs">
+                            {item.transaction_url}
+                          </span>
+                        </div>
+                      )}
+                  </div>
+                );
+              })}
           </div>
         </div>
       </div>
@@ -785,14 +787,14 @@ const RelatedDocuments = ({ saleDetails }) => {
         <h2 className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-base text-sm font-semibold text-[#4A4A4A]">
           Sales Invoice
         </h2>
-        <button
+        {/* <button
           onClick={downloadAllFiles}
           tabIndex={0}
           className="flex items-center gap-2 cursor-pointer bg-[#0033661A] text-indigo-600 px-4 py-2 rounded-lg text-base font-medium hover:bg-[#0016661a] transition"
         >
           <Download className="w-4 h-4" />
           Download all
-        </button>
+        </button> */}
       </div>
 
       <div className="flex flex-wrap items-center justify-start gap-2 mb-4 max-h-[250px] overflow-auto">

@@ -11,6 +11,7 @@ import axios from "axios";
 import { CompanyContext } from "../company/CompanyContext";
 import { validateFields } from "../../utils/checkFormValidation";
 import { UserContext } from "../userContext/UserContext";
+import { uploadFile } from "../../utils/uploadFiles";
 
 export const DocumentContext = createContext();
 
@@ -18,8 +19,8 @@ const initialDocumentState = {
   documentName: "",
   documentUrl: [
     {
-      related_doc_name: "Vendor Agreement PDF",
-      related_doc_url: "https://example.com/documents/vendor-agreement.pdf",
+      related_doc_name: "",
+      related_doc_url: "",
       doc_size: "",
     },
   ],
@@ -96,7 +97,7 @@ export const DocumentContextProvider = ({ children }) => {
       console.log({
         // userId: userId,
         companyId: companyDetails.company_id,
-        uploadedBy:userDetails?.username || "Unkown",
+        uploadedBy: userDetails?.username || "Unkown",
         ...documentForm,
       });
 
@@ -109,12 +110,28 @@ export const DocumentContextProvider = ({ children }) => {
       try {
         setisLoading(true);
 
+        // upload documens
+        for (let i = 0; i < documentForm.documentUrl.length; i++) {
+          // if (documentForm.invoiceUrl[i].invoice_url.toLowerCase() != "n/a")
+          //   continue;
+          const file = documentForm.documentUrl[i];
+          const res = await uploadFile(file.fileName, file.fileBlob, token);
+          console.log(res);
+          documentForm.documentUrl[i] = {
+            related_doc_name: res.file_name,
+            related_doc_url: res.doc_url,
+            doc_size: documentForm.documentUrl[i].doc_size,
+          };
+        }
+
+        console.log("file uploaded");
+
         const res = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/accounting/add-documents/`,
           {
             // userId: userId,
             companyId: companyDetails.company_id,
-            uploadedBy:userDetails?.username || "",
+            uploadedBy: userDetails?.username || "",
             ...documentForm,
           },
           {
@@ -123,12 +140,79 @@ export const DocumentContextProvider = ({ children }) => {
             },
           }
         );
+
+        if (res.data?.status && res.data.status.toLowerCase() !== "success") {
+          showToast("Somthing went wrong. Please try again", 1);
+          setisLoading(false);
+          return;
+        }
+
         // reset form data
         documentFormdispatch({
           type: "RESET",
         });
         showToast("Document added.");
-        window.location.reload();
+        // window.location.reload();
+      } catch (error) {
+        console.log(error);
+        showToast(
+          error.response?.data?.message ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+        throw new Error(
+          error.response?.data?.message ||
+            error.message ||
+            "Somthing went wrong. Please try again"
+        );
+      } finally {
+        setisLoading(false);
+      }
+    },
+    [documentForm, userDetails]
+  );
+
+  // get all documents of a company with comanpany id
+  const getAllDocumentList = useCallback(
+    async (setisLoading = () => {}) => {
+      if (!companyDetails) {
+        showToast("No company details not found", 1);
+        return;
+      }
+      if (!companyDetails.company_id) {
+        showToast("Company ID not found", 1);
+        return;
+      }
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Token not found", 1);
+        return;
+      }
+
+      try {
+        setisLoading(true);
+        const res = await axios.post(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/accounting/get-list-documents/`,
+          {
+            companyId: `${companyDetails.company_id}`,
+          },
+          {
+            headers: {
+              Authorization: token,
+            },
+          }
+        );
+
+        // console.log(res);
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
+          showToast("Somthing went wrong. Please try again", 1);
+          return;
+        }
+
+        setallDocumentList(res.data.data);
       } catch (error) {
         console.log(error);
         showToast(
@@ -141,61 +225,8 @@ export const DocumentContextProvider = ({ children }) => {
         setisLoading(false);
       }
     },
-    [documentForm , userDetails]
+    [userDetails]
   );
-
-  // get all documents of a company with comanpany id
-  const getAllDocumentList = useCallback(
-    async (setisLoading = () => {}) => {
-    if (!companyDetails) {
-      showToast("No company details not found", 1);
-      return;
-    }
-    if (!companyDetails.company_id) {
-      showToast("Company ID not found", 1);
-      return;
-    }
-    const token = localStorage.getItem("token");
-    if (!token) {
-      showToast("Token not found", 1);
-      return;
-    }
-
-    try {
-      setisLoading(true);
-      const res = await axios.post(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/accounting/get-list-documents/`,
-        {
-          companyId: `${companyDetails.company_id}`,
-        },
-        {
-          headers: {
-            Authorization: token,
-          },
-        }
-      );
-
-      // console.log(res);
-      if (res.data.status && res.data.status.toLowerCase() !== "success") {
-        showToast("Somthing went wrong. Please try again", 1);
-        return;
-      }
-
-      setallDocumentList(res.data.data);
-    } catch (error) {
-      console.log(error);
-      showToast(
-        error.response?.data?.message ||
-          error.message ||
-          "Somthing went wrong. Please try again",
-        1
-      );
-    } finally {
-      setisLoading(false);
-    }
-  }, [userDetails]);
 
   //document list meta data
   const totalDocument =
