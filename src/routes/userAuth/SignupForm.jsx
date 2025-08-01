@@ -78,7 +78,7 @@ export const SignupForm = ({
                     onChange={(e) => {
                       setuserData((prev) => ({
                         ...prev,
-                        name: e.target.value.trim(),
+                        name: e.target.value,
                       }));
                     }}
                     disabled={isLoading}
