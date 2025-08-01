@@ -13,13 +13,7 @@ export const OnBoardingPage = () => {
   return (
     <>
       <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        closeOnClick
-        pauseOnHover
-        draggable
-        theme="light"
+        
       />
       <div className="md:p-6 px-2 py-6">
         <h1 className=" text-lg md:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-semibold text-[#4A4A4A] mb-1">
@@ -205,6 +199,7 @@ const StreetAddress = ({ className }) => {
     address && handleChange("companyStreet", address);
   }, [address]);
 
+  console.log(errors);
   return (
     <div className={` relative ${className}`}>
       <InputField
@@ -332,7 +327,7 @@ const GstNumber = ({ className }) => {
         value={gst}
         setvalue={setgst}
         label={"GSTIN Number"}
-        placeholder={"ABCDE1234F"}
+        placeholder={"07ABCDE1234F2Z5"}
       />
       {/* error message  */}
       {errors["companyGSTIN"] && (
@@ -408,7 +403,7 @@ const CinNumber = ({ className }) => {
         value={cin}
         setvalue={setcin}
         label={"CIN number"}
-        placeholder={"AFZPK7190K"}
+        placeholder={"U12345MH2023PTC012345"}
       />
       {/* error message  */}
       {errors["companyCIN"] && (

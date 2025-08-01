@@ -297,7 +297,6 @@ export const CompanyContextProvider = ({ children }) => {
   if (!companyDetails) {
     return (
       <>
-        <ToastContainer />
         <CompanyContext.Provider
           value={{
             companyDetails,
@@ -316,7 +315,6 @@ export const CompanyContextProvider = ({ children }) => {
 
   return (
     <>
-      <ToastContainer />
       <CompanyContext.Provider
         value={{
           companyDetails,

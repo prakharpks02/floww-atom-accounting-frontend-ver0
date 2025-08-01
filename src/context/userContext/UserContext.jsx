@@ -130,7 +130,7 @@ export const UserContextProvider = ({ children }) => {
         mobileNo:
           res.data.authType?.toLowerCase() === "member"
             ? "Member"
-            : res.data.data.emailres.data.data.phone_number,
+            : res.data.data.phone_number,
       });
       // navigate("/");
       // showToast("User created successfully");
@@ -169,7 +169,10 @@ export const UserContextProvider = ({ children }) => {
         );
 
         console.log(res);
-        if (!res.data.token || res.data?.message?.toLowerCase().includes("incorrect")) {
+        if (
+          !res.data.token ||
+          res.data?.message?.toLowerCase().includes("incorrect")
+        ) {
           showToast(
             res.data?.message || "Somthing went wrong. Please try again",
             1
@@ -180,7 +183,7 @@ export const UserContextProvider = ({ children }) => {
         showToast("Member logged in successfully");
         localStorage.setItem("token", res.data.token);
         // localStorage.setItem("companyid", res.data.data.company_id);
-        await getUserDetails()
+        await getUserDetails();
 
         navigate("/");
       } catch (error) {
@@ -334,7 +337,9 @@ export const UserContextProvider = ({ children }) => {
       console.log(res);
       if (
         res.data.error ||
-        (res.data.status && res.data.status?.toLowerCase() !== "success")
+        (res.data.status && res.data.status?.toLowerCase() !== "success") ||
+        !res.data.token ||
+        res.data?.message?.toLowerCase().includes("incorrect")
       ) {
         showToast(res.data.error || "Fail to Login user", 1);
         setisLoading(false);
@@ -343,8 +348,9 @@ export const UserContextProvider = ({ children }) => {
       }
       localStorage.setItem("token", res.data.token);
       showToast("User login successfully");
-      navigate("/");
-      // window.location.reload();
+      await getUserDetails();
+
+      // navigate("/");
     } catch (error) {
       console.log(error);
       showToast(
@@ -441,7 +447,6 @@ export const UserContextProvider = ({ children }) => {
   if (!userDetails) {
     return (
       <>
-        <ToastContainer />
         <UserContext.Provider
           value={{
             loginMember,
