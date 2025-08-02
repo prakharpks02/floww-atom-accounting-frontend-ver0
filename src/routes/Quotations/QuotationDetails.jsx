@@ -139,7 +139,7 @@ const QuotationInfoLeftPart = ({ className, quotationDetails }) => {
       <QuotationDetailsSection quotationDetails={quotationDetails} />
       <CustomerDetails quotationDetails={quotationDetails} />
       <ItemDetailsTable dataList={quotationDetails} />
-      <RelatedDocuments quotationDetails={quotationDetails} />
+      {/* <RelatedDocuments quotationDetails={quotationDetails} /> */}
       <TermsAndConditions quotationDetails={quotationDetails} />
     </div>
   );

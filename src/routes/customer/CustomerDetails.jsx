@@ -308,7 +308,18 @@ const CustomerAddressDetails = ({ customerDetails }) => {
 };
 
 const RelatedDocuments = ({ className, customerDetails }) => {
-  const [files, setFile] = useState(customerDetails.related_documents);
+  const [files, setFile] = useState(
+    customerDetails.related_documents?.length > 0 &&
+      customerDetails.related_documents[0]?.related_doc_url != "N/A"
+      ? (customerDetails.related_documents || []).map((item) => {
+          return {
+            related_doc_name: item.related_doc_name,
+            related_doc_url: item.related_doc_url,
+            invoice_url: item.related_doc_url,
+          };
+        })
+      : null
+  );
   const [isZipping, setisZipping] = useState(false);
 
   const downloadAllFiles = async (e) => {
@@ -316,17 +327,9 @@ const RelatedDocuments = ({ className, customerDetails }) => {
 
     if (!files || files.length === 0) return;
 
-    const modifiedFiles = [];
-    files.forEach((file) => {
-      modifiedFiles.push({
-        name: file?.related_doc_name,
-        url: file?.related_doc_url,
-      });
-    });
-
     try {
       setisZipping(true);
-      await downloadAsZip(modifiedFiles);
+      await downloadAsZip(files, "customer-related-documents.zip");
     } catch (error) {
       showToast(error.message, 1);
     } finally {
@@ -342,7 +345,7 @@ const RelatedDocuments = ({ className, customerDetails }) => {
         <h2 className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-base text-sm font-semibold text-[#4A4A4A]">
           Related Documents
         </h2>
-        {/* <button
+        <button
           onClick={downloadAllFiles}
           tabIndex={0}
           disabled={isZipping}
@@ -358,7 +361,7 @@ const RelatedDocuments = ({ className, customerDetails }) => {
               <Download className="w-4 h-4" /> Download all
             </>
           )}
-        </button> */}
+        </button>
       </div>
 
       <div className="flex flex-wrap items-center justify-start gap-2 mb-4 max-h-[250px] overflow-auto">

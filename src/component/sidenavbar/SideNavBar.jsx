@@ -107,12 +107,12 @@ const dropDownDataList = {
       href: "/purchase/addPurchase/new",
     },
     {
-      label: "Create Order",
-      href: "/purchase/createOrder/new",
-    },
-    {
       label: "Order List",
       href: "/purchase/OrderList",
+    },
+    {
+      label: "Create Order",
+      href: "/purchase/createOrder/new",
     },
   ],
   Quotation: [

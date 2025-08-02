@@ -372,7 +372,7 @@ const PurchaseOrderForm = ({ purchaseOrderDetails }) => {
 
   return (
     <>
-      <div className=" grid lg:grid-cols-2 grid-cols-1 space-x-2 space-y-2">
+      <div className="mb-4 grid lg:grid-cols-2 grid-cols-1 space-x-2 space-y-2">
         <PurchaseOrderLeftPart purchaseOrderDetails={purchaseOrderDetails} />
         <PurchaseOrderRightPart handelDownloadInvoice={downloadPDF} />
       </div>
@@ -528,7 +528,7 @@ const TermsAndConditions = ({ className, purchaseOrderDetails }) => {
 
   return (
     <>
-      <div className="mb-6">
+      <div className="">
         <InputField
           value={toc}
           setvalue={settoc}

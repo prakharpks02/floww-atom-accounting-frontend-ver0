@@ -237,7 +237,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
       e.preventDefault();
 
       if (
-        createPurchaseOrderForm.poUrl[0]?.invoice_url.toLowerCase() != "n/a"
+        createPurchaseOrderForm.poUrl[0]?.invoice_url.toLowerCase() == "n/a"
       ) {
         const validationErrors = validateFields(createPurchaseOrderForm);
 
@@ -272,16 +272,22 @@ export const PurchaseOrderContextProvider = ({ children }) => {
       try {
         setisLoading(true);
 
-        // upload documens
-        for (let i = 0; i < createPurchaseOrderForm.poUrl.length; i++) {
-          const file = createPurchaseOrderForm.poUrl[i];
-          const response = await uploadFile(
-            file.fileName,
-            file.fileBlob,
-            token
-          );
-          console.log(response);
-          createPurchaseOrderForm.poUrl[i] = { invoice_url: response.doc_url };
+        // upload documents when document present
+        if (
+          createPurchaseOrderForm.poUrl[0]?.invoice_url.toLowerCase() != "n/a"
+        ) {
+          for (let i = 0; i < createPurchaseOrderForm.poUrl.length; i++) {
+            const file = createPurchaseOrderForm.poUrl[i];
+            const response = await uploadFile(
+              file.fileName,
+              file.fileBlob,
+              token
+            );
+            console.log(response);
+            createPurchaseOrderForm.poUrl[i] = {
+              invoice_url: response.doc_url,
+            };
+          }
         }
 
         console.log("file uploaded");

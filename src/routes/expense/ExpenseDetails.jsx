@@ -5,6 +5,7 @@ import { ToastContainer } from "react-toastify";
 import { showToast } from "../../utils/showToast";
 import { useNavigate, useParams } from "react-router-dom";
 import { ExpenseContext } from "../../context/expense/ExpenseContext";
+import { downloadAsZip } from "../../utils/downloadAsZip";
 
 export const ExpenseDetails = () => {
   const { getExpenseDetails, expenseDetails } = useContext(ExpenseContext);
@@ -15,6 +16,8 @@ export const ExpenseDetails = () => {
   useEffect(() => {
     getExpenseDetails(expenseid, setisLoading);
   }, []);
+  
+  console.log(expenseDetails)
 
   return (
     <>
@@ -121,7 +124,18 @@ const BesicDetails = ({ className, expenseDetails }) => {
 };
 
 const RelatedDocuments = ({ expenseDetails }) => {
-  const [files, setFile] = useState(expenseDetails?.attachments || []);
+  const [files, setFile] = useState(
+    expenseDetails.attachments?.length > 0 &&
+      expenseDetails.attachments[0]?.related_doc_url != "N/A"
+      ? (expenseDetails.attachments || []).map((item) => {
+          return {
+            related_doc_name: item.related_doc_name,
+            related_doc_url: item.related_doc_url,
+            invoice_url: item.related_doc_url,
+          };
+        })
+      : null
+  );
   const [isZipping, setisZipping] = useState(false);
 
   const downloadAllFiles = async (e) => {
@@ -131,7 +145,7 @@ const RelatedDocuments = ({ expenseDetails }) => {
 
     try {
       setisZipping(true);
-      await downloadAsZip(files);
+      await downloadAsZip(files, "expense-related-documents.zip");
     } catch (error) {
       showToast(error.message, 1);
     } finally {
@@ -145,7 +159,7 @@ const RelatedDocuments = ({ expenseDetails }) => {
         <h2 className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-base text-sm font-semibold text-[#4A4A4A]">
           Documents Related to Expense
         </h2>
-        {/* <button
+        <button
           onClick={downloadAllFiles}
           tabIndex={0}
           disabled={isZipping}
@@ -161,7 +175,7 @@ const RelatedDocuments = ({ expenseDetails }) => {
               <Download className="w-4 h-4" /> Download all
             </>
           )}
-        </button> */}
+        </button>
       </div>
 
       <div className="flex flex-wrap items-center justify-start gap-2 mb-4 max-h-[250px] overflow-auto">

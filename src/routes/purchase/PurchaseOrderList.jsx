@@ -125,7 +125,7 @@ export const PurchaseOrderList = () => {
               className=" cursor-pointer col-span-5 flex items-center justify-center gap-1 px-2 lg:px-4 py-2 lg:py-3 bg-[#2543B1] border-2 border-[#3333331A] rounded-xl text-[#ffffff] font-medium "
             >
               <Plus className="w-5 h-5 " />
-              <span className="">Add Purchase</span>
+              <span className="">Add Purchase Order</span>
             </button>
           </div>
         </div>
@@ -260,12 +260,7 @@ const ShowPurchaseOrderInTable = ({ allPurchase }) => {
                         </td>
                         <td
                           className=" text-center whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium"
-                          style={{
-                            textAlign:
-                              doc.invoice_url?.toLowerCase() == "n/a"
-                                ? "start"
-                                : "center",
-                          }}
+                         
                         >
                           {doc.invoice_url?.toLowerCase() == "n/a"
                             ? `${item.quantity}`

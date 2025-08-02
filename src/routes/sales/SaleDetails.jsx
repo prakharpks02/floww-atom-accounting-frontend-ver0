@@ -691,7 +691,15 @@ const SaleDetails = ({ saleDetails }) => {
           <p className="font-medium text-[#777777] 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs ">
             Payment Status
           </p>
-          <span className="text-[#1FC16B] font-medium 2xl:text-2xl xl:text-xl lg:text-lg md:text-base text-sm">
+          <span
+            className={`${
+              saleDetails?.status?.toLowerCase() === "paid"
+                ? "text-[#1FC16B]"
+                : saleDetails?.status?.toLowerCase().includes("partially")
+                ? "text-yellow-400"
+                : "text-[#FB3748]"
+            } font-medium 2xl:text-2xl xl:text-xl lg:text-lg md:text-base text-sm`}
+          >
             {saleDetails?.status}
           </span>
         </div>
@@ -762,22 +770,26 @@ const RelatedDocuments = ({ saleDetails }) => {
       saleDetails?.invoice_url[0]?.invoice_url != "N/A"
       ? (saleDetails?.invoice_url || []).map((item) => {
           return {
-            related_doc_name: item?.invoice_url,
-            related_doc_url: item?.invoice_url,
+            related_doc_name: item.invoice_url,
+            related_doc_url: item.invoice_url,
+            invoice_url: item.invoice_url,
           };
         })
       : null
   );
+  const [isDownloading, setisDownloading] = useState(false);
 
-  const downloadAllFiles = (e) => {
+  const downloadAllFiles = async (e) => {
     e.preventDefault();
 
     if (!files || files.length === 0) return;
-
     try {
-      downloadAsZip(files);
+      setisDownloading(true);
+      await downloadAsZip(files, "sale-related-documents.zip");
     } catch (error) {
       showToast(error.message, 1);
+    } finally {
+      setisDownloading(false);
     }
   };
 
@@ -787,14 +799,22 @@ const RelatedDocuments = ({ saleDetails }) => {
         <h2 className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-base text-sm font-semibold text-[#4A4A4A]">
           Sales Invoice
         </h2>
-        {/* <button
+        <button
           onClick={downloadAllFiles}
           tabIndex={0}
           className="flex items-center gap-2 cursor-pointer bg-[#0033661A] text-indigo-600 px-4 py-2 rounded-lg text-base font-medium hover:bg-[#0016661a] transition"
         >
-          <Download className="w-4 h-4" />
-          Download all
-        </button> */}
+          {isDownloading ? (
+            <>
+              <Loader2 className=" mx-auto w-5 animate-spin " /> zipping...
+            </>
+          ) : (
+            <>
+              <Download className="w-4 h-4" />
+              Download all
+            </>
+          )}
+        </button>
       </div>
 
       <div className="flex flex-wrap items-center justify-start gap-2 mb-4 max-h-[250px] overflow-auto">

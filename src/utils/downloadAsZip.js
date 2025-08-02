@@ -1,28 +1,27 @@
 import JSZip from "jszip";
+import axios from "axios";
 
-export const downloadAsZip = async (files) => {
-
-  if (!files || files.length === 0) return;
-
+export const downloadAsZip = async (invoiceData, zipName = "invoices.zip") => {
   const zip = new JSZip();
 
-  // Add each file to the zip
-  files.forEach((file) => {
-    zip.file(file.name, file); // add file directly
-  });
+  for (const item of invoiceData) {
+    const url = typeof item === "string" ? item : item.invoice_url;
+    const filename = decodeURIComponent(url.split("/").pop());
 
-  try {
-    const content = await zip.generateAsync({ type: "blob" });
-    const url = URL.createObjectURL(content);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "all-files.zip";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url); // cleanup
-  } catch (err) {
-    console.error("ZIP download failed:", err);
-    throw new Error("ZIP download failed.")
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const buffer = await resp.arrayBuffer();
+      zip.file(filename, buffer);
+    } catch (err) {
+      console.error(`Failed to download ${url}:`, err);
+      zip.file(`${filename}.error.txt`, `Failed to fetch: ${err.message}`);
+    }
   }
+
+  const blob = await zip.generateAsync({ type: "blob" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = zipName;
+  link.click();
 };

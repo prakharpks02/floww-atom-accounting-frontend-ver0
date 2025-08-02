@@ -43,7 +43,7 @@ export const ItemDetailsTable = ({dataList}) => {
         {dataList?.list_items.map((item, idx) => (
           <div
             key={idx}
-            className="flex gap-5 bg-[#0000000D] p-4 rounded-lg text-sm xl:text-base overflow-x-auto"
+            className="flex justify-evenly gap-5 bg-[#0000000D] p-4 rounded-lg text-sm xl:text-base overflow-x-auto"
           >
             <div className=" min-w-[100px] max-w-[150px]">
               <p className="font-medium text-[#777777]">Item Name</p>

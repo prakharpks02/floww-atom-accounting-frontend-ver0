@@ -638,7 +638,15 @@ const PurchaseDetailsSection = ({ purchaseDetails }) => {
           <p className="font-medium text-[#777777] xl:text-base md:text-sm text-xs ">
             Status
           </p>
-          <span className="text-[#4A4A4A] font-medium xl:text-lg md:text-base text-sm">
+          <span
+            className={`${
+              purchaseDetails?.status?.toLowerCase() === "paid"
+                ? "text-[#1FC16B]"
+                : purchaseDetails?.status?.toLowerCase().includes("partially")
+                ? "text-yellow-400"
+                : "text-[#FB3748]"
+            }  font-medium xl:text-lg md:text-base text-sm`}
+          >
             {purchaseDetails?.status}
           </span>
         </div>
@@ -701,21 +709,32 @@ const VendorDetails = ({ purchaseDetails }) => {
 };
 
 const RelatedDocuments = ({ purchaseDetails }) => {
+  const [isDownloading, setisDownloading] = useState(false);
   const [files, setFile] = useState(
-    purchaseDetails?.attachments && purchaseDetails?.attachments[0]
-      ? purchaseDetails?.attachments
-      : []
+    purchaseDetails?.attachments?.length > 0 &&
+      purchaseDetails?.attachments[0]?.related_doc_url != "N/A"
+      ? (purchaseDetails?.attachments || []).map((item) => {
+          return {
+            related_doc_name: item.related_doc_name,
+            related_doc_url: item.related_doc_url,
+            invoice_url: item.related_doc_url,
+          };
+        })
+      : null
   );
 
-  const downloadAllFiles = (e) => {
+  const downloadAllFiles = async (e) => {
     e.preventDefault();
 
     if (!files || files.length === 0) return;
 
     try {
-      downloadAsZip(files);
+      setisDownloading(true);
+      await downloadAsZip(files, "purchase-related-documents.zip");
     } catch (error) {
       showToast(error.message, 1);
+    } finally {
+      setisDownloading(false);
     }
   };
 
@@ -725,14 +744,22 @@ const RelatedDocuments = ({ purchaseDetails }) => {
         <h2 className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-base text-sm font-semibold text-[#4A4A4A]">
           Related Documents
         </h2>
-        {/* <button
+        <button
           onClick={downloadAllFiles}
           tabIndex={0}
-          className="flex items-center gap-2 cursor-pointer bg-[#0033661A] text-indigo-800 px-4 py-2 rounded-lg text-base font-medium hover:bg-[#0016661a] transition"
+          className="flex items-center gap-2 cursor-pointer bg-[#0033661A] text-indigo-600 px-4 py-2 rounded-lg text-base font-medium hover:bg-[#0016661a] transition"
         >
-          <Download className="w-4 h-4" />
-          Download all
-        </button> */}
+          {isDownloading ? (
+            <>
+              <Loader2 className=" mx-auto w-5 animate-spin " /> zipping...
+            </>
+          ) : (
+            <>
+              <Download className="w-4 h-4" />
+              Download all
+            </>
+          )}
+        </button>
       </div>
 
       <div className="flex flex-wrap items-center justify-start gap-2 mb-4 max-h-[250px] overflow-auto">
