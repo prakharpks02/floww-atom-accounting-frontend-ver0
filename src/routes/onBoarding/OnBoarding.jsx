@@ -103,10 +103,11 @@ const NameAndProfileImg = ({ className }) => {
       {/* company name */}
       <div className="col-span-full lg:col-span-2 relative h-fit">
         <InputField
+          required={true}
           className={""}
           value={companyName}
           setvalue={setcompanyName}
-          label={"Company Name"}
+          label={`Company Name`}
           placeholder={"Enter name of your company"}
         />
         {/* error message  */}
@@ -205,6 +206,7 @@ const StreetAddress = ({ className }) => {
   return (
     <div className={` relative ${className}`}>
       <InputField
+        required={true}
         value={address}
         setvalue={setaddress}
         label={"Street Address"}
@@ -230,6 +232,7 @@ const ZipCode = ({ className }) => {
   return (
     <div className={`relative ${className}`}>
       <InputField
+        required={true}
         value={zipCode}
         setvalue={setzipCode}
         label={"ZIP Code"}
@@ -255,6 +258,7 @@ const State = ({ className }) => {
   return (
     <div className={` relative ${className}`}>
       <InputField
+        required={true}
         value={state}
         setvalue={setstate}
         label={"State"}
@@ -301,6 +305,7 @@ const CompanyWebsite = ({ className }) => {
   return (
     <div className={` relative ${className}`}>
       <InputField
+        required={true}
         value={website}
         setvalue={setwebsite}
         label={"Company website"}
@@ -326,8 +331,11 @@ const GstNumber = ({ className }) => {
   return (
     <div className={` relative ${className}`}>
       <InputField
+        required={true}
         value={gst}
-        setvalue={setgst}
+        setvalue={(val) => {
+          setgst(val.toUpperCase());
+        }}
         label={"GSTIN Number"}
         placeholder={"07ABCDE1234F2Z5"}
       />
@@ -352,7 +360,10 @@ const PanNumber = ({ className }) => {
     <div className={` relative ${className}`}>
       <InputField
         value={pan}
-        setvalue={setpan}
+        required={true}
+        setvalue={(val) => {
+          setpan(val.toUpperCase());
+        }}
         label={"PAN Number"}
         placeholder={"AFZPK7190K"}
       />
@@ -376,11 +387,12 @@ const EmailAddress = ({ className }) => {
   return (
     <div className={` relative ${className}`}>
       <InputField
+        required={true}
         value={email}
         setvalue={setemail}
         inputType={"email"}
         label={"Email address"}
-        placeholder={"eg: abc@gmail.com"}
+        placeholder={"abc@gmail.com"}
       />
       {/* error message  */}
       {errors["companyEmail"] && (
@@ -402,8 +414,11 @@ const CinNumber = ({ className }) => {
   return (
     <div className={` relative ${className}`}>
       <InputField
+        required={true}
         value={cin}
-        setvalue={setcin}
+        setvalue={(val) => {
+          setcin(val.toUpperCase());
+        }}
         label={"CIN number"}
         placeholder={"U12345MH2023PTC012345"}
       />
@@ -430,7 +445,7 @@ const ContactNumber = ({ className }) => {
       <p
         className={`font-normal text-[#000000] mb-1 2xl:text-lg xl:text-base lg:text-sm text-xs ${className}`}
       >
-        Contact number
+        Contact number <span className=" text-red-600 ">*</span>
       </p>
       <div className=" flex items-end ">
         <div className="text-[#333333c6] w-fit font-normal 2xl:text-lg md:text-base px-3 py-2 border-[1.5px] border-[#0000001A] rounded-lg mr-3">

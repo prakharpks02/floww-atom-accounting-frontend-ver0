@@ -96,7 +96,8 @@ export const InputField = ({
             ${!label ? "opacity-0" : ""}
             ${inputType === "password" ? "text-[#FB3748]" : "text-[#000000]"}`}
         >
-          {label ? label : "label"}
+          {label ? label : "label"}&nbsp;
+          {required ? <span className=" text-red-600 ">*</span> : ""}
         </label>
       )}
 
@@ -234,7 +235,7 @@ export const InputField = ({
             tabIndex={0}
             placeholder={placeholder}
             name={label}
-            id={`input-${(label || "label")}`.replace(/\s+/g, "")}
+            id={`input-${label || "label"}`.replace(/\s+/g, "")}
             className={`w-full placeholder:text-[#00000080] text-[#343434] outline-[#00000029] 2xl:text-lg xl:text-base lg:text-sm text-xs rounded-lg p-3 border-[1.5px] border-[#0000001A]`}
             style={{ minHeight: `${minHeight}px` }}
           />
@@ -258,6 +259,7 @@ export const InputField = ({
 
       {hasDropDown && dropDownType === "default" && (
         <DefaultDropdown
+          isLoading={isLoading}
           value={value}
           maxHeight={dropDownMaxHeight}
           hasCustom={hasCustom}

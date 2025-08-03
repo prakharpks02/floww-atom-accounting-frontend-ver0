@@ -210,7 +210,7 @@ export default function SideNavbar() {
         </div>
 
         <nav className="flex flex-col gap-1 pb-5">
-          <SwitchCompanyButton />
+          <SwitchCompanyButton isPanelClosed={isPanelClosed} />
           {navbarRoutes.map((item, index) => {
             return (
               !(
@@ -377,7 +377,7 @@ const DropDown = ({ data = [], isOpen, isPanelClosed }) => {
   );
 };
 
-const SwitchCompanyButton = () => {
+const SwitchCompanyButton = ({ isPanelClosed }) => {
   const { companyDetails, companyList, getCompanyList } =
     useContext(CompanyContext);
   const [isOpen, setIsOpen] = useState(false);
@@ -410,10 +410,15 @@ const SwitchCompanyButton = () => {
   }, []);
 
   return (
-    <div className="relative inline-block px-2" ref={dropdownRef}>
+    <div
+      className={`relative inline-block  ${!isPanelClosed ? "px-2" : ""}`}
+      ref={dropdownRef}
+    >
       {/* Main Button */}
       <div
-        className="flex items-center gap-3 rounded-xl px-4 py-3 bg-[#0000000D] cursor-pointer select-none"
+        className={`flex items-center gap-3 rounded-xl ${
+          !isPanelClosed ? " px-4" : " justify-center"
+        } py-3 bg-[#0000000D] cursor-pointer select-none`}
         onClick={() => setIsOpen((prev) => !prev)}
       >
         <img
@@ -425,12 +430,14 @@ const SwitchCompanyButton = () => {
           alt="logo"
           className="w-10 h-10 rounded-full text-xs bg-white object-cover"
         />
-        <div className="text-left">
-          <p className="2xl:text-xl xl:text-lg lg:text-base text-sm font-semibold text-[#4A4A4A]">
-            {companyDetails?.company_name || "Company"}
-          </p>
-        </div>
-        {companyList && companyList.length > 0 && (
+        {!isPanelClosed && (
+          <div className="text-left">
+            <p className="2xl:text-xl xl:text-lg lg:text-base text-sm font-semibold text-[#4A4A4A]">
+              {companyDetails?.company_name || "Company"}
+            </p>
+          </div>
+        )}
+        {!isPanelClosed && companyList && companyList.length > 0 && (
           <div className="ml-auto bg-gray-200 rounded-full p-1 hover:bg-gray-300 transition">
             <ChevronDown className=" text-gray-800" size={20} />
           </div>

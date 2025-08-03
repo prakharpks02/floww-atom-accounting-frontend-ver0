@@ -2,6 +2,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useReducer,
   useRef,
   useState,
@@ -35,6 +36,10 @@ import { SalesContext } from "../../context/sales/salesContext";
 import { CustomerContext } from "../../context/customer/customerContext";
 import { ToWords } from "to-words";
 import { formatISODateToDDMMYYYY } from "../../utils/formateDate";
+import {
+  QuotationContext,
+  QuotationContextProvider,
+} from "../../context/quotation/QuotationContext";
 
 export const AddSales = () => {
   const navigate = useNavigate();
@@ -77,21 +82,23 @@ export const AddSales = () => {
             </h2>
 
             {/* sales info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 space-y-8 mb-8">
-              <CustomerNameInputField saleDetails={saleDetails} />
-              {/* <SalesPersonInputField /> */}
-              <CustomerEmailInputField saleDetails={saleDetails} />
-              <CustomerMobileInputField saleDetails={saleDetails} />
-              <SaleDateInputField saleDetails={saleDetails} />
-              <PaymentMethodInputField saleDetails={saleDetails} />
-              <SelectStatusInputField saleDetails={saleDetails} />
-              <QuotationIDInputField saleDetails={saleDetails} />
-              <GSTNumberInputField saleDetails={saleDetails} />
-              <PANNumberInputField saleDetails={saleDetails} />
-            </div>
+            <QuotationContextProvider>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 space-y-8 mb-8">
+                <CustomerNameInputField saleDetails={saleDetails} />
+                {/* <SalesPersonInputField /> */}
+                <CustomerEmailInputField saleDetails={saleDetails} />
+                <CustomerMobileInputField saleDetails={saleDetails} />
+                <SaleDateInputField saleDetails={saleDetails} />
+                <PaymentMethodInputField saleDetails={saleDetails} />
+                <SelectStatusInputField saleDetails={saleDetails} />
+                <QuotationIDInputField saleDetails={saleDetails} />
+                <GSTNumberInputField saleDetails={saleDetails} />
+                <PANNumberInputField saleDetails={saleDetails} />
+              </div>
 
-            {/* Items info */}
-            <ItemDetails saleDetails={saleDetails} />
+              {/* Items info */}
+              <ItemDetails saleDetails={saleDetails} />
+            </QuotationContextProvider>
 
             {/* Terms and Conditions */}
             <TermsAndConditions saleDetails={saleDetails} />
@@ -266,8 +273,9 @@ const ItemDetails = ({ saleDetails }) => {
     hsn_code: "",
   };
 
-  const [items, setItems] = useState(saleDetails?.list_items || [blankItem]);
   const { createSaleFormDispatch } = useContext(SalesContext);
+  const { selectedQuotationItems } = useContext(QuotationContext);
+  const [items, setItems] = useState(saleDetails?.list_items || [blankItem]);
 
   // changes fields for particular item row
   const handleChange = (index, field, value) => {
@@ -346,6 +354,10 @@ const ItemDetails = ({ saleDetails }) => {
     }
   }, []);
 
+  useEffect(() => {
+    selectedQuotationItems && selectedQuotationItems[0]?.item_name  && setItems(selectedQuotationItems);
+  }, [selectedQuotationItems]);
+
   return (
     <>
       {items.map((item, index) => {
@@ -355,6 +367,7 @@ const ItemDetails = ({ saleDetails }) => {
             <div className=" grid md:grid-cols-12 grid-cols-2 space-x-2 space-y-4 mb-6">
               <div className=" overflow-x-auto md:col-span-6 col-span-2">
                 <InputField
+                  required={true}
                   autoComplete="off"
                   value={item.item_description}
                   setvalue={(val) => {
@@ -367,6 +380,7 @@ const ItemDetails = ({ saleDetails }) => {
               </div>
               <div className=" overflow-x-auto md:col-span-3 col-span-1">
                 <InputField
+                  required={true}
                   autoComplete="off"
                   padding={4}
                   value={item.hsn_code}
@@ -380,6 +394,7 @@ const ItemDetails = ({ saleDetails }) => {
               </div>
               <div className=" overflow-x-auto md:col-span-3 col-span-1">
                 <InputField
+                  required={true}
                   autoComplete="off"
                   padding={2}
                   value={item.unit_price}
@@ -395,6 +410,7 @@ const ItemDetails = ({ saleDetails }) => {
               </div>
               <div className=" overflow-x-auto md:col-span-3 col-span-1">
                 <InputField
+                  required={true}
                   autoComplete="off"
                   value={item.quantity}
                   setvalue={(val) => handleChange(index, "quantity", val)}
@@ -405,6 +421,7 @@ const ItemDetails = ({ saleDetails }) => {
               </div>
               <div className=" overflow-x-auto md:col-span-3 col-span-1">
                 <InputField
+                  required={true}
                   autoComplete="off"
                   max={100}
                   min={0}
@@ -417,6 +434,7 @@ const ItemDetails = ({ saleDetails }) => {
               </div>
               <div className=" overflow-x-auto md:col-span-3 col-span-1">
                 <InputField
+                  required={true}
                   autoComplete="off"
                   max={100}
                   min={0}
@@ -429,6 +447,7 @@ const ItemDetails = ({ saleDetails }) => {
               </div>
               <div className=" overflow-x-auto md:col-span-3 col-span-2">
                 <InputField
+                  required={true}
                   autoComplete="off"
                   padding={2}
                   readOnly={true}
@@ -485,7 +504,7 @@ const ItemDetails = ({ saleDetails }) => {
 };
 
 const AdditionalNotes = ({ className, saleDetails }) => {
-  const [notes, setnotes] = useState(saleDetails?.notes || "");
+  const [notes, setnotes] = useState(saleDetails?.notes || "N/A");
   const { createSaleFormDispatch } = useContext(SalesContext);
 
   useEffect(() => {
@@ -499,7 +518,7 @@ const AdditionalNotes = ({ className, saleDetails }) => {
   //clear state value
   useEffect(() => {
     if (!saleDetails) {
-      setnotes("");
+      setnotes("N/A");
     }
   }, [saleDetails]);
 
@@ -509,10 +528,10 @@ const AdditionalNotes = ({ className, saleDetails }) => {
         htmlFor="add-sales-additional-notes"
         className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal mb-1"
       >
-        Notes*
+        Notes
       </label>
       <textarea
-        value={notes}
+        value={notes.includes("N/A") ? "" : notes}
         onChange={(e) => {
           setnotes(e.target.value);
         }}
@@ -529,7 +548,7 @@ const AdditionalNotes = ({ className, saleDetails }) => {
 
 const TermsAndConditions = ({ className, saleDetails }) => {
   const [conditions, setconditions] = useState(
-    saleDetails?.list_toc[0]?.terms_of_service || ""
+    saleDetails?.list_toc[0]?.terms_of_service || "N/A"
   );
   const { createSaleFormDispatch } = useContext(SalesContext);
 
@@ -548,7 +567,7 @@ const TermsAndConditions = ({ className, saleDetails }) => {
   //clear state value
   useEffect(() => {
     if (!saleDetails) {
-      setconditions("");
+      setconditions("N/A");
     }
   }, [saleDetails]);
   return (
@@ -560,7 +579,7 @@ const TermsAndConditions = ({ className, saleDetails }) => {
         Terms and Conditions
       </label>
       <textarea
-        value={conditions}
+        value={conditions.includes("N/A") ? "" : conditions}
         onChange={(e) => {
           setconditions(e.target.value);
         }}
@@ -660,6 +679,7 @@ const CustomerNameInputField = ({ saleDetails }) => {
         <InputField
           value={customer.customer_name}
           setvalue={setcustomer}
+          required={true}
           isLoading={isLoading}
           label={"Customer Name"}
           placeholder={"Customer name"}
@@ -696,6 +716,7 @@ const CustomerEmailInputField = ({ saleDetails }) => {
       <div className="flex flex-col overflow-y-visible relative">
         <InputField
           value={email}
+          required={true}
           readOnly={true}
           setvalue={setemail}
           label={"Customer email address"}
@@ -723,6 +744,7 @@ const CustomerMobileInputField = ({ saleDetails }) => {
     <>
       <div className="flex flex-col overflow-y-visible relative">
         <InputField
+          required={true}
           readOnly={true}
           value={customerMobile}
           setvalue={setcustomerMobile}
@@ -772,6 +794,7 @@ const PaymentMethodInputField = ({ saleDetails }) => {
     <>
       <div className="flex flex-col overflow-y-visible relative">
         <InputField
+          required={true}
           value={paymentMethod}
           setvalue={setpaymentMethod}
           label={"Payment Method"}
@@ -803,9 +826,10 @@ const SelectStatusInputField = ({ saleDetails }) => {
   }, [saleDetails]);
   return (
     <>
-      <div className="flex flex-col overflow-y-visible relative">
+      <div className="flex flex-col overflow-y-visible relative col-span-2">
         <InputField
           value={status}
+          required={true}
           setvalue={setstatus}
           label={"Status"}
           placeholder={"Select status"}
@@ -839,6 +863,7 @@ const SaleDateInputField = ({ saleDetails }) => {
     <>
       <div className="flex flex-col overflow-y-visible relative">
         <InputField
+          required={true}
           value={date}
           setvalue={setdate}
           label={"Sale Date"}
@@ -856,6 +881,20 @@ const QuotationIDInputField = ({ saleDetails }) => {
   const [quotationid, setquotationid] = useState(
     saleDetails?.quotation_id || ""
   );
+  const {
+    selectedQuotationItems,
+    setselectedQuotationItems,
+    quotationList,
+    getQuotationList,
+  } = useContext(QuotationContext);
+  const [isLoading, setisLoading] = useState(false);
+  const [isCustomQuotation, setisCustomQuotation] = useState(true);
+  const [isDropdownOpen, setisDropdownOpen] = useState(false);
+  const [query, setquery] = useState("");
+
+  const dropDownRef = useRef();
+  const containerRef = useRef();
+
   useEffect(() => {
     quotationid &&
       createSaleFormDispatch({
@@ -877,15 +916,194 @@ const QuotationIDInputField = ({ saleDetails }) => {
       setquotationid("");
     }
   }, [saleDetails]);
+
+  const filteredData = useMemo(() => {
+    if (!query) return quotationList;
+    return (quotationList || []).filter((item) => {
+      return item.quotation_id.toLowerCase().includes(query);
+    });
+  }, [query]);
+
+  useEffect(() => {
+    getQuotationList(setisLoading);
+  }, []);
+
+  useEffect(() => {
+    const handelClickOutside = (e) => {
+      if (
+        containerRef.current &&
+        dropDownRef.current &&
+        !containerRef.current.contains(e.target) &&
+        !dropDownRef.current.contains(e.target)
+      ) {
+        setisDropdownOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handelClickOutside);
+
+    return () => {
+      window.removeEventListener("pointerdown", handelClickOutside);
+    };
+  }, [containerRef.current, dropDownRef.current]);
+
   return (
     <>
-      <div className="flex flex-col overflow-y-visible relative">
-        <InputField
-          value={quotationid}
-          setvalue={setquotationid}
-          label={"Quotation ID (Optional)"}
-          placeholder={"Enter Quotation ID"}
-        />
+      <div className="flex flex-col overflow-y-visible relative col-span-2">
+        <label className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal mb-1">
+          Quotation ID (Optional) <span className=" text-red-600 ">*</span>
+        </label>
+
+        {/* radio buttons for switch quotation id type  */}
+        <div className="mb-3 mt-1 flex items-center gap-8">
+          {/* radio button for custom input  */}
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="radio"
+              name="quotationIdType"
+              value={isCustomQuotation}
+              checked={isCustomQuotation}
+              onChange={(e) => setisCustomQuotation(true)}
+              className="sr-only"
+            />
+            {/* custom styled circle */}
+            <div
+              className={`w-4 h-4 rounded-full border-[2.5px] flex items-center justify-center ${
+                isCustomQuotation ? "border-blue-800" : "border-gray-400"
+              }`}
+            >
+              {isCustomQuotation && (
+                <div className="w-2 h-2 bg-blue-800 rounded-full" />
+              )}
+            </div>
+            <span className="text-sm font-medium capitalize">Custom</span>
+          </label>
+
+          {/* radio button for select dropdown input  */}
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="radio"
+              name="quotationIdType"
+              value={isCustomQuotation}
+              checked={!isCustomQuotation}
+              onChange={(e) => setisCustomQuotation(false)}
+              className="sr-only"
+            />
+            {/* custom styled circle */}
+            <div
+              className={`w-4 h-4 rounded-full border-[2.5px] flex items-center justify-center ${
+                !isCustomQuotation ? "border-blue-800" : "border-gray-400"
+              }`}
+            >
+              {!isCustomQuotation && (
+                <div className="w-2 h-2 bg-blue-800 rounded-full" />
+              )}
+            </div>
+            <span className="text-sm font-medium capitalize">Select</span>
+          </label>
+        </div>
+
+        {isCustomQuotation && (
+          <InputField
+            value={quotationid}
+            required={true}
+            setvalue={setquotationid}
+            label={""}
+            hasLabel={false}
+            placeholder={"Enter Quotation ID"}
+          />
+        )}
+
+        {!isCustomQuotation && (
+          <>
+            {/* input area  */}
+            <div
+              ref={containerRef}
+              className="rounded-xl border-[#0000001A] border-[1.5px] px-4
+                py-3 flex items-center"
+            >
+              <input
+                autoComplete
+                required
+                readOnly
+                onClick={() => {
+                  setisDropdownOpen(!isDropdownOpen);
+                }}
+                tabIndex={0}
+                placeholder={"Select Quotation ID"}
+                value={quotationid}
+                className={`w-full relative items-center outline-none 2xl:text-lg xl:text-base 
+                lg:text-sm text-xs font-normal placeholder:text-[#00000080]
+                text-[#343434] cursor-default `}
+              />
+              <button
+                aria-label="toggle drop down"
+                className=" outline-none cursor-pointer"
+                onClick={() => {
+                  setisDropdownOpen(!isDropdownOpen);
+                }}
+              >
+                <ChevronDown
+                  className={`w-5 h-5 text-[#000000B2] transition-transform ${
+                    isDropdownOpen ? "-rotate-180" : ""
+                  } `}
+                />
+              </button>
+            </div>
+
+            {/* dropdown quotation list  */}
+            <div
+              ref={dropDownRef}
+              className={`absolute top-[105%] left-0 w-full ${
+                isDropdownOpen
+                  ? `  overflow-auto border-[1.5px]`
+                  : "h-0 overflow-x-hidden border-0 "
+              }
+              bg-white z-5 rounded-xl border-[#0000001A]`}
+              style={{ maxHeight: `250px` }}
+            >
+              {isLoading && (
+                <div className=" flex-1 flex justify-center items-center py-8 px-4 min-h-[200px]">
+                  <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
+                </div>
+              )}
+
+              {/* search bar  */}
+              <input
+                value={query}
+                onChange={(e) => {
+                  setquery(e.target.value);
+                }}
+                type="text"
+                className=" rounded-t-xl rounded-b-md w-full text-sm text-gray-700 px-2 py-3 outline-none bg-gray-200/50 border-1 border-gray-300 "
+              />
+
+              {!isLoading && (
+                <ul className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal placeholder:text-[#00000080] text-[#000000a1]">
+                  {filteredData?.map((item, index) => {
+                    if (item.list_items[0].item_name) {
+                      return (
+                        <li
+                          tabIndex={0}
+                          key={index}
+                          onClick={(e) => {
+                            console.log(item.list_items);
+                            setquotationid(item.quotation_id);
+                            setselectedQuotationItems(item.list_items);
+                            setisDropdownOpen(false);
+                          }}
+                          className="px-4 py-3 hover:bg-gray-100 cursor-pointer"
+                        >
+                          {item.quotation_id}{" "}
+                        </li>
+                      );
+                    }
+                  })}
+                </ul>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </>
   );
@@ -911,9 +1129,10 @@ const GSTNumberInputField = ({ saleDetails }) => {
         <InputField
           readOnly={true}
           value={gst}
+          required={true}
           setvalue={setgst}
           label={"GSTIN Number"}
-          placeholder={"ABCDE1234F"}
+          placeholder={"07ABCDE1234F2Z5"}
         />
       </div>
     </>
@@ -938,6 +1157,7 @@ const PANNumberInputField = ({ saleDetails }) => {
         <InputField
           readOnly={true}
           value={pan}
+          required={true}
           setvalue={setpan}
           label={"PAN Number"}
           placeholder={"AFZPK7190K"}
@@ -952,14 +1172,16 @@ const SubTotal = ({ className, saleDetails }) => {
   const [subtotal, setsubtotal] = useState(createSaleForm?.subtotalAmount || 0);
   const [discount, setdiscount] = useState(saleDetails?.discount_amount || 0);
   const [isAdjustment, setisAdjustment] = useState(
-    saleDetails?.adjustmentAmount?.toString().toLowerCase() === "true"
+    saleDetails?.adjustment_amount &&
+      saleDetails?.adjustment_amount.toString().toLowerCase() === "true"
       ? true
       : false
   );
   const [tds, settds] = useState({
-    value: saleDetails?.tds_amount || "",
-    name: saleDetails?.tds_reason || "",
+    value: saleDetails?.tds_amount || "0",
+    name: saleDetails?.tds_reason || "N/A",
   });
+  const [isTdsEnable, setisTdsEnable] = useState(true);
   const [grandTotal, setgrandTotal] = useState(
     saleDetails?.total_amount || 0.0
   );
@@ -1026,9 +1248,9 @@ const SubTotal = ({ className, saleDetails }) => {
     createSaleFormDispatch({
       type: "UPDATE_FIELD",
       field: "totalAmount",
-      value: grandTotal,
+      value: isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal,
     });
-  }, [grandTotal]);
+  }, [grandTotal,isAdjustment]);
   useEffect(() => {
     createSaleFormDispatch({
       type: "UPDATE_FIELD",
@@ -1043,6 +1265,8 @@ const SubTotal = ({ className, saleDetails }) => {
     const tax = Number(tds.value.split("%")[0] || 0);
     settaxableAmount(((subtotal * (100 - discount) * tax) / 10000).toFixed(2));
   }, [tds, subtotal, discount]);
+
+
 
   return (
     <>
@@ -1080,7 +1304,7 @@ const SubTotal = ({ className, saleDetails }) => {
         {/* Tax Type + Dropdown */}
         <div className="flex items-center justify-between text-[#4A4A4A] gap-3 mb-4">
           {/* Radio buttons */}
-          <div className="flex items-center gap-4">
+          {/* <div className="flex items-center gap-4">
             <label className="inline-flex items-center gap-1 cursor-pointer">
               <input
                 type="radio"
@@ -1090,10 +1314,36 @@ const SubTotal = ({ className, saleDetails }) => {
               />
               <span className="md:text-sm text-xs font-medium">TDS</span>
             </label>
+          </div> */}
+          <div className=" flex items-center gap-2 cursor-pointer">
+            <label
+              htmlFor="toggle tds"
+              className=" md:text-sm text-xs font-medium flex items-center gap-2 cursor-pointer select-none text-[#4A4A4A]"
+            >
+              <div
+                className={` border-4 w-3.5 2xl:w-5 h-3.5 2xl:h-5 rounded-full transition ${
+                  isTdsEnable ? "border-[#2543B1]" : "border-[#777777]"
+                }`}
+              />
+              TDS
+            </label>
+            <input
+              id="toggle tds"
+              type="checkbox"
+              value={isTdsEnable}
+              onChange={() => {
+                setisTdsEnable(!isTdsEnable);
+              }}
+              className=" cursor-pointer hidden"
+            />
           </div>
 
           {/* Tax Dropdown */}
-          <TaxDropdown value={tds.value} setvalue={settds} />
+          <TaxDropdown
+            value={tds.value}
+            setvalue={settds}
+            isDisabled={!isTdsEnable}
+          />
 
           {/* Negative Tax Value */}
           <div className="text-gray-500 text-sm w-12 text-right">
@@ -1124,23 +1374,34 @@ const SubTotal = ({ className, saleDetails }) => {
                 type="checkbox"
                 value={isAdjustment}
                 onChange={() => {
+                  // console.log(isAdjustment);
+                  // if (isAdjustment) {
+                  // setisAdjustment(0);
+                  // } else {
+                  //   setisAdjustment(Math.ceil(Number(grandTotal)));
+                  // }
                   setisAdjustment(!isAdjustment);
                 }}
                 className=" cursor-pointer hidden"
               />
             </div>
           </div>
-          <span>{grandTotal}</span>
+          <span>
+            {isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal}
+          </span>
         </div>
         <p className=" text-end font-medium 2xl:text-xl xl:text-lg lg:text-base text-xs text-[#606060] ">
-          {toWords.convert(Number(grandTotal))} Only
+          {toWords.convert(
+            Number(isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal)
+          )}{" "}
+          Only
         </p>
       </div>
     </>
   );
 };
 
-const TaxDropdown = ({ saleDetails, value, setvalue }) => {
+const TaxDropdown = ({ isDisabled, value, setvalue }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState(-1);
   const dropdownRef = useRef(null);
@@ -1165,14 +1426,21 @@ const TaxDropdown = ({ saleDetails, value, setvalue }) => {
   }, []);
 
   return (
-    <div ref={dropdownRef} className="relative mx-auto w-full max-w-[200px]">
+    <div
+      ref={dropdownRef}
+      className={`relative mx-auto w-full max-w-[200px] ${
+        isDisabled ? "pointer-events-none" : ""
+      }`}
+    >
       <motion.div
         className="relative"
         initial={false}
         animate={isOpen ? "open" : "closed"}
       >
         <motion.button
-          className={`w-full px-2 py-2 cursor-pointer bg-white border rounded-md lg:text-sm text-xs text-gray-700 flex items-center justify-between border-gray-400`}
+          className={`w-full px-2 py-2 cursor-pointer ${
+            isDisabled ? "bg-gray-500/30" : "bg-white"
+          }  border rounded-md lg:text-sm text-xs text-gray-700 flex items-center justify-between border-gray-400`}
           whileHover={{
             borderColor: "#9CA3AF",
             boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",

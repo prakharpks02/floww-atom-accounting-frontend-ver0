@@ -46,7 +46,7 @@ export const initialSalesState = {
   ],
   listToc: [
     {
-      terms_of_service: "",
+      terms_of_service: "N/A",
     },
   ],
   listStatus: [
@@ -57,11 +57,11 @@ export const initialSalesState = {
     },
   ],
   customerId: "",
-  notes: "",
+  notes: "N/A",
   contactNo: "",
   email: "",
   address: "",
-  invoiceUrl: [{ invoice_url: "" }],
+  invoiceUrl: [{ invoice_url: "N/A" }],
   paymentNameList: [
     {
       payment_name: "N/A",
@@ -93,7 +93,7 @@ export const initialSalesState = {
   panNumber: "",
   subtotalAmount: "",
   discountAmount: "",
-  tdsAmount: "",
+  tdsAmount: "0",
   adjustmentAmount: "",
   totalAmount: "",
   status: "",
@@ -518,7 +518,7 @@ export const SalesContextProvider = ({ children }) => {
       createSaleFormDispatch({ type: "RESET" });
   }, [pathname]);
 
-  // console.log(createSaleForm);
+  console.log(createSaleForm);
 
   return (
     <SalesContext.Provider

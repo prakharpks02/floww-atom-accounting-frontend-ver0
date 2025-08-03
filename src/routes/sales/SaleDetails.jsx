@@ -20,7 +20,7 @@ import {
   Loader2,
   IndianRupee,
 } from "lucide-react";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { FileIcon, defaultStyles } from "react-file-icon";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -35,12 +35,15 @@ import { formatISODateToDDMMYYYY } from "../../utils/formateDate";
 import axios from "axios";
 import { UserContext } from "../../context/userContext/UserContext";
 import { CompanyContext } from "../../context/company/CompanyContext";
+import { uploadFile } from "../../utils/uploadFiles";
+import { downloadElementAsPDF } from "../../utils/downloadPageInPdf";
 
 export const SaleInfo = () => {
   const navigate = useNavigate();
   const { saleid } = useParams();
   const [isLoading, setisLoading] = useState(true);
   const { getSaleDetails, saleDetails } = useContext(SalesContext);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     getSaleDetails(saleid, setisLoading);
@@ -68,28 +71,44 @@ export const SaleInfo = () => {
             <h1 className="2xl:text-4xl xl:text-3xl lg:text-2xl md:text-xl text-lg font-semibold text-[#333333]">
               Sales Information
             </h1>
-            <button
-              onClick={() => {
-                navigate(`/sales/addSales/${saleDetails?.sales_id}`);
-              }}
-              className="px-4 py-3 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
-            >
-              <Edit className="w-5 h-5" /> Edit Sales
-            </button>
+            <div className=" flex items-center gap-3">
+              <button
+                onClick={() =>
+                  downloadElementAsPDF(
+                    containerRef.current,
+                    `sale-${saleDetails.sales_id || "unknown"}.pdf`
+                  )
+                }
+                className="px-4 py-3 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
+              >
+                <Download className="w-5 h-5" /> Download
+              </button>
+              <button
+                onClick={() => {
+                  navigate(`/sales/addSales/${saleDetails?.sales_id}`);
+                }}
+                className="px-4 py-3 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
+              >
+                <Edit className="w-5 h-5" /> Edit Sales
+              </button>
+            </div>
           </div>
 
           <div className="mb-8  flex justify-between items-center  xl:text-base md:text-sm  text-xs">
             <p className=" text-[#A4A4A4] font-medium ">
               Detailed information for sale - {saleDetails?.sales_id}
             </p>
-            <p className="text-[#A4A4A4] lg:max-w-none max-w-[50%] font-medium ">
+            {/* <p className="text-[#A4A4A4] lg:max-w-none max-w-[50%] font-medium ">
               Note: Edit can only be done once the invoice has been uploaded
-            </p>
+            </p> */}
           </div>
         </div>
 
         {/* sales info  */}
-        <div className=" grid lg:grid-cols-10 grid-cols-1 gap-3">
+        <div
+          ref={containerRef}
+          className=" grid lg:grid-cols-10 grid-cols-1 gap-3"
+        >
           <SaleInfoLeftPart
             className={"lg:col-span-6 col-span-1"}
             saleDetails={saleDetails}
@@ -144,12 +163,12 @@ const SaleInfoRightPart = ({
     return ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext);
   }, []);
 
-  const getFilePreview = (file, ext) => {
+  const getFilePreview = (url, ext) => {
     if (isImage(ext)) {
       return (
         <img
-          src={file?.related_doc_url || "document image"}
-          alt={`preview ${file?.related_doc_name}`}
+          src={url || "document image"}
+          alt={`preview ${url}`}
           className="object-contain w-full text-[10px]"
         />
       );
@@ -223,10 +242,15 @@ const SaleInfoRightPart = ({
             </button> */}
           </div>
           <div className="space-y-4">
-            {saleDetails?.payment_transactions_list
+            {[...(saleDetails?.payment_transactions_list ?? [])]
               ?.reverse()
               ?.map((item, idx) => {
                 const ext = getFileExtension(item?.transaction_url);
+                const fileName =
+                  item.transaction_url?.split("/")[
+                    item.transaction_url?.split("/").length - 1
+                  ];
+                console.log(fileName);
                 return (
                   <div
                     key={idx}
@@ -247,12 +271,20 @@ const SaleInfoRightPart = ({
                     {/* File box if present */}
                     {item.transaction_url &&
                       item.transaction_url.toLowerCase() != "n/a" && (
-                        <div className="ml-11 bg-white border-[#0000001A] border-1  shadow-sm rounded-lg flex items-center gap-3 px-2 py-2 w-fit text-sm">
-                          <div className=" text-white w-15 px-2 py-2 rounded text-xs font-semibold">
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(item?.transaction_url, "_blank");
+                          }}
+                          className="ml-11 cursor-pointer bg-white border-[#0000001A] border-1  shadow-sm rounded-lg flex items-center gap-3 px-2 py-2 w-fit text-sm"
+                        >
+                          <div className=" text-white w-15 py-2 rounded text-xs font-semibold">
                             {getFilePreview(item?.transaction_url, ext)}
                           </div>
                           <span className="text-[#606060] font-medium xl:text-base md:text-sm text-xs">
-                            {item.transaction_url}
+                            {fileName.includes(".")
+                              ? fileName.substring(0, fileName.lastIndexOf("."))
+                              : fileName}
                           </span>
                         </div>
                       )}
@@ -279,7 +311,7 @@ const UpdateTimeLineModal = ({
     timestamp: Date.now(),
     amount: "",
     remark: "",
-    transaction_url: "",
+    file: null,
   });
   const { userDetails } = useContext(UserContext);
   const { companyDetails } = useContext(CompanyContext);
@@ -305,7 +337,7 @@ const UpdateTimeLineModal = ({
       showToast("Token not found", 1);
       return;
     }
-    if (!formData.amount || !formData.transaction_url || !formData.remark) {
+    if (!formData.amount || !formData.file || !formData.remark) {
       showToast("All fields are required", 1);
       return;
     }
@@ -324,6 +356,14 @@ const UpdateTimeLineModal = ({
 
     try {
       setisLoading(true);
+
+      // upload documens
+      const file = formData.file;
+      const response = await uploadFile(file.name, file, token);
+      console.log(response);
+      formData.file = response.doc_url;
+      console.log("file uploaded");
+
       const res = await axios.post(
         `${
           import.meta.env.VITE_BACKEND_URL
@@ -348,7 +388,7 @@ const UpdateTimeLineModal = ({
           purchaseOrderId: saleDetails.po_id,
           paymentTransactionsList: [
             ...saleDetails.payment_transactions_list,
-            formData,
+            { ...formData, transaction_url: response.doc_url },
           ],
           gstinNumber: saleDetails.gstin_number,
           panNumber: saleDetails.pan_number,
@@ -397,7 +437,6 @@ const UpdateTimeLineModal = ({
 
   return (
     <>
-      <ToastContainer />
       <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm overflow-y-auto p-5">
         <div className="w-full max-w-md mx-auto my-5 bg-white rounded-xl shadow-lg p-6 space-y-5 animate-slideDown">
           {/* header  */}
@@ -490,10 +529,11 @@ const UpdateTimeLineModal = ({
 const UploadDocuments = ({ setSelectedFile }) => {
   const [files, setfiles] = useState(null);
   useEffect(() => {
+    if (!files) return;
     setSelectedFile((prev) => {
       return {
         ...prev,
-        transaction_url: files && files.length > 0 ? files[0].name : "",
+        file: files[0],
       };
     });
   }, [files]);
@@ -785,7 +825,10 @@ const RelatedDocuments = ({ saleDetails }) => {
     if (!files || files.length === 0) return;
     try {
       setisDownloading(true);
-      await downloadAsZip(files, "sale-related-documents.zip");
+      await downloadAsZip(
+        files,
+        `sale-${saleDetails.sales_id}-related-documents.zip`
+      );
     } catch (error) {
       showToast(error.message, 1);
     } finally {
@@ -898,7 +941,7 @@ const ShowFiles = ({ files }) => {
   };
 
   return (
-    <div className="max-h-[200px] w-full overflow-auto flex flex-wrap justify-center gap-3 pt-5">
+    <div className="max-h-[200px] w-full overflow-y-auto flex flex-wrap justify-center gap-3 pt-5">
       {files.map((file, index) => {
         const ext = getFileExtension(file?.related_doc_name);
         return (
