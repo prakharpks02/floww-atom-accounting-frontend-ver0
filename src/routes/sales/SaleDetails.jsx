@@ -36,7 +36,7 @@ import axios from "axios";
 import { UserContext } from "../../context/userContext/UserContext";
 import { CompanyContext } from "../../context/company/CompanyContext";
 import { uploadFile } from "../../utils/uploadFiles";
-import { downloadElementAsPDF } from "../../utils/downloadPageInPdf";
+import {  generatePDF,  } from "../../utils/downloadPageInPdf";
 
 export const SaleInfo = () => {
   const navigate = useNavigate();
@@ -74,10 +74,7 @@ export const SaleInfo = () => {
             <div className=" flex items-center gap-3">
               <button
                 onClick={() =>
-                  downloadElementAsPDF(
-                    containerRef.current,
-                    `sale-${saleDetails.sales_id || "unknown"}.pdf`
-                  )
+                   generatePDF(saleDetails)
                 }
                 className="px-4 py-3 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
               >
