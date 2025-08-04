@@ -13,23 +13,25 @@ import {
   SortDataOnDate,
   SortDataOnQuantity,
 } from "../../utils/filterData";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { CompanyContext } from "../company/CompanyContext";
 import { showToast } from "../../utils/showToast";
 import axios from "axios";
 import { validateFields } from "../../utils/checkFormValidation";
 import { UserContext } from "../userContext/UserContext";
+import { uploadFile } from "../../utils/uploadFiles";
 
 export const InvoiceContext = createContext();
 
 // initial invoice state
 export const initialInvoiceState = {
   customerId: "",
+  customerName: "",
   invoiceNumber: "",
   invoiceDate: "",
   invoiceDueBy: "",
   invoiceTs: "N/A",
-  orderNumber: "",
+  orderNumber: "N/A",
   invoiceSubject: "",
   salesId: "",
   listItems: [
@@ -46,12 +48,12 @@ export const initialInvoiceState = {
     },
   ],
   subtotalAmount: "",
-  discountAmount: "",
+  discountAmount: "0",
   taxAmount: "N/A",
-  totalAmount: "",
-  listToc: [{ terms_of_service: "" }],
-  terms: "",
-  notes: "",
+  totalAmount: "0",
+  listToc: [{ terms_of_service: "N/A" }],
+  terms: "N/A",
+  notes: "N/A",
   gstNumber: "",
   status: "N/A",
   contactNo: "",
@@ -128,7 +130,8 @@ export const InvoiceContextProvider = ({ children }) => {
     invoiceReducer,
     initialInvoiceState
   );
-  const {userDetails} = useContext(UserContext)
+  const navigate = useNavigate();
+  const { userDetails } = useContext(UserContext);
 
   // create invoice function
   const createInvoice = useCallback(
@@ -140,13 +143,12 @@ export const InvoiceContextProvider = ({ children }) => {
 
         if (Object.keys(validationErrors).length > 0) {
           console.log(validationErrors);
-          showToast("All fields are required", 1);
-          return;
+          showToast("All fields are required ", 1);
+          throw new Error("All fields are required");
         }
       }
 
       if (!companyDetails) {
-        showToast("No company details found", 1);
         throw new Error("No company details found");
       }
 
@@ -158,12 +160,23 @@ export const InvoiceContextProvider = ({ children }) => {
 
       const token = localStorage.getItem("token");
       if (!token) {
-        showToast("Token not found", 1);
-        return;
+        throw new Error("Token not found");
       }
 
       try {
         setisLoading(true);
+
+        if (createInvoiceForm.invoiceUrl[0]?.fileBlob) {
+          for (let i = 0; i < createInvoiceForm.invoiceUrl.length; i++) {
+            const file = createInvoiceForm.invoiceUrl[i];
+            const res = await uploadFile(file.fileName, file.fileBlob, token);
+            console.log(res);
+            createInvoiceForm.invoiceUrl[i] = { invoice_url: res.doc_url };
+          }
+
+          console.log("file uploaded");
+        }
+
         const res = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/accounting/create-invoices/`,
           {
@@ -180,13 +193,13 @@ export const InvoiceContextProvider = ({ children }) => {
 
         console.log(res);
         if (res.data.status && res.data.status.toLowerCase() !== "success") {
-          showToast("Somthing went wrong. Please try again", 1);
           throw new Error("Somthing went wrong. Please try again");
         }
 
         // reset to initial value
         // createInvoiceDispatch({ type: "RESET" });
         showToast("Invoice created created");
+        navigate("/sales/allInvoiceList");
       } catch (error) {
         console.log(error);
         showToast(
@@ -195,6 +208,7 @@ export const InvoiceContextProvider = ({ children }) => {
             "Somthing went wrong. Please try again",
           1
         );
+        setisLoading(false);
         throw new Error(
           error.response?.data?.message ||
             error.message ||
@@ -204,62 +218,102 @@ export const InvoiceContextProvider = ({ children }) => {
         setisLoading(false);
       }
     },
-    [createInvoiceForm , userDetails]
+    [createInvoiceForm, userDetails]
   );
 
   //  function to get all invoice list
   const getAllInvoices = useCallback(
     async (setisLoading = () => {}) => {
-    if (!companyDetails) {
-      showToast("No company details found", 1);
-      return;
-    }
-    const token = localStorage.getItem("token");
-    if (!token) {
-      showToast("Token not found", 1);
-      return;
-    }
-
-    try {
-      setisLoading(true);
-      const res = await axios.get(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/accounting/get-all-invoices/?companyId=${
-          companyDetails.company_id
-        }`,
-        {
-          headers: {
-            Authorization: token,
-          },
-        }
-      );
-
-      if (res.data.status && res.data.status.toLowerCase() !== "success") {
-        showToast("Somthing went wrong. Please try again", 1);
-        setisLoading(false);
+      if (!companyDetails) {
+        showToast("No company details found", 1);
+        return;
+      }
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Token not found", 1);
         return;
       }
 
-      setAllInvoiceList(res.data.data);
-    } catch (error) {
-      console.log(error);
-      showToast(
-        error.response?.data?.message ||
-          error.message ||
-          "Somthing went wrong. Please try again",
-        1
-      );
-    } finally {
-      setisLoading(false);
-    }
-  }, [userDetails]);
+      try {
+        setisLoading(true);
+        const res = await axios.get(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/accounting/get-all-invoices/?companyId=${
+            companyDetails.company_id
+          }`,
+          {
+            headers: {
+              Authorization: token,
+            },
+          }
+        );
+
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
+          showToast("Somthing went wrong. Please try again", 1);
+          setisLoading(false);
+          return;
+        }
+
+        setAllInvoiceList(res.data.data);
+      } catch (error) {
+        console.log(error);
+        showToast(
+          error.response?.data?.message ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+      } finally {
+        setisLoading(false);
+      }
+    },
+    [userDetails]
+  );
+
+  // search on invoice list
+  const searchInvoice = useCallback(
+    async (searchQuery) => {
+      const query = searchQuery.toLowerCase();
+
+      const filteredInvoices = AllInvoiceList.map((invoice) => {
+        const saleIdMatch = invoice.sales_id?.toLowerCase().includes(query);
+        const invoiceNumberMatch = invoice.invoice_number
+          ?.toLowerCase()
+          .includes(query);
+        const DateMatch = invoice.invoice_date?.toLowerCase().includes(query);
+        const dueDateMatch = invoice.invoice_due_by?.toLowerCase() === query;
+        const customerMatch = invoice.customer_name?.toLowerCase().includes(query);
+
+        // If invoice level fields match OR list_items have match
+        const invoiceLevelMatch =
+          saleIdMatch ||
+          customerMatch ||
+          invoiceNumberMatch ||
+          DateMatch ||
+          dueDateMatch;
+
+        if (invoiceLevelMatch) {
+          return {
+            ...invoice,
+          };
+        }
+
+        return null;
+      }).filter((inoice) => inoice !== null); // remove nulls
+
+      return filteredInvoices;
+    },
+    [AllInvoiceList, userDetails]
+  );
 
   // reset the create invoice form to intial value when not in create invoice page
   useEffect(() => {
     !pathname.toLowerCase().includes("/createInvoice") &&
       createInvoiceDispatch({ type: "RESET" });
   }, [pathname]);
+
+  console.log(createInvoiceForm);
 
   return (
     <InvoiceContext.Provider
@@ -268,6 +322,8 @@ export const InvoiceContextProvider = ({ children }) => {
         createInvoiceDispatch,
         createInvoice,
         getAllInvoices,
+        AllInvoiceList,
+        searchInvoice
       }}
     >
       {children}

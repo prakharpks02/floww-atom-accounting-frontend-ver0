@@ -88,10 +88,10 @@ const dropDownDataList = {
       label: "Add Sales",
       href: "/sales/addSales/new",
     },
-    // {
-    //   label: "Invoice List",
-    //   href: "/sales/allInvoiceList",
-    // },
+    {
+      label: "Invoice List",
+      href: "/sales/allInvoiceList",
+    },
     {
       label: "Create Invoice",
       href: "/sales/createInvoice",

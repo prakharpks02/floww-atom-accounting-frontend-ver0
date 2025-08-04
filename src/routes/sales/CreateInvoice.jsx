@@ -325,10 +325,10 @@ const CreateInvoiceForm = ({ activeTab }) => {
       <div className="flex sm:flex-row flex-col sm:items-center gap-4">
         <button
           disabled={isLoading}
-          onClick={(e) => {
+          onClick={async (e) => {
             try {
-              createInvoice(e, setisLoading, activeTab);
-              downloadPDF(setisLoading);
+              await createInvoice(e, setisLoading, activeTab);
+              await downloadPDF(setisLoading);
             } catch (error) {
               console.log("error");
             }
@@ -365,8 +365,8 @@ const CreateInvoiceLeftPart = () => {
           <DueDateInputField className={" col-span-1"} />
           <CustomerNameInputField className={" md:col-span-2 col-span-1"} />
           <SubjectInputField className={" md:col-span-2 col-span-1"} />
-          <OrderNumberInputField className={" col-span-1"} />
-          <SalesIDInputField className={" col-span-1"} />
+          <OrderNumberInputField className={" col-span-2"} />
+          <SalesIDInputField className={" col-span-2"} />
         </div>
 
         {/* Item Table */}
@@ -393,7 +393,7 @@ const CustomerNotes = ({ className }) => {
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "notes",
-      value: notes,
+      value: notes || "N/A",
     });
   }, [notes]);
 
@@ -424,7 +424,7 @@ const TermsAndConditions = ({ className }) => {
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "listToc",
-      value: [{ terms_of_service: toc }],
+      value: [{ terms_of_service: toc || "N/A" }],
     });
   }, [toc]);
 
@@ -498,7 +498,7 @@ const CreateInvoiceRightPart = ({
             Invoice review
           </h1>
           <button
-          disabled={isDownloading}
+            disabled={isDownloading}
             onClick={async (e) => {
               e.preventDefault();
               handelDownloadInvoice(setisDownloading);
@@ -538,10 +538,7 @@ const CreateInvoiceRightPart = ({
                   Bill To:
                 </h4>
                 <p className="text-[#777777] font-medium 2xl:text-lg xl:text-base lg:text-sm text-xs  ">
-                  {
-                    createInvoiceForm?.paymentNameList[0]
-                      ?.bank_account_receivers_name
-                  }
+                  {createInvoiceForm?.customerName}
                 </p>
               </div>
             </div>
@@ -769,7 +766,7 @@ const ItemDetails = ({ className }) => {
     gross_amount: "",
     gst_amount: "",
     discount: "",
-    hsn_code: "",
+    hsn_code: "N/A",
   };
   const [items, setItems] = useState([blankItem]);
   const { createInvoiceDispatch } = useContext(InvoiceContext);
@@ -847,6 +844,7 @@ const ItemDetails = ({ className }) => {
               <div className=" grid md:grid-cols-5 grid-cols-2 gap-3">
                 <div className=" overflow-x-hidden md:col-span-3 col-span-2">
                   <InputField
+                    required={true}
                     autoComplete="off"
                     value={item.item_description}
                     setvalue={(val) => {
@@ -871,6 +869,7 @@ const ItemDetails = ({ className }) => {
                 </div> */}
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    required={true}
                     autoComplete="off"
                     padding={2}
                     value={item.unit_price}
@@ -886,6 +885,7 @@ const ItemDetails = ({ className }) => {
                 </div>
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    required={true}
                     autoComplete="off"
                     padding={2}
                     value={item.quantity}
@@ -899,6 +899,7 @@ const ItemDetails = ({ className }) => {
               <div className=" grid md:grid-cols-3 grid-cols-2 gap-3">
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    required={true}
                     autoComplete="off"
                     max={100}
                     min={0}
@@ -911,6 +912,7 @@ const ItemDetails = ({ className }) => {
                 </div>
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    required={true}
                     autoComplete="off"
                     max={100}
                     min={0}
@@ -923,6 +925,7 @@ const ItemDetails = ({ className }) => {
                 </div>
                 <div className=" overflow-x-hidden md:col-span-1 col-span-2">
                   <InputField
+                    required={true}
                     readOnly={true}
                     autoComplete="off"
                     padding={2}
@@ -986,6 +989,7 @@ const InvoiceNumberInputField = ({ className }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={invoiceNumber}
           setvalue={setinvoiceNumber}
           label={"Invoice Number"}
@@ -1003,7 +1007,7 @@ const OrderNumberInputField = ({ className }) => {
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "orderNumber",
-      value: orderNumber,
+      value: orderNumber ? orderNumber : "N/A",
     });
   }, [orderNumber]);
   return (
@@ -1034,6 +1038,7 @@ const SalesIDInputField = ({ className }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={salesId}
           setvalue={setsalesId}
           label={"Sales ID"}
@@ -1058,6 +1063,7 @@ const SubjectInputField = ({ className }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={subject}
           setvalue={setsubject}
           label={"Subject"}
@@ -1082,6 +1088,7 @@ const InvoiceDateInputField = ({ className }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={invoiceDate}
           setvalue={setinvoiceDate}
           label={"Invoice Date"}
@@ -1101,7 +1108,7 @@ const TermsInputField = ({ className }) => {
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "terms",
-      value: terms,
+      value: terms || "N/A",
     });
   }, [terms]);
   return (
@@ -1135,6 +1142,7 @@ const DueDateInputField = ({ className }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={dueDate}
           setvalue={setdueDate}
           label={"Due Date"}
@@ -1181,12 +1189,19 @@ const CustomerNameInputField = ({ className }) => {
       field: "bank_account_receivers_name",
       value: customer.customer_name || "",
     });
+
+    createInvoiceDispatch({
+      type: "UPDATE_FIELD",
+      field: "customerName",
+      value: customer.customer_name || "",
+    });
   }, [customer]);
 
   return (
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={customer.customer_name}
           isLoading={isLoading}
           setvalue={setcustomer}
@@ -1212,12 +1227,24 @@ const UploadInvoice = () => {
   const [isLoading, setisLoading] = useState(false);
 
   useEffect(() => {
+    if (!files || files.length == 0) {
+      createInvoiceDispatch({
+        type: "UPDATE_FIELD",
+        field: "invoiceUrl",
+        value: {
+          invoice_url: "N/A",
+        },
+      });
+      return;
+    }
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "invoiceUrl",
       value: (files || []).map((item) => {
         return {
-          invoice_url: item.name,
+          fileBlob: item || "N/A",
+          fileName: item.name || "N/A",
+          invoice_url: item.related_doc_url || "N/A",
         };
       }),
     });
@@ -1225,8 +1252,7 @@ const UploadInvoice = () => {
 
   useEffect(() => {
     createInvoiceDispatch({
-      type: "UPDATE_FIELD",
-      field: "RESET",
+      type: "RESET",
     });
   }, []);
 
@@ -1319,12 +1345,12 @@ const UploadInvoice = () => {
             if (
               !createInvoiceForm.invoiceUrl ||
               createInvoiceForm.invoiceUrl.length == 0 ||
-              createInvoiceForm.invoiceUrl[0]?.invoice_url == "N/A"
+              !createInvoiceForm.invoiceUrl[0]?.fileBlob 
             ) {
               showToast("Please select atleast one file", 1);
               return;
             }
-            createInvoice(e, setisLoading);
+            createInvoice(e, setisLoading, "upload");
           }}
           className="2xl:text-xl xl:text-lg lg:text-base md:text-sm xl:rounded-2xl rounded-xl xl:px-6 px-4 xl:py-4 py-3 cursor-pointer bg-[#2543B1] border-2 border-[#3333331A] text-white hover:bg-[#252eb1]"
         >
@@ -1354,11 +1380,12 @@ const SubTotal = ({ className }) => {
   const [subtotal, setsubtotal] = useState(
     Number(createInvoiceForm?.subtotalAmount).toFixed(2) || 0
   );
+  const [isTdsEnable, setisTdsEnable] = useState(true);
   const [discount, setdiscount] = useState(0);
   const [isAdjustment, setisAdjustment] = useState(false);
   const [tds, settds] = useState({
-    value: "",
-    name: "",
+    value: "0%",
+    name: "N/A",
   });
   const [grandTotal, setgrandTotal] = useState(0.0);
   const [discountAmount, setdiscountAmount] = useState(0);
@@ -1428,9 +1455,9 @@ const SubTotal = ({ className }) => {
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "totalAmount",
-      value: grandTotal,
+      value: isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal,
     });
-  }, [grandTotal]);
+  }, [grandTotal, isAdjustment]);
 
   useEffect(() => {
     createInvoiceDispatch({
@@ -1483,20 +1510,35 @@ const SubTotal = ({ className }) => {
         {/* Tax Type + Dropdown */}
         <div className="flex items-center justify-between text-[#4A4A4A] gap-3 mb-4">
           {/* Radio buttons */}
-          <div className="flex items-center gap-4">
-            <label className="inline-flex items-center gap-1 cursor-pointer">
-              <input
-                type="radio"
-                name="taxType"
-                defaultChecked={true}
-                className="accent-[#2543B1]"
+          <div className=" flex items-center gap-2 cursor-pointer">
+            <label
+              htmlFor="toggle tds"
+              className=" md:text-sm text-xs font-medium flex items-center gap-2 cursor-pointer select-none text-[#4A4A4A]"
+            >
+              <div
+                className={` border-4 w-3.5 2xl:w-5 h-3.5 2xl:h-5 rounded-full transition ${
+                  isTdsEnable ? "border-[#2543B1]" : "border-[#777777]"
+                }`}
               />
-              <span className="text-sm font-medium">TDS</span>
+              TDS
             </label>
+            <input
+              id="toggle tds"
+              type="checkbox"
+              value={isTdsEnable}
+              onChange={() => {
+                setisTdsEnable(!isTdsEnable);
+              }}
+              className=" cursor-pointer hidden"
+            />
           </div>
 
           {/* Tax Dropdown */}
-          <TaxDropdown value={tds.value} setvalue={settds} />
+          <TaxDropdown
+            value={tds.value}
+            setvalue={settds}
+            isDisabled={!isTdsEnable}
+          />
 
           {/* Negative Tax Value */}
           <div className="text-gray-500 text-sm w-12 text-right">
@@ -1533,17 +1575,22 @@ const SubTotal = ({ className }) => {
               />
             </div>
           </div>
-          <span>{grandTotal}</span>
+          <span>
+            {isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal}
+          </span>
         </div>
         <p className=" text-end font-medium 2xl:text-xl xl:text-lg lg:text-base text-xs text-[#606060] ">
-          {toWords.convert(Number(grandTotal))} Only
+          {toWords.convert(
+            Number(isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal)
+          )}{" "}
+          Only
         </p>
       </div>
     </>
   );
 };
 
-const TaxDropdown = ({ value, setvalue }) => {
+const TaxDropdown = ({ value, setvalue, isDisabled }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState(-1);
   const dropdownRef = useRef(null);
@@ -1568,14 +1615,21 @@ const TaxDropdown = ({ value, setvalue }) => {
   }, []);
 
   return (
-    <div ref={dropdownRef} className="relative mx-auto w-full max-w-[200px]">
+    <div
+      ref={dropdownRef}
+      className={`relative mx-auto w-full max-w-[200px] ${
+        isDisabled ? "pointer-events-none" : ""
+      }`}
+    >
       <motion.div
         className="relative"
         initial={false}
         animate={isOpen ? "open" : "closed"}
       >
         <motion.button
-          className={`w-full px-2 py-2 cursor-pointer bg-white border rounded-md lg:text-sm text-xs text-gray-700 flex items-center justify-between border-gray-400`}
+          className={`w-full px-2 py-2 ${
+            isDisabled ? "bg-gray-500/30" : "bg-white"
+          } cursor-pointer border rounded-md lg:text-sm text-xs text-gray-700 flex items-center justify-between border-gray-400`}
           whileHover={{
             borderColor: "#9CA3AF",
             boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",

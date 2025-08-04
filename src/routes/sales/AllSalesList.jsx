@@ -33,6 +33,7 @@ import {
   getLast10FinancialYears,
   StatusFieldsDropDown,
 } from "../../utils/dropdownFields";
+import { generatePDF } from "../../utils/downloadSalesInPdf";
 
 const filterDropdown = {
   Status: [
@@ -235,6 +236,12 @@ const ShowSalesInTable = ({ AllSales }) => {
                   scope="col"
                   className="px-3 py-4 whitespace-nowrap font-medium "
                 >
+                  Download
+                </th>
+                <th
+                  scope="col"
+                  className="px-3 py-4 whitespace-nowrap font-medium "
+                >
                   Sale Id
                 </th>
                 <th
@@ -292,6 +299,20 @@ const ShowSalesInTable = ({ AllSales }) => {
                     }}
                     className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
                   >
+                    <td
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        generatePDF(sale);
+                      }}
+                      className=" text-center px-3 py-4 text-[#ffffff] font-medium"
+                    >
+                      <button
+                        aria-label="download sales details"
+                        className=" text-[#2543B1] cursor-pointer"
+                      >
+                        <Download className=" w-8" />
+                      </button>
+                    </td>
                     <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
                       {sale.sales_id}
                     </td>

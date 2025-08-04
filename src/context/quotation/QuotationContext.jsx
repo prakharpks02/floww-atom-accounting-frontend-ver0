@@ -248,7 +248,7 @@ export const QuotationContextProvider = ({ children }) => {
 
       //check only for form submision
       if (
-        createQuotationForm.quotationUrl[0]?.invoice_url.toLowerCase() != "n/a"
+        !createQuotationForm.quotationUrl[0]?.fileBlob
       ) {
         const validationErrors = validateFields(createQuotationForm);
 
@@ -285,8 +285,7 @@ export const QuotationContextProvider = ({ children }) => {
 
         // upload documens
         if (
-          createQuotationForm.quotationUrl[0]?.invoice_url.toLowerCase() !=
-          "n/a"
+          createQuotationForm.quotationUrl[0]?.fileBlob
         ) {
           for (let i = 0; i < createQuotationForm.quotationUrl.length; i++) {
             const file = createQuotationForm.quotationUrl[i];

@@ -383,22 +383,18 @@ export const PurchaseListContextProvider = ({ children }) => {
         setisLoading(true);
 
         // upload documens
-        for (let i = 0; i < createPurchaseListForm.attachments.length; i++) {
-          if (
-            createPurchaseListForm.attachments[
-              i
-            ].related_doc_url.toLowerCase() != "n/a"
-          )
-            continue;
-          const file = createPurchaseListForm.attachments[i];
-          const res = await uploadFile(file.fileName, file.fileBlob, token);
-          console.log(res);
-          createPurchaseListForm.attachments[i] = {
-            related_doc_name: res.file_name,
-            related_doc_url: res.doc_url,
-          };
+        if (createPurchaseListForm.attachments[0].fileBlob) {
+          for (let i = 0; i < createPurchaseListForm.attachments.length; i++) {
+            const file = createPurchaseListForm.attachments[i];
+            const res = await uploadFile(file.fileName, file.fileBlob, token);
+            console.log(res);
+            createPurchaseListForm.attachments[i] = {
+              related_doc_name: res.file_name,
+              related_doc_url: res.doc_url,
+            };
+          }
+          console.log("file uploaded");
         }
-        console.log("file uploaded");
 
         const res = await axios.post(
           `${

@@ -1266,8 +1266,6 @@ const SubTotal = ({ className, saleDetails }) => {
     settaxableAmount(((subtotal * (100 - discount) * tax) / 10000).toFixed(2));
   }, [tds, subtotal, discount]);
 
-
-
   return (
     <>
       <div
@@ -1304,17 +1302,6 @@ const SubTotal = ({ className, saleDetails }) => {
         {/* Tax Type + Dropdown */}
         <div className="flex items-center justify-between text-[#4A4A4A] gap-3 mb-4">
           {/* Radio buttons */}
-          {/* <div className="flex items-center gap-4">
-            <label className="inline-flex items-center gap-1 cursor-pointer">
-              <input
-                type="radio"
-                name="taxType"
-                defaultChecked={true}
-                className="accent-[#2543B1]"
-              />
-              <span className="md:text-sm text-xs font-medium">TDS</span>
-            </label>
-          </div> */}
           <div className=" flex items-center gap-2 cursor-pointer">
             <label
               htmlFor="toggle tds"
@@ -1374,12 +1361,6 @@ const SubTotal = ({ className, saleDetails }) => {
                 type="checkbox"
                 value={isAdjustment}
                 onChange={() => {
-                  // console.log(isAdjustment);
-                  // if (isAdjustment) {
-                  // setisAdjustment(0);
-                  // } else {
-                  //   setisAdjustment(Math.ceil(Number(grandTotal)));
-                  // }
                   setisAdjustment(!isAdjustment);
                 }}
                 className=" cursor-pointer hidden"
