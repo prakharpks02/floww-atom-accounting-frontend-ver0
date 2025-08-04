@@ -224,6 +224,7 @@ const SearchSalesComponent = ({ setData }) => {
 
 const ShowSalesInTable = ({ AllSales }) => {
   const navigate = useNavigate();
+  const [isDownloading, setisDownloading] = useState(false);
 
   return (
     <>
@@ -300,17 +301,26 @@ const ShowSalesInTable = ({ AllSales }) => {
                     className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
                   >
                     <td
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.stopPropagation();
-                        generatePDF(sale);
+                        setisDownloading(`${idx}-${index}`);
+                        await generatePDF(sale);
+                        setisDownloading(-1);
                       }}
                       className=" text-center px-3 py-4 text-[#ffffff] font-medium"
                     >
                       <button
+                        disabled={isDownloading === `${idx}-${index}`}
                         aria-label="download sales details"
-                        className=" text-[#2543B1] cursor-pointer"
+                        className=" disabled:cursor-not-allowed text-[#2543B1] cursor-pointer"
                       >
-                        <Download className=" w-8" />
+                        {isDownloading === `${idx}-${index}` ? (
+                          <>
+                            <Loader2 className=" w-5 animate-spin mx-auto" />
+                          </>
+                        ) : (
+                          <Download className=" w-8" />
+                        )}
                       </button>
                     </td>
                     <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">

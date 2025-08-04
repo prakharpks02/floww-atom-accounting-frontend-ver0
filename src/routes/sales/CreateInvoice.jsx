@@ -28,9 +28,8 @@ import { CustomerContext } from "../../context/customer/customerContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { ToWords } from "to-words";
 import { useNavigate } from "react-router-dom";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
-import { saveAs } from "file-saver";
 import { InvoiceContext } from "../../context/invoiceContext/InvoiceContext";
+import { downloadInvoiceAsPDF } from "../../utils/downloadInvoiceDetails";
 
 export const CreateInvoice = () => {
   const [activeTab, setActiveTab] = useState("create");
@@ -84,242 +83,17 @@ export const CreateInvoice = () => {
     </>
   );
 };
+
 const CreateInvoiceForm = ({ activeTab }) => {
   const [isLoading, setisLoading] = useState(false);
   const { createInvoice, createInvoiceForm } = useContext(InvoiceContext);
   const { companyDetails } = useContext(CompanyContext);
 
-  const wrapAndDrawText = useCallback(
-    (page, text, x, yStart, maxWidth, fontSize, fontObj) => {
-      const lines = [];
-      const words = text?.split(" ") || [];
-      let line = "";
-      for (const word of words) {
-        const testLine = line + word + " ";
-        const testWidth = fontObj.widthOfTextAtSize(testLine, fontSize);
-        if (testWidth > maxWidth) {
-          lines.push(line.trim());
-          line = word + " ";
-        } else {
-          line = testLine;
-        }
-      }
-      if (line) lines.push(line.trim());
-
-      lines.forEach((lineText, idx) => {
-        page.drawText(lineText, {
-          x,
-          y: yStart - idx * (fontSize + 2),
-          size: fontSize,
-          font: fontObj,
-          color: rgb(0, 0, 0),
-        });
-      });
-      return lines.length;
-    },
-    []
-  );
-
-  //download invoice
-  const downloadPDF = useCallback(
-    async (setisLoading) => {
-      try {
-        setisLoading(true);
-        const pdfDoc = await PDFDocument.create();
-        const page = pdfDoc.addPage([595, 842]); // A4
-        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-        const drawText = (text, x, y, size = 10, isBold = false) => {
-          page.drawText(text, {
-            x,
-            y,
-            size,
-            font: isBold ? boldFont : font,
-            color: rgb(0, 0, 0),
-          });
-        };
-
-        let y = 800;
-        drawText("Invoice Review", 230, y, 18, true);
-
-        // Labels
-        y -= 30;
-        drawText("From:", 40, y, 11, true);
-        drawText("Bill To:", 320, y, 11, true);
-
-        // Addresses
-        y -= 15;
-        const fromText = `${companyDetails?.company_name ?? ""}, ${
-          companyDetails?.company_address ?? ""
-        }`;
-        const billToText = `${
-          createInvoiceForm?.paymentNameList?.[0]
-            ?.bank_account_receivers_name ?? ""
-        }`;
-
-        const leftLineCount = wrapAndDrawText(
-          page,
-          fromText,
-          40,
-          y,
-          250,
-          10,
-          font
-        );
-        const rightLineCount = wrapAndDrawText(
-          page,
-          billToText,
-          320,
-          y,
-          230,
-          10,
-          font
-        );
-
-        y -= Math.max(leftLineCount, rightLineCount) * 12;
-
-        // Dates and GST
-        y -= 10;
-        drawText(`From: ${createInvoiceForm?.invoiceDate}`, 40, y, 11, true);
-        drawText(
-          `Due Date: ${createInvoiceForm?.invoiceDueBy}`,
-          320,
-          y,
-          11,
-          true
-        );
-
-        y -= 20;
-        drawText(`Phone: +91${createInvoiceForm?.contactNo}`, 40, y, 11, true);
-        drawText(`GST: ${createInvoiceForm?.gstNumber}`, 320, y, 11, true);
-
-        // Table headers
-        y -= 35;
-        const headers = [
-          "Description",
-          "Rate",
-          "Qty",
-          "Disc%",
-          "GST%",
-          "Amount",
-        ];
-        const colX = [40, 220, 270, 310, 360, 420];
-        headers.forEach((text, i) => drawText(text, colX[i], y, 10, true));
-
-        y -= 10;
-        page.drawLine({
-          start: { x: 40, y },
-          end: { x: 550, y },
-          thickness: 0.8,
-          color: rgb(0.8, 0.8, 0.8),
-        });
-
-        // Table items
-        const items = createInvoiceForm?.listItems || [];
-        y -= 20;
-        items.forEach((item) => {
-          drawText(item.item_description, colX[0], y);
-          drawText(item.base_amount, colX[1], y);
-          drawText(String(item.quantity), colX[2], y);
-          drawText(`${item.discount}%`, colX[3], y);
-          drawText(`${item.gst_amount}%`, colX[4], y);
-          drawText(
-            `${Number(item.gross_amount).toLocaleString("en-IN", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}`,
-            colX[5],
-            y
-          );
-          y -= 20;
-        });
-
-        // Line after items
-        page.drawLine({
-          start: { x: 40, y: y + 10 },
-          end: { x: 550, y: y + 10 },
-          thickness: 1,
-          color: rgb(0.7, 0.7, 0.7),
-        });
-
-        // Totals
-        y -= 10;
-        drawText("Subtotal:", 40, y, 11, true);
-        drawText(`Rs.${createInvoiceForm?.subtotalAmount}`, 420, y);
-
-        y -= 20;
-        drawText(`Tax(${createInvoiceForm?.tdsAmount}):`, 40, y, 11, true);
-        drawText(
-          `+Rs.${Number(
-            ((Number(createInvoiceForm?.subtotalAmount) || 0) *
-              (100 - Number(createInvoiceForm?.discountAmount)) *
-              (Number(createInvoiceForm?.tdsAmount?.split("%")[0]) || 0)) /
-              10000
-          ).toFixed(2)}`,
-          420,
-          y
-        );
-
-        y -= 20;
-        drawText(
-          `Discount(${createInvoiceForm?.discountAmount}%):`,
-          40,
-          y,
-          11,
-          true
-        );
-        drawText(
-          `-Rs.${Number(
-            ((createInvoiceForm?.subtotalAmount || 0) *
-              (createInvoiceForm?.discountAmount || 0)) /
-              100
-          ).toFixed(2)}`,
-          420,
-          y
-        );
-
-        y -= 25;
-        drawText("Total:", 40, y, 12, true);
-        drawText(`Rs.${createInvoiceForm?.totalAmount}`, 420, y, 12, true);
-
-        page.drawLine({
-          start: { x: 40, y: y - 10 },
-          end: { x: 550, y: y - 10 },
-          thickness: 1,
-          color: rgb(0.7, 0.7, 0.7),
-        });
-
-        // Notes and T&C
-        y -= 40;
-        drawText(`Customer note: ${createInvoiceForm?.notes ?? ""}`, 40, y);
-        y -= 20;
-        drawText(
-          `Terms & Conditions: ${
-            createInvoiceForm?.listToc?.[0]?.terms_of_service ?? ""
-          }`,
-          40,
-          y
-        );
-
-        const pdfBytes = await pdfDoc.save();
-        const blob = new Blob([pdfBytes], { type: "application/pdf" });
-        saveAs(blob, "invoice.pdf");
-      } catch (error) {
-        console.log(error);
-        showToast(error.message || "Download pdf failed", 1);
-      } finally {
-        setisLoading(false);
-      }
-    },
-    [createInvoiceForm, companyDetails]
-  );
-
   return (
     <>
       <div className=" grid lg:grid-cols-2 grid-cols-1 gap-x-2 gap-y-4 mb-4">
         <CreateInvoiceLeftPart />
-        <CreateInvoiceRightPart handelDownloadInvoice={downloadPDF} />
+        <CreateInvoiceRightPart handelDownloadInvoice={downloadInvoiceAsPDF} />
       </div>
       {/* Action Buttons */}
       <div className="flex sm:flex-row flex-col sm:items-center gap-4">
@@ -328,7 +102,11 @@ const CreateInvoiceForm = ({ activeTab }) => {
           onClick={async (e) => {
             try {
               await createInvoice(e, setisLoading, activeTab);
-              await downloadPDF(setisLoading);
+              await downloadInvoiceAsPDF(
+                companyDetails,
+                createInvoiceForm,
+                setisLoading
+              );
             } catch (error) {
               console.log("error");
             }
@@ -501,7 +279,7 @@ const CreateInvoiceRightPart = ({
             disabled={isDownloading}
             onClick={async (e) => {
               e.preventDefault();
-              handelDownloadInvoice(setisDownloading);
+              handelDownloadInvoice(companyDetails , createInvoiceForm , setisDownloading);
             }}
             aria-label="download invoice as pdf"
             className="flex disabled:cursor-progress cursor-pointer items-center justify-center gap-2 bg-[#2543B1] text-white px-4 py-3 sm:rounded-xl rounded-lg text-xs md:text-sm lg:text-base xl:text-lg 2xl:text-xl font-medium hover:bg-[#1b34a3] transition"
@@ -1345,7 +1123,7 @@ const UploadInvoice = () => {
             if (
               !createInvoiceForm.invoiceUrl ||
               createInvoiceForm.invoiceUrl.length == 0 ||
-              !createInvoiceForm.invoiceUrl[0]?.fileBlob 
+              !createInvoiceForm.invoiceUrl[0]?.fileBlob
             ) {
               showToast("Please select atleast one file", 1);
               return;

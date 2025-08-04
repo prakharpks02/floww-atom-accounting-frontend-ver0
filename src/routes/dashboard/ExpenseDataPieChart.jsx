@@ -12,7 +12,7 @@ const COLORS = ["#6366F1", "#10B981", "#F59E0B", "#EF4444"];
 
 export const ExpenseDataPieChart = ({ data, className }) => {
   return (
-    <div className={`bg-white rounded-xl shadow-sm p-6 ${className}`}>
+    <div className={`bg-white rounded-xl  p-6 border-2 border-[#E8E8E8] ${className}`}>
       <div className="space-y-1 mb-6">
         <h2 className="text-lg font-semibold text-gray-900">Weekly Expense Breakdown</h2>
         <p className="text-sm text-gray-500">Distribution of expenses across weeks</p>

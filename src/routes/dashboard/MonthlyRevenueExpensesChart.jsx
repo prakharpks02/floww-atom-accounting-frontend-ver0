@@ -12,23 +12,6 @@ import {
 import { showToast } from "../../utils/showToast";
 import { ChartColumn } from "lucide-react";
 
-// const RoundedTopBar = (props) => {
-//   const { fill, x, y, width, height } = props;
-//   const curveRadius = 10; // Adjust this value to change the roundness
-
-//   // Path for bar with only top-left and top-right rounded corners
-//   const path = `
-//     M${x},${y + height}
-//     L${x},${y + curveRadius}
-//     Q${x},${y} ${x + curveRadius},${y}
-//     L${x + width - curveRadius},${y}
-//     Q${x + width},${y} ${x + width},${y + curveRadius}
-//     L${x + width},${y + height}
-//     Z
-//   `;
-
-//   return <path d={path} fill={fill} />;
-// };
 
 const RoundedTopBar = (props) => {
   const { fill, x, y, width, height } = props;

@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { getFileNameFromURL } from "./getFileNameFromURL";
 
-export const generatePDF = (saleData) => {
+export const generatePDF = async (saleData) => {
   const doc = new jsPDF();
   let y = 20;
 
@@ -29,8 +29,13 @@ export const generatePDF = (saleData) => {
   doc.text(`${saleData.notes}`, 20, y, { charSpace: 0 });
   y += 6;
 
+  await new Promise((res, rej) => {
+    setTimeout(() => {
+      res(true);
+    }, 1000);
+  });
   // Save PDF
-  doc.save(`${saleData.customer_name || "invoice"}.pdf`);
+  doc.save(`Sales-${saleData.sales_id || ""}.pdf`);
 };
 
 const saleSection = (doc, saleData, y) => {
@@ -38,7 +43,7 @@ const saleSection = (doc, saleData, y) => {
   doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(0, 0, 0);
-  doc.text("Sale Details", 15, y );
+  doc.text("Sale Details", 15, y);
   y += 8;
 
   // Row 1: Sale ID and Total Payment
