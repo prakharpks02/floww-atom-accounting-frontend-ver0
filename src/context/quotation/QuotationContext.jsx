@@ -119,19 +119,7 @@ export const QuotationContextProvider = ({ children }) => {
   const [quotationList, setquotationList] = useState(null);
   const [quotationDetails, setquotationDetails] = useState(null);
   const { companyDetails } = useContext(CompanyContext);
-  const [selectedQuotationItems, setselectedQuotationItems] = useState([
-    {
-      item_name: "",
-      item_description: "",
-      discount: "",
-      quantity: "",
-      hsn_code: "",
-      unit_price: "",
-      base_amount: "",
-      gst_amount: "",
-      gross_amount: "",
-    },
-  ]);
+  const [selectedQuotationItems, setselectedQuotationItems] = useState(null);
   //create quotation reducer
   const [createQuotationForm, createQuotationFormDispatch] = useReducer(
     QuotationReducer,
@@ -247,9 +235,7 @@ export const QuotationContextProvider = ({ children }) => {
       e.preventDefault();
 
       //check only for form submision
-      if (
-        !createQuotationForm.quotationUrl[0]?.fileBlob
-      ) {
+      if (!createQuotationForm.quotationUrl[0]?.fileBlob) {
         const validationErrors = validateFields(createQuotationForm);
 
         if (Object.keys(validationErrors).length > 0) {
@@ -284,9 +270,7 @@ export const QuotationContextProvider = ({ children }) => {
         setisLoading(true);
 
         // upload documens
-        if (
-          createQuotationForm.quotationUrl[0]?.fileBlob
-        ) {
+        if (createQuotationForm.quotationUrl[0]?.fileBlob) {
           for (let i = 0; i < createQuotationForm.quotationUrl.length; i++) {
             const file = createQuotationForm.quotationUrl[i];
             const res = await uploadFile(file.fileName, file.fileBlob, token);
@@ -524,7 +508,7 @@ export const QuotationContextProvider = ({ children }) => {
     [quotationList, userDetails]
   );
 
-  console.log(createQuotationForm);
+  // console.log(createQuotationForm);
 
   return (
     <QuotationContext.Provider

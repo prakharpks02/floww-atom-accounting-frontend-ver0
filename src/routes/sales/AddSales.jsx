@@ -271,22 +271,16 @@ const ItemDetails = ({ saleDetails }) => {
     gst_amount: "",
     discount: "",
     hsn_code: "",
+    item_name: "",
+    base_amount: "",
   };
 
-  const { createSaleFormDispatch } = useContext(SalesContext);
+  const { createSaleFormDispatch, createSaleForm } = useContext(SalesContext);
   const { selectedQuotationItems } = useContext(QuotationContext);
-  const [items, setItems] = useState(saleDetails?.list_items || [blankItem]);
+  const [items, setItems] = useState([blankItem]);
 
   // changes fields for particular item row
   const handleChange = (index, field, value) => {
-    // Dispatch to reducer to update the item field
-    createSaleFormDispatch({
-      type: "UPDATE_ITEM_FIELD",
-      index,
-      field,
-      value,
-    });
-
     // Update local items state
     const updatedItems = [...items];
     updatedItems[index][field] = value;
@@ -344,19 +338,68 @@ const ItemDetails = ({ saleDetails }) => {
   }, [saleDetails]);
 
   //first set all item details to create sales form
-  useEffect(() => {
-    if (saleDetails?.list_items) {
-      createSaleFormDispatch({
-        type: "UPDATE_FIELD",
-        field: "listItems",
-        value: saleDetails?.list_items,
-      });
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (!selectedQuotationItems && !saleDetails) {
+  //     setItems([blankItem]);
+  //     return;
+  //   }
+  //   createSaleFormDispatch({
+  //     type: "UPDATE_FIELD",
+  //     field: "listItems",
+  //     value: [
+  //       ...(saleDetails?.list_items || []),
+  //       ...(selectedQuotationItems || []),
+  //     ],
+  //   });
+  // }, [saleDetails, selectedQuotationItems]);
 
   useEffect(() => {
-    selectedQuotationItems && selectedQuotationItems[0]?.item_name  && setItems(selectedQuotationItems);
-  }, [selectedQuotationItems]);
+    if (!selectedQuotationItems && !saleDetails) {
+      setItems([blankItem]);
+      return;
+    }
+
+    setItems((prev) => {
+
+      return [
+        ...(prev.length == 1 && !prev[0].item_description ? [] : prev),
+        ...(saleDetails?.list_items || []),
+        ...(selectedQuotationItems || []),
+      ];
+    });
+  }, [selectedQuotationItems, saleDetails, setItems]);
+
+  useEffect(() => {
+    items.forEach((item, index) => {
+      if (
+        item.discount &&
+        item.gross_amount &&
+        item.gst_amount &&
+        item.hsn_code &&
+        item.item_description &&
+        item.quantity &&
+        item.unit_price &&
+        item.item_name &&
+        item.base_amount
+      ) {
+        createSaleFormDispatch({
+          type: "ADD_ITEM",
+          item: item,
+        });
+      }
+      // for (const key in item) {
+      //   // Dispatch to reducer to update the item field
+      //   createSaleFormDispatch({
+      //     type: "UPDATE_ITEM_FIELD",
+      //     index,
+      //     key,
+      //     item: item[key],
+      //   });
+      // }
+    });
+  }, [items]);
+
+  console.log(selectedQuotationItems);
 
   return (
     <>
@@ -881,12 +924,8 @@ const QuotationIDInputField = ({ saleDetails }) => {
   const [quotationid, setquotationid] = useState(
     saleDetails?.quotation_id || ""
   );
-  const {
-    selectedQuotationItems,
-    setselectedQuotationItems,
-    quotationList,
-    getQuotationList,
-  } = useContext(QuotationContext);
+  const { setselectedQuotationItems, quotationList, getQuotationList } =
+    useContext(QuotationContext);
   const [isLoading, setisLoading] = useState(false);
   const [isCustomQuotation, setisCustomQuotation] = useState(true);
   const [isDropdownOpen, setisDropdownOpen] = useState(false);
@@ -922,7 +961,7 @@ const QuotationIDInputField = ({ saleDetails }) => {
     return (quotationList || []).filter((item) => {
       return item.quotation_id.toLowerCase().includes(query);
     });
-  }, [query]);
+  }, [query, quotationList]);
 
   useEffect(() => {
     getQuotationList(setisLoading);
@@ -947,11 +986,13 @@ const QuotationIDInputField = ({ saleDetails }) => {
     };
   }, [containerRef.current, dropDownRef.current]);
 
+  // console.log(filteredData);
+
   return (
     <>
       <div className="flex flex-col overflow-y-visible relative col-span-2">
         <label className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal mb-1">
-          Quotation ID (Optional) <span className=" text-red-600 ">*</span>
+          Quotation ID (Optional)
         </label>
 
         {/* radio buttons for switch quotation id type  */}
@@ -963,7 +1004,11 @@ const QuotationIDInputField = ({ saleDetails }) => {
               name="quotationIdType"
               value={isCustomQuotation}
               checked={isCustomQuotation}
-              onChange={(e) => setisCustomQuotation(true)}
+              onChange={(e) => {
+                setselectedQuotationItems([]);
+                setquotationid("");
+                setisCustomQuotation(true);
+              }}
               className="sr-only"
             />
             {/* custom styled circle */}
@@ -986,7 +1031,9 @@ const QuotationIDInputField = ({ saleDetails }) => {
               name="quotationIdType"
               value={isCustomQuotation}
               checked={!isCustomQuotation}
-              onChange={(e) => setisCustomQuotation(false)}
+              onChange={(e) => {
+                setisCustomQuotation(false);
+              }}
               className="sr-only"
             />
             {/* custom styled circle */}
@@ -1075,7 +1122,8 @@ const QuotationIDInputField = ({ saleDetails }) => {
                   setquery(e.target.value);
                 }}
                 type="text"
-                className=" rounded-t-xl rounded-b-md w-full text-sm text-gray-700 px-2 py-3 outline-none bg-gray-200/50 border-1 border-gray-300 "
+                placeholder="Search Quotation ID"
+                className=" rounded-t-xl rounded-b-md w-full text-sm text-gray-700 px-4 py-3 outline-none bg-gray-200/50 border-1 border-gray-300 "
               />
 
               {!isLoading && (
@@ -1170,7 +1218,7 @@ const PANNumberInputField = ({ saleDetails }) => {
 const SubTotal = ({ className, saleDetails }) => {
   const { createSaleForm, createSaleFormDispatch } = useContext(SalesContext);
   const [subtotal, setsubtotal] = useState(createSaleForm?.subtotalAmount || 0);
-  const [discount, setdiscount] = useState(saleDetails?.discount_amount || 0);
+  const [discount, setdiscount] = useState(Number(saleDetails?.discount_amount) || 0);
   const [isAdjustment, setisAdjustment] = useState(
     saleDetails?.adjustment_amount &&
       saleDetails?.adjustment_amount.toString().toLowerCase() === "true"
@@ -1178,7 +1226,7 @@ const SubTotal = ({ className, saleDetails }) => {
       : false
   );
   const [tds, settds] = useState({
-    value: saleDetails?.tds_amount || "0",
+    value: Number(saleDetails?.tds_amount) || "0",
     name: saleDetails?.tds_reason || "N/A",
   });
   const [isTdsEnable, setisTdsEnable] = useState(true);
@@ -1228,7 +1276,7 @@ const SubTotal = ({ className, saleDetails }) => {
     createSaleFormDispatch({
       type: "UPDATE_FIELD",
       field: "discountAmount",
-      value: discount,
+      value: discount.toFixed(2),
     });
     setdiscountAmount(((subtotal * discount) / 100).toFixed(2));
   }, [discount, subtotal]);
@@ -1250,7 +1298,7 @@ const SubTotal = ({ className, saleDetails }) => {
       field: "totalAmount",
       value: isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal,
     });
-  }, [grandTotal,isAdjustment]);
+  }, [grandTotal, isAdjustment]);
   useEffect(() => {
     createSaleFormDispatch({
       type: "UPDATE_FIELD",
@@ -1266,6 +1314,8 @@ const SubTotal = ({ className, saleDetails }) => {
     settaxableAmount(((subtotal * (100 - discount) * tax) / 10000).toFixed(2));
   }, [tds, subtotal, discount]);
 
+  console.log(saleDetails)
+
   return (
     <>
       <div
@@ -1275,7 +1325,7 @@ const SubTotal = ({ className, saleDetails }) => {
         {/* Subtotal */}
         <div className="text-[#4A4A4A] flex justify-between items-center mb-4 2xl:text-lg xl:text-base text-sm ">
           <span className="font-medium ">Sub Total</span>
-          <span className="">{subtotal}</span>
+          <span className="">{subtotal.toFixed(2)}</span>
         </div>
 
         {/* Discount */}

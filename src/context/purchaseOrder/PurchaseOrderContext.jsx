@@ -535,6 +535,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
         updatePurchaseOrder,
         searchPurchaseOrder,
         handelMultipleFilter,
+        setpurchaseOrderDetails
       }}
     >
       {children}

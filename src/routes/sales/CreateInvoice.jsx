@@ -1,4 +1,11 @@
-import { useState, useEffect, useRef, useContext, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useContext,
+  useCallback,
+  useMemo,
+} from "react";
 // import { UploadInvoice } from "./UploadInvoice";
 import {
   Calendar,
@@ -27,9 +34,14 @@ import { CompanyContext } from "../../context/company/CompanyContext";
 import { CustomerContext } from "../../context/customer/customerContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { ToWords } from "to-words";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { InvoiceContext } from "../../context/invoiceContext/InvoiceContext";
 import { downloadInvoiceAsPDF } from "../../utils/downloadInvoiceDetails";
+import { SalesContext } from "../../context/sales/salesContext";
+import {
+  PurchaseOrderContext,
+  PurchaseOrderContextProvider,
+} from "../../context/purchaseOrder/PurchaseOrderContext";
 
 export const CreateInvoice = () => {
   const [activeTab, setActiveTab] = useState("create");
@@ -49,7 +61,7 @@ export const CreateInvoice = () => {
         </div>
 
         {/* Tabs */}
-        <div className=" hidden mb-4 md:flex rounded-lg bg-[#0033661A] overflow-hidden xl:py-2 xl:px-3 p-1 w-full">
+        {/* <div className=" hidden mb-4 md:flex rounded-lg bg-[#0033661A] overflow-hidden xl:py-2 xl:px-3 p-1 w-full">
           <button
             tabIndex={0}
             className={`w-1/2 cursor-pointer py-2 rounded-lg 2xl:text-xl xl:text-lg lg:text-base md:text-sm font-medium transition-all 
@@ -74,11 +86,11 @@ export const CreateInvoice = () => {
           >
             Upload existing invoice
           </button>
-        </div>
+        </div> */}
 
         {/* main content */}
         {activeTab === "create" && <CreateInvoiceForm activeTab={activeTab} />}
-        {activeTab === "upload" && <UploadInvoice activeTab={activeTab} />}
+        {/* {activeTab === "upload" && <UploadInvoice activeTab={activeTab} />} */}
       </div>
     </>
   );
@@ -136,19 +148,21 @@ const CreateInvoiceLeftPart = () => {
         </h1>
 
         {/* Invoice info */}
-        <div className=" grid md:grid-cols-2 grid-cols-1 gap-3 space-y-4 mb-4 w-full">
-          <InvoiceNumberInputField className={" col-span-1"} />
-          <InvoiceDateInputField className={" col-span-1"} />
-          <TermsInputField className={" col-span-1"} />
-          <DueDateInputField className={" col-span-1"} />
-          <CustomerNameInputField className={" md:col-span-2 col-span-1"} />
-          <SubjectInputField className={" md:col-span-2 col-span-1"} />
-          <OrderNumberInputField className={" col-span-2"} />
-          <SalesIDInputField className={" col-span-2"} />
-        </div>
+        <PurchaseOrderContextProvider>
+          <div className=" grid md:grid-cols-2 grid-cols-1 gap-3 space-y-4 mb-4 w-full">
+            <InvoiceNumberInputField className={" col-span-1"} />
+            <InvoiceDateInputField className={" col-span-1"} />
+            <TermsInputField className={" col-span-1"} />
+            <DueDateInputField className={" col-span-1"} />
+            <CustomerNameInputField className={" md:col-span-2 col-span-1"} />
+            <SubjectInputField className={" md:col-span-2 col-span-1"} />
+            <OrderNumberInputField className={" col-span-2"} />
+            <SalesIDInputField className={" col-span-2"} />
+          </div>
 
-        {/* Item Table */}
-        <ItemDetails />
+          {/* Item Table */}
+          <ItemDetails />
+        </PurchaseOrderContextProvider>
 
         {/* Totals Section */}
         <SubTotal className={"mb-6"} />
@@ -279,7 +293,11 @@ const CreateInvoiceRightPart = ({
             disabled={isDownloading}
             onClick={async (e) => {
               e.preventDefault();
-              handelDownloadInvoice(companyDetails , createInvoiceForm , setisDownloading);
+              handelDownloadInvoice(
+                companyDetails,
+                createInvoiceForm,
+                setisDownloading
+              );
             }}
             aria-label="download invoice as pdf"
             className="flex disabled:cursor-progress cursor-pointer items-center justify-center gap-2 bg-[#2543B1] text-white px-4 py-3 sm:rounded-xl rounded-lg text-xs md:text-sm lg:text-base xl:text-lg 2xl:text-xl font-medium hover:bg-[#1b34a3] transition"
@@ -537,6 +555,8 @@ const CreateInvoiceRightPart = ({
 };
 
 const ItemDetails = ({ className }) => {
+  const { saleDetails } = useContext(SalesContext);
+  const { purchaseOrderDetails } = useContext(PurchaseOrderContext);
   const blankItem = {
     item_description: "",
     unit_price: "",
@@ -546,8 +566,14 @@ const ItemDetails = ({ className }) => {
     discount: "",
     hsn_code: "N/A",
   };
-  const [items, setItems] = useState([blankItem]);
+  const [items, setItems] = useState(
+    [
+      ...(saleDetails?.list_items || []),
+      ...(purchaseOrderDetails?.list_items || []),
+    ] || [blankItem]
+  );
   const { createInvoiceDispatch } = useContext(InvoiceContext);
+  const { pathname } = useLocation();
 
   // changes fields for particular item row
   const handleChange = (index, field, value) => {
@@ -609,6 +635,29 @@ const ItemDetails = ({ className }) => {
       index,
     });
   };
+
+  useEffect(() => {
+    if (!saleDetails && !purchaseOrderDetails) {
+      setItems([blankItem]);
+      return;
+    }
+    setItems(
+      [
+        ...(saleDetails?.list_items || []),
+        ...(purchaseOrderDetails?.list_items || []),
+      ] || [blankItem]
+    );
+  }, [saleDetails, purchaseOrderDetails]);
+
+useEffect(() => {
+  
+}, [items])
+
+
+  // reset the create sale form to intial value when not in addSales page
+  useEffect(() => {
+    !pathname.toLowerCase() != "/sales/createInvoice" && setItems([blankItem]);
+  }, [pathname]);
 
   return (
     <>
@@ -780,7 +829,24 @@ const InvoiceNumberInputField = ({ className }) => {
 
 const OrderNumberInputField = ({ className }) => {
   const [orderNumber, setorderNumber] = useState("");
+  const [isLoading, setisLoading] = useState(false);
+  const [isCustomPOId, setisCustomPOId] = useState(true);
+  const [isDropdownOpen, setisDropdownOpen] = useState(false);
+  const [query, setquery] = useState("");
   const { createInvoiceDispatch } = useContext(InvoiceContext);
+  const { getPurchaseOrderList, purchaseOrderList, setpurchaseOrderDetails } =
+    useContext(PurchaseOrderContext);
+  const containerRef = useRef();
+  const dropDownRef = useRef();
+
+  const filteredData = useMemo(() => {
+    if (!query) return purchaseOrderList;
+    return (purchaseOrderList || []).filter((item) => {
+      console.log(item.po_number);
+      return item.po_number.toLowerCase().includes(query);
+    });
+  }, [query, purchaseOrderList]);
+
   useEffect(() => {
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
@@ -788,15 +854,208 @@ const OrderNumberInputField = ({ className }) => {
       value: orderNumber ? orderNumber : "N/A",
     });
   }, [orderNumber]);
+
+  useEffect(() => {
+    getPurchaseOrderList(setisLoading);
+  }, []);
+
+  useEffect(() => {
+    const handelClickOutside = (e) => {
+      if (
+        containerRef.current &&
+        dropDownRef.current &&
+        !containerRef.current.contains(e.target) &&
+        !dropDownRef.current.contains(e.target)
+      ) {
+        setisDropdownOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handelClickOutside);
+
+    return () => {
+      window.removeEventListener("pointerdown", handelClickOutside);
+    };
+  }, [containerRef.current, dropDownRef.current]);
+
+  console.log(filteredData);
+
   return (
     <>
-      <div className={`${className} w-full`}>
-        <InputField
-          value={orderNumber}
-          setvalue={setorderNumber}
-          label={"Order number"}
-          placeholder={"Enter Order number"}
-        />
+      <div
+        className={`flex flex-col overflow-y-visible relative w-full ${className}`}
+      >
+        <label className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal mb-1">
+          Enter Order number(Optional)
+        </label>
+
+        {/* radio buttons for switch saels id type  */}
+        <div className="mb-3 mt-1 flex items-center gap-8">
+          {/* radio button for custom input  */}
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="radio"
+              name="salesIdType"
+              value={isCustomPOId}
+              checked={isCustomPOId}
+              onChange={(e) => {
+                setorderNumber("");
+                setpurchaseOrderDetails(null);
+                setisCustomPOId(true);
+              }}
+              className="sr-only"
+            />
+            {/* custom styled circle */}
+            <div
+              className={`w-4 h-4 rounded-full border-[2.5px] flex items-center justify-center ${
+                isCustomPOId ? "border-blue-800" : "border-gray-400"
+              }`}
+            >
+              {isCustomPOId && (
+                <div className="w-2 h-2 bg-blue-800 rounded-full" />
+              )}
+            </div>
+            <span className="text-sm font-medium capitalize">Custom</span>
+          </label>
+
+          {/* radio button for select dropdown input  */}
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="radio"
+              name="salesIdType"
+              value={isCustomPOId}
+              checked={!isCustomPOId}
+              onChange={(e) => {
+                setisCustomPOId(false);
+              }}
+              className="sr-only"
+            />
+            {/* custom styled circle */}
+            <div
+              className={`w-4 h-4 rounded-full border-[2.5px] flex items-center justify-center ${
+                !isCustomPOId ? "border-blue-800" : "border-gray-400"
+              }`}
+            >
+              {!isCustomPOId && (
+                <div className="w-2 h-2 bg-blue-800 rounded-full" />
+              )}
+            </div>
+            <span className="text-sm font-medium capitalize">Select</span>
+          </label>
+        </div>
+
+        {isCustomPOId && (
+          <InputField
+            value={orderNumber}
+            setvalue={setorderNumber}
+            label={"Order number"}
+            hasLabel={false}
+            placeholder={"Enter Order number"}
+          />
+        )}
+
+        {!isCustomPOId && (
+          <>
+            {/* input area  */}
+            <div
+              ref={containerRef}
+              className="rounded-xl border-[#0000001A] border-[1.5px] px-4
+                py-3 flex items-center"
+            >
+              <input
+                autoComplete
+                required
+                readOnly
+                onClick={() => {
+                  setisDropdownOpen(!isDropdownOpen);
+                }}
+                tabIndex={0}
+                placeholder={"Select Sales ID"}
+                value={orderNumber}
+                className={`w-full relative items-center outline-none 2xl:text-lg xl:text-base 
+                lg:text-sm text-xs font-normal placeholder:text-[#00000080]
+                text-[#343434] cursor-default `}
+              />
+              <button
+                aria-label="toggle drop down"
+                className=" outline-none cursor-pointer"
+                onClick={() => {
+                  setisDropdownOpen(!isDropdownOpen);
+                }}
+              >
+                <ChevronDown
+                  className={`w-5 h-5 text-[#000000B2] transition-transform ${
+                    isDropdownOpen ? "-rotate-180" : ""
+                  } `}
+                />
+              </button>
+            </div>
+
+            {/* dropdown sales list  */}
+            {purchaseOrderList && purchaseOrderList.length > 0 && (
+              <div
+                ref={dropDownRef}
+                className={`absolute top-[105%] left-0 w-full ${
+                  isDropdownOpen
+                    ? `  overflow-auto border-[1.5px]`
+                    : "h-0 overflow-x-hidden border-0 "
+                }
+              bg-white z-5 rounded-xl border-[#0000001A]`}
+                style={{ maxHeight: `250px` }}
+              >
+                {isLoading && (
+                  <div className=" flex-1 flex justify-center items-center py-8 px-4 min-h-[200px]">
+                    <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
+                  </div>
+                )}
+
+                {/* search bar  */}
+                <input
+                  value={query}
+                  onChange={(e) => {
+                    setquery(e.target.value);
+                  }}
+                  type="text"
+                  placeholder="Search sales ID"
+                  className=" rounded-t-xl rounded-b-md w-full text-sm text-gray-700 px-4 py-3 outline-none bg-gray-200/50 border-1 border-gray-300 "
+                />
+
+                {!isLoading && (
+                  <ul className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal placeholder:text-[#00000080] text-[#000000a1]">
+                    {filteredData?.map((item, index) => {
+                      if (item.list_items[0].item_name) {
+                        return (
+                          <li
+                            tabIndex={0}
+                            key={index}
+                            onClick={(e) => {
+                              console.log(item.list_items);
+                              setorderNumber(item.po_number);
+                              setpurchaseOrderDetails(item);
+                              setisDropdownOpen(false);
+                            }}
+                            className="px-4 py-3 hover:bg-gray-100 cursor-pointer"
+                          >
+                            {item.po_number}{" "}
+                          </li>
+                        );
+                      }
+                    })}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {/* no data found  */}
+            {(!purchaseOrderList || purchaseOrderList.length == 0) && (
+              <>
+                <p className=" text-base text-gray-600 font-medium">
+                  No data found
+                </p>
+              </>
+            )}
+          </>
+        )}
       </div>
     </>
   );
@@ -804,7 +1063,23 @@ const OrderNumberInputField = ({ className }) => {
 
 const SalesIDInputField = ({ className }) => {
   const [salesId, setsalesId] = useState("");
+  const [isLoading, setisLoading] = useState(false);
+  const [isCustomSalesId, setisCustomSalesId] = useState(true);
+  const [isDropdownOpen, setisDropdownOpen] = useState(false);
+  const [query, setquery] = useState("");
   const { createInvoiceDispatch } = useContext(InvoiceContext);
+  const { getAllSales, AllSalesList, setsaleDetails } =
+    useContext(SalesContext);
+  const dropDownRef = useRef();
+  const containerRef = useRef();
+
+  const filteredData = useMemo(() => {
+    if (!query) return AllSalesList;
+    return (AllSalesList || []).filter((item) => {
+      return item.sales_id.toLowerCase().includes(query);
+    });
+  }, [query, AllSalesList]);
+
   useEffect(() => {
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
@@ -812,16 +1087,194 @@ const SalesIDInputField = ({ className }) => {
       value: salesId,
     });
   }, [salesId]);
+
+  useEffect(() => {
+    getAllSales(setisLoading);
+  }, []);
+
+  useEffect(() => {
+    const handelClickOutside = (e) => {
+      if (
+        containerRef.current &&
+        dropDownRef.current &&
+        !containerRef.current.contains(e.target) &&
+        !dropDownRef.current.contains(e.target)
+      ) {
+        setisDropdownOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handelClickOutside);
+
+    return () => {
+      window.removeEventListener("pointerdown", handelClickOutside);
+    };
+  }, [containerRef.current, dropDownRef.current]);
+  console.log(AllSalesList);
+
   return (
     <>
-      <div className={`${className} w-full`}>
-        <InputField
-          required={true}
-          value={salesId}
-          setvalue={setsalesId}
-          label={"Sales ID"}
-          placeholder={"Enter Sales ID"}
-        />
+      <div
+        className={`flex flex-col overflow-y-visible relative w-full ${className}`}
+      >
+        <label className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal mb-1">
+          Sales ID <span className=" text-red-600 ">*</span>
+        </label>
+
+        {/* radio buttons for switch saels id type  */}
+        <div className="mb-3 mt-1 flex items-center gap-8">
+          {/* radio button for custom input  */}
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="radio"
+              name="salesIdType"
+              value={isCustomSalesId}
+              checked={isCustomSalesId}
+              onChange={(e) => {
+                setsalesId("");
+                setsaleDetails(null);
+                setisCustomSalesId(true);
+              }}
+              className="sr-only"
+            />
+            {/* custom styled circle */}
+            <div
+              className={`w-4 h-4 rounded-full border-[2.5px] flex items-center justify-center ${
+                isCustomSalesId ? "border-blue-800" : "border-gray-400"
+              }`}
+            >
+              {isCustomSalesId && (
+                <div className="w-2 h-2 bg-blue-800 rounded-full" />
+              )}
+            </div>
+            <span className="text-sm font-medium capitalize">Custom</span>
+          </label>
+
+          {/* radio button for select dropdown input  */}
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <input
+              type="radio"
+              name="salesIdType"
+              value={isCustomSalesId}
+              checked={!isCustomSalesId}
+              onChange={(e) => setisCustomSalesId(false)}
+              className="sr-only"
+            />
+            {/* custom styled circle */}
+            <div
+              className={`w-4 h-4 rounded-full border-[2.5px] flex items-center justify-center ${
+                !isCustomSalesId ? "border-blue-800" : "border-gray-400"
+              }`}
+            >
+              {!isCustomSalesId && (
+                <div className="w-2 h-2 bg-blue-800 rounded-full" />
+              )}
+            </div>
+            <span className="text-sm font-medium capitalize">Select</span>
+          </label>
+        </div>
+
+        {isCustomSalesId && (
+          <InputField
+            value={salesId}
+            setvalue={setsalesId}
+            label={"Sales ID"}
+            hasLabel={false}
+            placeholder={"Enter Sales ID"}
+          />
+        )}
+
+        {!isCustomSalesId && (
+          <>
+            {/* input area  */}
+            <div
+              ref={containerRef}
+              className="rounded-xl border-[#0000001A] border-[1.5px] px-4
+                py-3 flex items-center"
+            >
+              <input
+                autoComplete
+                required
+                readOnly
+                onClick={() => {
+                  setisDropdownOpen(!isDropdownOpen);
+                }}
+                tabIndex={0}
+                placeholder={"Select Sales ID"}
+                value={salesId}
+                className={`w-full relative items-center outline-none 2xl:text-lg xl:text-base 
+                lg:text-sm text-xs font-normal placeholder:text-[#00000080]
+                text-[#343434] cursor-default `}
+              />
+              <button
+                aria-label="toggle drop down"
+                className=" outline-none cursor-pointer"
+                onClick={() => {
+                  setisDropdownOpen(!isDropdownOpen);
+                }}
+              >
+                <ChevronDown
+                  className={`w-5 h-5 text-[#000000B2] transition-transform ${
+                    isDropdownOpen ? "-rotate-180" : ""
+                  } `}
+                />
+              </button>
+            </div>
+
+            {/* dropdown sales list  */}
+            <div
+              ref={dropDownRef}
+              className={`absolute top-[105%] left-0 w-full ${
+                isDropdownOpen
+                  ? `  overflow-auto border-[1.5px]`
+                  : "h-0 overflow-x-hidden border-0 "
+              }
+              bg-white z-5 rounded-xl border-[#0000001A]`}
+              style={{ maxHeight: `250px` }}
+            >
+              {isLoading && (
+                <div className=" flex-1 flex justify-center items-center py-8 px-4 min-h-[200px]">
+                  <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
+                </div>
+              )}
+
+              {/* search bar  */}
+              <input
+                value={query}
+                onChange={(e) => {
+                  setquery(e.target.value);
+                }}
+                type="text"
+                placeholder="Search sales ID"
+                className=" rounded-t-xl rounded-b-md w-full text-sm text-gray-700 px-4 py-3 outline-none bg-gray-200/50 border-1 border-gray-300 "
+              />
+
+              {!isLoading && (
+                <ul className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal placeholder:text-[#00000080] text-[#000000a1]">
+                  {filteredData?.map((item, index) => {
+                    if (item.list_items[0].item_name) {
+                      return (
+                        <li
+                          tabIndex={0}
+                          key={index}
+                          onClick={(e) => {
+                            console.log(item.list_items);
+                            setsalesId(item.sales_id);
+                            setsaleDetails(item);
+                            setisDropdownOpen(false);
+                          }}
+                          className="px-4 py-3 hover:bg-gray-100 cursor-pointer"
+                        >
+                          {item.sales_id}{" "}
+                        </li>
+                      );
+                    }
+                  })}
+                </ul>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </>
   );

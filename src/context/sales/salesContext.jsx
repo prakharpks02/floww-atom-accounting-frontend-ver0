@@ -518,7 +518,7 @@ export const SalesContextProvider = ({ children }) => {
       createSaleFormDispatch({ type: "RESET" });
   }, [pathname]);
 
-  console.log(createSaleForm);
+  // console.log(createSaleForm);
 
   return (
     <SalesContext.Provider
@@ -534,6 +534,7 @@ export const SalesContextProvider = ({ children }) => {
         updateSales,
         getSaleDetails,
         saleDetails,
+        setsaleDetails
       }}
     >
       {children}
