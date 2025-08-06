@@ -128,7 +128,7 @@ export const InputField = ({
             readOnly={hasDropDown || readOnly}
             onPaste={(e) => {
               if (
-                inputType === "number" ||
+                inputType === "num" ||
                 (inputType === "rupee" && e.target.value < 0)
               ) {
                 showToast("Negative numbers not allowed.", 1);
@@ -174,7 +174,19 @@ export const InputField = ({
               }
 
               // console.log(e.target.value)
-              if (inputType === "number" && e.target.value < 0) {
+              if (
+                (inputType === "num" && isNaN(Number(e.target.value))) ||
+                Number(e.target.value || 0) < 0
+              ) {
+                const newValue = e.target.value;
+                const lastChar = newValue.slice(-1); // get the last character typed
+                // console.log(lastChar);
+                // If last character is not a digit, show alert
+                if (lastChar && /\D/.test(lastChar)) {
+                  showToast("Only numbers are allowed.", 1);
+                  return; // don't update state with invalid input
+                }
+
                 showToast("Negative numbers not allowed.", 1);
                 return;
               }

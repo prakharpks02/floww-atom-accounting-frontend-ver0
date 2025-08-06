@@ -35,17 +35,6 @@ export const initialInvoiceState = {
   invoiceSubject: "",
   salesId: "",
   listItems: [
-    {
-      item_name: "",
-      item_description: "",
-      quantity: "",
-      hsn_code: "N/A",
-      unit_price: "",
-      discount: "",
-      base_amount: "",
-      gst_amount: "",
-      gross_amount: "",
-    },
   ],
   subtotalAmount: "",
   discountAmount: "0",

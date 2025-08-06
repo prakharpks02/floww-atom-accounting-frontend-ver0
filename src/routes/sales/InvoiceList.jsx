@@ -178,7 +178,7 @@ const ShowSalesInTable = ({ AllInvoice }) => {
   const navigate = useNavigate();
   const { companyDetails } = useContext(CompanyContext);
   const [isDownloading, setisDownloading] = useState(-1);
-
+console.log(isDownloading)
   return (
     <>
       {AllInvoice && (
@@ -219,7 +219,7 @@ const ShowSalesInTable = ({ AllInvoice }) => {
                 </th>
                 <th
                   scope="col"
-                  className="px-3 py-4 whitespace-nowrap font-medium "
+                  className="px-3 py-4 text-center whitespace-nowrap font-medium "
                 >
                   Sales ID
                 </th>
@@ -240,20 +240,20 @@ const ShowSalesInTable = ({ AllInvoice }) => {
                       onClick={async (e) => {
                         e.stopPropagation();
                         setisDownloading(idx);
-                        invoice.invoice_url[0]?.invoice_url.toLowerCase() ===
-                          "n/a" &&
-                          (await downloadInvoiceAsPDF(
+                        if (
+                          invoice.invoice_url[0]?.invoice_url.toLowerCase() ===
+                          "n/a"
+                        ) {
+                          await downloadInvoiceAsPDF(
                             companyDetails,
                             invoice,
-                            setisDownloading
-                          ));
-
-                        invoice.invoice_url[0]?.invoice_url.toLowerCase() !==
-                          "n/a" &&
-                          (await downloadAsZip(
+                          );
+                        } else {
+                          await downloadAsZip(
                             invoice.invoice_url,
                             `Invoice-douments`
-                          ));
+                          );
+                        }
 
                         setisDownloading(-1);
                       }}

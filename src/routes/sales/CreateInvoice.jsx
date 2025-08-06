@@ -100,11 +100,28 @@ const CreateInvoiceForm = ({ activeTab }) => {
   const [isLoading, setisLoading] = useState(false);
   const { createInvoice, createInvoiceForm } = useContext(InvoiceContext);
   const { companyDetails } = useContext(CompanyContext);
+  const [previousDetails, setpreviousDetails] = useState(-1);
+  useEffect(() => {
+    const invoiceNo = new URLSearchParams(window.location.search).get(
+      "invoiceNo"
+    );
+    const storedData = localStorage.getItem("createInvoiceForm");
+    if (invoiceNo && storedData) setpreviousDetails(JSON.parse(storedData));
+    else setpreviousDetails(null);
+  }, []);
+
+  if (previousDetails == -1) {
+    return (
+      <div className=" flex-1 flex justify-center items-center py-10 px-4 min-h-[300px]">
+        <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
+      </div>
+    );
+  }
 
   return (
     <>
       <div className=" grid lg:grid-cols-2 grid-cols-1 gap-x-2 gap-y-4 mb-4">
-        <CreateInvoiceLeftPart />
+        <CreateInvoiceLeftPart previousDetails={previousDetails} />
         <CreateInvoiceRightPart handelDownloadInvoice={downloadInvoiceAsPDF} />
       </div>
       {/* Action Buttons */}
@@ -114,6 +131,7 @@ const CreateInvoiceForm = ({ activeTab }) => {
           onClick={async (e) => {
             try {
               await createInvoice(e, setisLoading, activeTab);
+              localStorage.removeItem("createInvoiceForm");
               await downloadInvoiceAsPDF(
                 companyDetails,
                 createInvoiceForm,
@@ -139,7 +157,7 @@ const CreateInvoiceForm = ({ activeTab }) => {
   );
 };
 
-const CreateInvoiceLeftPart = () => {
+const CreateInvoiceLeftPart = ({ previousDetails }) => {
   return (
     <>
       <div className=" 2xl:p-8 xl:p-6 md:p-4 py-4 px-2 2xl:rounded-2xl xl:rounded-xl rounded-lg border-[1.5px] border-[#E8E8E8] ">
@@ -150,35 +168,59 @@ const CreateInvoiceLeftPart = () => {
         {/* Invoice info */}
         <PurchaseOrderContextProvider>
           <div className=" grid md:grid-cols-2 grid-cols-1 gap-3 space-y-4 mb-4 w-full">
-            <InvoiceNumberInputField className={" col-span-1"} />
-            <InvoiceDateInputField className={" col-span-1"} />
-            <TermsInputField className={" col-span-1"} />
-            <DueDateInputField className={" col-span-1"} />
-            <CustomerNameInputField className={" md:col-span-2 col-span-1"} />
-            <SubjectInputField className={" md:col-span-2 col-span-1"} />
-            <OrderNumberInputField className={" col-span-2"} />
-            <SalesIDInputField className={" col-span-2"} />
+            <InvoiceNumberInputField
+              className={" col-span-1"}
+              previousDetails={previousDetails}
+            />
+            <InvoiceDateInputField
+              className={" col-span-1"}
+              previousDetails={previousDetails}
+            />
+            <TermsInputField
+              className={" col-span-1"}
+              previousDetails={previousDetails}
+            />
+            <DueDateInputField
+              className={" col-span-1"}
+              previousDetails={previousDetails}
+            />
+            <CustomerNameInputField
+              className={" md:col-span-2 col-span-1"}
+              previousDetails={previousDetails}
+            />
+            <SubjectInputField
+              className={" md:col-span-2 col-span-1"}
+              previousDetails={previousDetails}
+            />
+            <OrderNumberInputField
+              className={" col-span-2"}
+              previousDetails={previousDetails}
+            />
+            <SalesIDInputField
+              className={" col-span-2"}
+              previousDetails={previousDetails}
+            />
           </div>
 
           {/* Item Table */}
-          <ItemDetails />
+          <ItemDetails previousDetails={previousDetails} />
         </PurchaseOrderContextProvider>
 
         {/* Totals Section */}
-        <SubTotal className={"mb-6"} />
+        <SubTotal className={"mb-6"} previousDetails={previousDetails} />
 
         {/* Customer Note */}
-        <CustomerNotes />
+        <CustomerNotes previousDetails={previousDetails} />
 
         {/* Terms and Conditions */}
-        <TermsAndConditions />
+        <TermsAndConditions previousDetails={previousDetails} />
       </div>
     </>
   );
 };
 
-const CustomerNotes = ({ className }) => {
-  const [notes, setnotes] = useState("");
+const CustomerNotes = ({ className, previousDetails }) => {
+  const [notes, setnotes] = useState(previousDetails?.notes ?? "");
   const { createInvoiceDispatch } = useContext(InvoiceContext);
 
   useEffect(() => {
@@ -188,6 +230,8 @@ const CustomerNotes = ({ className }) => {
       value: notes || "N/A",
     });
   }, [notes]);
+
+  console.log(previousDetails);
 
   return (
     <>
@@ -208,8 +252,10 @@ const CustomerNotes = ({ className }) => {
   );
 };
 
-const TermsAndConditions = ({ className }) => {
-  const [toc, settoc] = useState("");
+const TermsAndConditions = ({ className, previousDetails }) => {
+  const [toc, settoc] = useState(
+    previousDetails?.listToc[0]?.terms_of_service ?? ""
+  );
   const { createInvoiceDispatch } = useContext(InvoiceContext);
 
   useEffect(() => {
@@ -554,9 +600,9 @@ const CreateInvoiceRightPart = ({
   );
 };
 
-const ItemDetails = ({ className }) => {
+const ItemDetails = ({ className, previousDetails }) => {
   const { saleDetails } = useContext(SalesContext);
-  const { purchaseOrderDetails } = useContext(PurchaseOrderContext);
+  // const { purchaseOrderDetails } = useContext(PurchaseOrderContext);
   const blankItem = {
     item_description: "",
     unit_price: "",
@@ -564,13 +610,14 @@ const ItemDetails = ({ className }) => {
     gross_amount: "",
     gst_amount: "",
     discount: "",
-    hsn_code: "N/A",
+    hsn_code: "",
+    item_name: "",
+    base_amount: "",
   };
   const [items, setItems] = useState(
-    [
-      ...(saleDetails?.list_items || []),
-      ...(purchaseOrderDetails?.list_items || []),
-    ] || [blankItem]
+    previousDetails?.listItems.length > 0
+      ? previousDetails?.listItems
+      : [blankItem]
   );
   const { createInvoiceDispatch } = useContext(InvoiceContext);
   const { pathname } = useLocation();
@@ -578,41 +625,42 @@ const ItemDetails = ({ className }) => {
   // changes fields for particular item row
   const handleChange = (index, field, value) => {
     // Dispatch to reducer to update the item field
-    createInvoiceDispatch({
-      type: "UPDATE_ITEM_FIELD",
-      index,
-      field,
-      value,
-    });
+    // createInvoiceDispatch({
+    //   type: "UPDATE_ITEM_FIELD",
+    //   index,
+    //   field,
+    //   value,
+    // });
 
     // Update local items state
     const updatedItems = [...items];
+    console.log(field, value);
     updatedItems[index][field] = value;
     setItems(updatedItems);
 
     // update total amount
     if (
-      items[index].unit_price &&
-      items[index].quantity &&
-      items[index].discount &&
-      items[index].gst_amount
+      updatedItems[index].unit_price &&
+      updatedItems[index].quantity &&
+      updatedItems[index].discount &&
+      updatedItems[index].gst_amount
     ) {
-      const temp = items;
+      const temp = updatedItems;
       temp[index].gross_amount = (
-        (Number(items[index].unit_price) *
-          Number(items[index].quantity) *
-          (100 - Number(items[index].discount)) *
-          (100 + Number(items[index].gst_amount))) /
+        (Number(updatedItems[index].unit_price) *
+          Number(updatedItems[index].quantity) *
+          (100 - Number(updatedItems[index].discount)) *
+          (100 + Number(updatedItems[index].gst_amount))) /
         10000
       ).toFixed(2);
 
-      //update gross amount on create salea form
-      createInvoiceDispatch({
-        type: "UPDATE_ITEM_FIELD",
-        index,
-        field: "gross_amount",
-        value: temp[index].gross_amount,
-      });
+      // //update gross amount on create salea form
+      // createInvoiceDispatch({
+      //   type: "UPDATE_ITEM_FIELD",
+      //   index,
+      //   field: "gross_amount",
+      //   value: temp[index].gross_amount,
+      // });
       setItems(temp);
     }
   };
@@ -620,43 +668,87 @@ const ItemDetails = ({ className }) => {
   // add new row , also add the row to sales reducer
   const addRow = () => {
     setItems([...items, blankItem]);
-    createInvoiceDispatch({
-      type: "ADD_ITEM",
-      item: blankItem,
-    });
+    // createInvoiceDispatch({
+    //   type: "ADD_ITEM",
+    //   item: blankItem,
+    // });
   };
 
   // remove a existing row , also remove the row to sales reducer
   const removeRow = (index) => {
     const updatedItems = items.filter((_, idx) => idx !== index);
     setItems(updatedItems);
-    createInvoiceDispatch({
-      type: "REMOVE_ITEM",
-      index,
-    });
+    // createInvoiceDispatch({
+    //   type: "REMOVE_ITEM",
+    //   index,
+    // });
   };
 
   useEffect(() => {
-    if (!saleDetails && !purchaseOrderDetails) {
-      setItems([blankItem]);
-      return;
-    }
-    setItems(
-      [
+    if (!saleDetails || !saleDetails.list_items) return;
+    console.log("dsficsdnfv");
+    let temp;
+    setItems((prev) => {
+      temp = prev;
+      return [
         ...(saleDetails?.list_items || []),
-        ...(purchaseOrderDetails?.list_items || []),
-      ] || [blankItem]
-    );
-  }, [saleDetails, purchaseOrderDetails]);
+        ...(prev.length == 1 && !prev[0].item_description ? [] : prev),
+        // ...(purchaseOrderDetails?.list_items || []),
+      ];
+    });
+    // console.log([
+    //   ...(saleDetails?.list_items || []),
+    //   ...(temp.length == 1 && !temp[0].item_description ? [] : temp),
+    //   // ...(purchaseOrderDetails?.list_items || []),
+    // ]);
 
-useEffect(() => {
-  
-}, [items])
+    // const value = [
+    //   ...(saleDetails?.list_items || []),
+    //   ...(temp.length == 1 && !temp[0].item_description ? [] : temp),
+    //   // ...(purchaseOrderDetails?.list_items || []),
+    // ];
 
+    // createInvoiceDispatch({
+    //   type: "UPDATE_FIELD",
+    //   state: "listItems",
+    //   value: value,
+    // });
+
+    // setcount(saleDetails ? saleDetails.list_items.length : 0);
+  }, [saleDetails, setItems]);
+
+  useEffect(() => {
+    // items.forEach((item, index) => {
+    //   if (
+    //     item.discount &&
+    //     item.gross_amount &&
+    //     item.gst_amount &&
+    //     item.hsn_code &&
+    //     item.item_description &&
+    //     item.quantity &&
+    //     item.unit_price &&
+    //     item.item_name &&
+    //     item.base_amount
+    //   ) {
+    //     console.log("dviudsfnv");
+    //     createInvoiceDispatch({
+    //       type: "ADD_ITEM",
+    //       item: item,
+    //     });
+    //   }
+    // });
+
+    createInvoiceDispatch({
+      type: "UPDATE_FIELD",
+      value: items,
+      field: "listItems",
+    });
+  }, [items]);
 
   // reset the create sale form to intial value when not in addSales page
   useEffect(() => {
-    !pathname.toLowerCase() != "/sales/createInvoice" && setItems([blankItem]);
+    !pathname.toLowerCase().includes("/sales/createinvoice") &&
+      setItems([blankItem]);
   }, [pathname]);
 
   return (
@@ -669,7 +761,7 @@ useEffect(() => {
           return (
             <div key={index} className=" space-y-3 mb-8">
               <div className=" grid md:grid-cols-5 grid-cols-2 gap-3">
-                <div className=" overflow-x-hidden md:col-span-3 col-span-2">
+                <div className=" overflow-x-hidden md:col-span-2 col-span-2">
                   <InputField
                     required={true}
                     autoComplete="off"
@@ -682,24 +774,25 @@ useEffect(() => {
                     placeholder={"Enter Item name"}
                   />
                 </div>
-                {/* <div className=" overflow-x-hidden col-span-3">
+                <div className=" overflow-x-hidden col-span-2">
                   <InputField
                     autoComplete="off"
-                    value={item.item_description}
+                    required={true}
+                    value={item.hsn_code}
                     setvalue={(val) => {
-                      handleChange(index, "item_name", val);
-                      handleChange(index, "item_description", val);
+                      handleChange(index, "hsn_code", val);
                     }}
-                    label={"Item Details"}
-                    placeholder={"Enter Item name"}
+                    label={"HSN code"}
+                    padding={3}
+                    placeholder={"123456"}
                   />
-                </div> */}
+                </div>
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
                     required={true}
                     autoComplete="off"
                     padding={2}
-                    value={item.unit_price}
+                    value={item.unit_price ? Number(item.unit_price) : ""}
                     setvalue={(val) => {
                       handleChange(index, "unit_price", val);
                       handleChange(index, "base_amount", val);
@@ -710,53 +803,55 @@ useEffect(() => {
                     inputType={"rupee"}
                   />
                 </div>
+              </div>
+              <div className=" grid md:grid-cols-4 grid-cols-2 gap-3">
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    padding={3}
                     required={true}
                     autoComplete="off"
-                    padding={2}
-                    value={item.quantity}
+                    value={item.quantity ? Number(item.quantity) : ""}
                     setvalue={(val) => handleChange(index, "quantity", val)}
                     label={"Qnty"}
                     placeholder={"0.00"}
-                    inputType={"number"}
+                    inputType={"num"}
                   />
                 </div>
-              </div>
-              <div className=" grid md:grid-cols-3 grid-cols-2 gap-3">
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    padding={3}
                     required={true}
                     autoComplete="off"
                     max={100}
                     min={0}
-                    value={item.discount}
+                    value={item.discount ? Number(item.discount) : ""}
                     setvalue={(val) => handleChange(index, "discount", val)}
                     label={"Discount %"}
                     placeholder={"0"}
-                    inputType={"number"}
+                    inputType={"num"}
                   />
                 </div>
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    padding={3}
                     required={true}
                     autoComplete="off"
                     max={100}
                     min={0}
-                    value={item.gst_amount}
+                    value={item.gst_amount ? Number(item.gst_amount) : ""}
                     setvalue={(val) => handleChange(index, "gst_amount", val)}
                     label={"GST %"}
                     placeholder={"0"}
-                    inputType={"number"}
+                    inputType={"num"}
                   />
                 </div>
                 <div className=" overflow-x-hidden md:col-span-1 col-span-2">
                   <InputField
+                    padding={3}
                     required={true}
                     readOnly={true}
                     autoComplete="off"
-                    padding={2}
-                    value={item.gross_amount}
+                    value={item.gross_amount ? Number(item.gross_amount) : ""}
                     setvalue={(val) => handleChange(index, "gross_amount", val)}
                     label={"Amount"}
                     placeholder={"0.00"}
@@ -801,8 +896,10 @@ useEffect(() => {
   );
 };
 
-const InvoiceNumberInputField = ({ className }) => {
-  const [invoiceNumber, setinvoiceNumber] = useState("");
+const InvoiceNumberInputField = ({ className, previousDetails }) => {
+  const [invoiceNumber, setinvoiceNumber] = useState(
+    previousDetails?.invoiceNumber ?? ""
+  );
   const { createInvoiceDispatch } = useContext(InvoiceContext);
   useEffect(() => {
     createInvoiceDispatch({
@@ -811,6 +908,8 @@ const InvoiceNumberInputField = ({ className }) => {
       value: invoiceNumber,
     });
   }, [invoiceNumber]);
+
+  console.log(previousDetails?.invoiceNumber, invoiceNumber);
 
   return (
     <>
@@ -827,8 +926,10 @@ const InvoiceNumberInputField = ({ className }) => {
   );
 };
 
-const OrderNumberInputField = ({ className }) => {
-  const [orderNumber, setorderNumber] = useState("");
+const OrderNumberInputField = ({ className, previousDetails }) => {
+  const [orderNumber, setorderNumber] = useState(
+    previousDetails?.orderNumber ?? ""
+  );
   const [isLoading, setisLoading] = useState(false);
   const [isCustomPOId, setisCustomPOId] = useState(true);
   const [isDropdownOpen, setisDropdownOpen] = useState(false);
@@ -890,59 +991,6 @@ const OrderNumberInputField = ({ className }) => {
         </label>
 
         {/* radio buttons for switch saels id type  */}
-        <div className="mb-3 mt-1 flex items-center gap-8">
-          {/* radio button for custom input  */}
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="radio"
-              name="salesIdType"
-              value={isCustomPOId}
-              checked={isCustomPOId}
-              onChange={(e) => {
-                setorderNumber("");
-                setpurchaseOrderDetails(null);
-                setisCustomPOId(true);
-              }}
-              className="sr-only"
-            />
-            {/* custom styled circle */}
-            <div
-              className={`w-4 h-4 rounded-full border-[2.5px] flex items-center justify-center ${
-                isCustomPOId ? "border-blue-800" : "border-gray-400"
-              }`}
-            >
-              {isCustomPOId && (
-                <div className="w-2 h-2 bg-blue-800 rounded-full" />
-              )}
-            </div>
-            <span className="text-sm font-medium capitalize">Custom</span>
-          </label>
-
-          {/* radio button for select dropdown input  */}
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="radio"
-              name="salesIdType"
-              value={isCustomPOId}
-              checked={!isCustomPOId}
-              onChange={(e) => {
-                setisCustomPOId(false);
-              }}
-              className="sr-only"
-            />
-            {/* custom styled circle */}
-            <div
-              className={`w-4 h-4 rounded-full border-[2.5px] flex items-center justify-center ${
-                !isCustomPOId ? "border-blue-800" : "border-gray-400"
-              }`}
-            >
-              {!isCustomPOId && (
-                <div className="w-2 h-2 bg-blue-800 rounded-full" />
-              )}
-            </div>
-            <span className="text-sm font-medium capitalize">Select</span>
-          </label>
-        </div>
 
         {isCustomPOId && (
           <InputField
@@ -1061,17 +1109,19 @@ const OrderNumberInputField = ({ className }) => {
   );
 };
 
-const SalesIDInputField = ({ className }) => {
-  const [salesId, setsalesId] = useState("");
+const SalesIDInputField = ({ className, previousDetails }) => {
+  const [salesId, setsalesId] = useState(previousDetails?.salesId ?? "");
   const [isLoading, setisLoading] = useState(false);
   const [isCustomSalesId, setisCustomSalesId] = useState(true);
   const [isDropdownOpen, setisDropdownOpen] = useState(false);
   const [query, setquery] = useState("");
-  const { createInvoiceDispatch } = useContext(InvoiceContext);
+  const { createInvoiceDispatch, createInvoiceForm } =
+    useContext(InvoiceContext);
   const { getAllSales, AllSalesList, setsaleDetails } =
     useContext(SalesContext);
   const dropDownRef = useRef();
   const containerRef = useRef();
+  const navigate = useNavigate();
 
   const filteredData = useMemo(() => {
     if (!query) return AllSalesList;
@@ -1220,7 +1270,6 @@ const SalesIDInputField = ({ className }) => {
                 />
               </button>
             </div>
-
             {/* dropdown sales list  */}
             <div
               ref={dropDownRef}
@@ -1237,6 +1286,30 @@ const SalesIDInputField = ({ className }) => {
                   <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
                 </div>
               )}
+
+              {/* add new sales id */}
+              <button
+                tabIndex={0}
+                onClick={() => {
+                  localStorage.setItem(
+                    "createInvoiceForm",
+                    JSON.stringify(createInvoiceForm)
+                  );
+                  navigate(
+                    `${
+                      createInvoiceForm.invoiceNumber
+                        ? `/sales/addSales/new?invoiceNo=${createInvoiceForm.invoiceNumber}`
+                        : "/sales/addSales/new"
+                    }`
+                  );
+                }}
+                className=" w-full hover:bg-[#f2f2f2] my-2 transition opacity-80 px-6 py-3 cursor-pointer flex items-center gap-2 rounded-xl text-[#2543B1] text-base font-medium"
+              >
+                <div className=" p-0.5 rounded-full flex items-center bg-[#2543B1]">
+                  <Plus className="w-4 h-4 text-white" />
+                </div>
+                {`Add new sales`}
+              </button>
 
               {/* search bar  */}
               <input
@@ -1280,8 +1353,8 @@ const SalesIDInputField = ({ className }) => {
   );
 };
 
-const SubjectInputField = ({ className }) => {
-  const [subject, setsubject] = useState("");
+const SubjectInputField = ({ className, previousDetails }) => {
+  const [subject, setsubject] = useState(previousDetails?.invoiceSubject ?? "");
   const { createInvoiceDispatch } = useContext(InvoiceContext);
   useEffect(() => {
     createInvoiceDispatch({
@@ -1305,8 +1378,10 @@ const SubjectInputField = ({ className }) => {
   );
 };
 
-const InvoiceDateInputField = ({ className }) => {
-  const [invoiceDate, setinvoiceDate] = useState("");
+const InvoiceDateInputField = ({ className, previousDetails }) => {
+  const [invoiceDate, setinvoiceDate] = useState(
+    previousDetails?.invoiceDate?.split("-").reverse().join("-") ?? ""
+  );
   const { createInvoiceDispatch } = useContext(InvoiceContext);
   useEffect(() => {
     createInvoiceDispatch({
@@ -1332,8 +1407,8 @@ const InvoiceDateInputField = ({ className }) => {
   );
 };
 
-const TermsInputField = ({ className }) => {
-  const [terms, setterms] = useState("");
+const TermsInputField = ({ className, previousDetails }) => {
+  const [terms, setterms] = useState(previousDetails?.terms ?? "");
   const { createInvoiceDispatch } = useContext(InvoiceContext);
   useEffect(() => {
     createInvoiceDispatch({
@@ -1359,8 +1434,10 @@ const TermsInputField = ({ className }) => {
   );
 };
 
-const DueDateInputField = ({ className }) => {
-  const [dueDate, setdueDate] = useState("");
+const DueDateInputField = ({ className, previousDetails }) => {
+  const [dueDate, setdueDate] = useState(
+    previousDetails?.invoiceDueBy?.split("-").reverse().join("-") ?? ""
+  );
   const { createInvoiceDispatch } = useContext(InvoiceContext);
   useEffect(() => {
     createInvoiceDispatch({
@@ -1386,8 +1463,13 @@ const DueDateInputField = ({ className }) => {
   );
 };
 
-const CustomerNameInputField = ({ className }) => {
-  const [customer, setcustomer] = useState({});
+const CustomerNameInputField = ({ className, previousDetails }) => {
+  const [customer, setcustomer] = useState({
+    customer_id: previousDetails?.customerId ?? "",
+    gst_number: previousDetails?.gstNumber ?? "",
+    contact_no: previousDetails?.contactNo ?? "",
+    customer_name: previousDetails?.customerName ?? "",
+  });
   const { createInvoiceDispatch } = useContext(InvoiceContext);
   const [isLoading, setisLoading] = useState(true);
   const { AllCustomersList, getAllCustomers } = useContext(CustomerContext);
@@ -1402,29 +1484,29 @@ const CustomerNameInputField = ({ className }) => {
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "customerId",
-      value: customer.customer_id || "",
+      value: customer.customer_id ?? "",
     });
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "gstNumber",
-      value: customer.gst_number || "",
+      value: customer.gst_number ?? "",
     });
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "contactNo",
-      value: customer.contact_no || "",
+      value: customer.contact_no ?? "",
     });
 
     createInvoiceDispatch({
       type: "UPDATE_BANK",
       field: "bank_account_receivers_name",
-      value: customer.customer_name || "",
+      value: customer.customer_name ?? "",
     });
 
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "customerName",
-      value: customer.customer_name || "",
+      value: customer.customer_name ?? "",
     });
   }, [customer]);
 
@@ -1605,20 +1687,28 @@ const UploadInvoice = () => {
   );
 };
 
-const SubTotal = ({ className }) => {
+const SubTotal = ({ className, previousDetails }) => {
   const { createInvoiceForm, createInvoiceDispatch } =
     useContext(InvoiceContext);
   const [subtotal, setsubtotal] = useState(
     Number(createInvoiceForm?.subtotalAmount).toFixed(2) || 0
   );
   const [isTdsEnable, setisTdsEnable] = useState(true);
-  const [discount, setdiscount] = useState(0);
-  const [isAdjustment, setisAdjustment] = useState(false);
+  const [discount, setdiscount] = useState(
+    previousDetails?.discountAmount || 0
+  );
+  const [isAdjustment, setisAdjustment] = useState(
+    previousDetails?.adjustmentAmount?.toString().toLowerCase() === "true"
+      ? true
+      : false
+  );
   const [tds, settds] = useState({
-    value: "0%",
-    name: "N/A",
+    value: previousDetails?.tdsAmount || "0%",
+    name: previousDetails?.tds_reason || "N/A",
   });
-  const [grandTotal, setgrandTotal] = useState(0.0);
+  const [grandTotal, setgrandTotal] = useState(
+    previousDetails?.totalAmount || 0.0
+  );
   const [discountAmount, setdiscountAmount] = useState(0);
   const [taxableAmount, settaxableAmount] = useState(0);
 
@@ -1705,6 +1795,7 @@ const SubTotal = ({ className }) => {
     settaxableAmount(((subtotal * (100 - discount) * tax) / 10000).toFixed(2));
   }, [tds, discount, subtotal]);
 
+  // console.log(discount);
   return (
     <>
       <div

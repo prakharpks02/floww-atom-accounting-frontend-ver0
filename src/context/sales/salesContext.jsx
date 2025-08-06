@@ -306,12 +306,12 @@ export const SalesContextProvider = ({ children }) => {
       if (Object.keys(validationErrors).length > 0) {
         console.log(validationErrors);
         showToast("All fields are required", 1);
-        return;
+        throw new Error("All fields are required", 1);
       }
 
       if (!companyDetails) {
         showToast("No company details found", 1);
-        return;
+        throw new Error("No company details found", 1);
       }
 
       // const userId = userDetails?.userId;
@@ -323,7 +323,7 @@ export const SalesContextProvider = ({ children }) => {
       const token = localStorage.getItem("token");
       if (!token) {
         showToast("Token not found", 1);
-        return;
+        throw new Error("Token not found", 1);
       }
 
       try {
@@ -355,18 +355,22 @@ export const SalesContextProvider = ({ children }) => {
 
         console.log(res);
         if (res.data?.status && res.data.status.toLowerCase() !== "success") {
-          showToast("Somthing went wrong. Please try again", 1);
           setisLoading(false);
-          return;
+          throw new Error("Somthing went wrong. Please try again", 1);
         }
 
         // reset to initial value
         createSaleFormDispatch({ type: "RESET" });
         showToast("Sale created");
-        navigate("/sales/salesList");
       } catch (error) {
         console.log(error);
         showToast(
+          error.response?.data?.message ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+        throw new Error(
           error.response?.data?.message ||
             error.message ||
             "Somthing went wrong. Please try again",
@@ -434,16 +438,16 @@ export const SalesContextProvider = ({ children }) => {
       if (Object.keys(validationErrors).length > 0) {
         console.log(validationErrors);
         showToast("All fields are required", 1);
-        return;
+        throw new Error("All fields are required", 1);
       }
 
       if (!companyDetails) {
         showToast("Company details not found", 1);
-        return;
+        throw new Error("Company details not found", 1);
       }
       if (!saleid) {
         showToast("Sales ID not found", 1);
-        return;
+        throw new Error("Sales ID not found", 1);
       }
       // const userId = userDetails?.userId;
       // if (!userId) {
@@ -453,7 +457,7 @@ export const SalesContextProvider = ({ children }) => {
       const token = localStorage.getItem("token");
       if (!token) {
         showToast("Token not found", 1);
-        return;
+        throw new Error("Token not found", 1);
       }
       try {
         setisLoading(true);
@@ -488,9 +492,8 @@ export const SalesContextProvider = ({ children }) => {
         );
         console.log(res);
         if (res.data?.status && res.data.status.toLowerCase() !== "success") {
-          showToast("Somthing went wrong. Please try again", 1);
           setisLoading(false);
-          return;
+          throw new Error("Somthing went wrong. Please try again", 1);
         }
 
         // reset to initial value
@@ -505,11 +508,98 @@ export const SalesContextProvider = ({ children }) => {
             "Somthing went wrong. Please try again",
           1
         );
+        throw new Error(
+          error.response?.data?.message ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
       } finally {
         setisLoading(false);
       }
     },
     [createSaleForm, userDetails]
+  );
+
+  //update sales timline
+  const updateSalesTimeLine = useCallback(
+    async (data, setisLoading = () => {}) => {
+      if (!data) {
+        showToast("Please provide the data", 1);
+        throw new Error("Please provide the data", 1);
+      }
+
+      const { salesId, amount, timestamp, remark, file } = data;
+      if (!salesId || !amount || !timestamp || !remark || !file) {
+        showToast("All fields are required", 1);
+        throw new Error("All fields are required", 1);
+      }
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Token not found", 1);
+        throw new Error("Token not found", 1);
+      }
+
+      try {
+        setisLoading(true);
+
+        // upload documens
+        const reponse = await uploadFile(file.name, file, token);
+        console.log(reponse);
+        const transactionUrl = reponse.doc_url;
+
+        console.log("file uploaded");
+
+        const res = await axios.post(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/accounting/update-sales-timeline-details/`,
+          {
+            salesId: salesId,
+            amount,
+            timestamp,
+            transactionUrl,
+            remark,
+          },
+          {
+            headers: {
+              Authorization: token,
+            },
+          }
+        );
+        console.log(res);
+        if (res.data?.status && res.data.status.toLowerCase() !== "success") {
+          showToast("Somthing went wrong. Please try again", 1);
+          setisLoading(false);
+          return;
+        }
+
+        // reset to initial value
+        createSaleFormDispatch({ type: "RESET" });
+        showToast("Timeline updated");
+        // navigate(`/sales/saleDetails/${saleid}`);
+      } catch (error) {
+        console.log(error);
+        showToast(
+          error.response?.data?.message ||
+            error.response?.data?.detail ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+        throw new Error(
+          error.response?.data?.message ||
+            error.response?.data?.detail ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+      } finally {
+        setisLoading(false);
+      }
+    },
+    [saleDetails]
   );
 
   // reset the create sale form to intial value when not in addSales page
@@ -534,7 +624,8 @@ export const SalesContextProvider = ({ children }) => {
         updateSales,
         getSaleDetails,
         saleDetails,
-        setsaleDetails
+        setsaleDetails,
+        updateSalesTimeLine,
       }}
     >
       {children}

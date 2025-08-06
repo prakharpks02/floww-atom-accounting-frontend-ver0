@@ -6,7 +6,7 @@ import { saveAs } from "file-saver";
 export const downloadInvoiceAsPDF = async (
   companyDetails,
   invoiceData,
-  setisLoading
+  setisLoading = () => {}
 ) => {
   if (!companyDetails || !invoiceData || !setisLoading) {
     console.log(companyDetails, typeof companyDetails);
@@ -139,15 +139,31 @@ export const downloadInvoiceAsPDF = async (
     // Totals
     y -= 10;
     drawText("Subtotal:", 40, y, 11, true);
-    drawText(`Rs.${invoiceData?.subtotalAmount || invoiceData.subtotal_amount}`, 420, y);
+    drawText(
+      `Rs.${invoiceData?.subtotalAmount || invoiceData.subtotal_amount}`,
+      420,
+      y
+    );
 
     y -= 20;
-    drawText(`Tax(${invoiceData?.tdsAmount || invoiceData?.tax_amount}):`, 40, y, 11, true);
+    drawText(
+      `Tax(${invoiceData?.tdsAmount || invoiceData?.tax_amount}):`,
+      40,
+      y,
+      11,
+      true
+    );
     drawText(
       `+Rs.${Number(
-        ((Number(invoiceData?.subtotalAmount || invoiceData.subtotal_amount) || 0) *
-          (100 - Number(invoiceData?.discountAmount || invoiceData?.discount_amount)) *
-          (Number((invoiceData?.tdsAmount ||invoiceData?.tax_amount )?.split("%")[0]) || 0)) /
+        ((Number(invoiceData?.subtotalAmount || invoiceData.subtotal_amount) ||
+          0) *
+          (100 -
+            Number(
+              invoiceData?.discountAmount || invoiceData?.discount_amount
+            )) *
+          (Number(
+            (invoiceData?.tdsAmount || invoiceData?.tax_amount)?.split("%")[0]
+          ) || 0)) /
           10000
       ).toFixed(2)}`,
       420,
@@ -155,7 +171,15 @@ export const downloadInvoiceAsPDF = async (
     );
 
     y -= 20;
-    drawText(`Discount(${invoiceData?.discountAmount || invoiceData?.discount_amount}%):`, 40, y, 11, true);
+    drawText(
+      `Discount(${
+        invoiceData?.discountAmount || invoiceData?.discount_amount
+      }%):`,
+      40,
+      y,
+      11,
+      true
+    );
     drawText(
       `-Rs.${Number(
         ((invoiceData?.subtotalAmount || invoiceData.subtotal_amount || 0) *
@@ -168,7 +192,13 @@ export const downloadInvoiceAsPDF = async (
 
     y -= 25;
     drawText("Total:", 40, y, 12, true);
-    drawText(`Rs.${invoiceData?.totalAmount || invoiceData?.total_amount}`, 420, y, 12, true);
+    drawText(
+      `Rs.${invoiceData?.totalAmount || invoiceData?.total_amount}`,
+      420,
+      y,
+      12,
+      true
+    );
 
     page.drawLine({
       start: { x: 40, y: y - 10 },
@@ -183,7 +213,8 @@ export const downloadInvoiceAsPDF = async (
     y -= 20;
     drawText(
       `Terms & Conditions: ${
-        (invoiceData?.listToc || invoiceData?.list_toc)?.[0]?.terms_of_service || "N/A"
+        (invoiceData?.listToc || invoiceData?.list_toc)?.[0]
+          ?.terms_of_service || "N/A"
       }`,
       40,
       y

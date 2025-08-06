@@ -310,6 +310,7 @@ const UpdateTimeLineModal = ({
   });
   const { userDetails } = useContext(UserContext);
   const { companyDetails } = useContext(CompanyContext);
+  const { updateSalesTimeLine } = useContext(SalesContext);
   const [isLoading, setisLoading] = useState(false);
   const { saleid } = useParams();
 
@@ -350,69 +351,16 @@ const UpdateTimeLineModal = ({
     }
 
     try {
-      setisLoading(true);
-
-      // upload documens
-      const file = formData.file;
-      const response = await uploadFile(file.name, file, token);
-      console.log(response);
-      formData.file = response.doc_url;
-      console.log("file uploaded");
-
-      const res = await axios.post(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/accounting/update-sales-details/`,
+      await updateSalesTimeLine(
         {
-          salesTs: saleDetails.sales_ts,
-          invoiceId: saleDetails.invoice_id,
-          invoiceNumber: saleDetails.invoice_number,
-          listItems: saleDetails.list_items,
-          listToc: saleDetails.list_toc,
-          listStatus: saleDetails.list_status,
-          customerId: saleDetails.created_on,
-          notes: saleDetails.notes,
-          contactNo: saleDetails.contact_no,
-          email: saleDetails.email,
-          address: saleDetails.address,
-          invoiceUrl: saleDetails.invoice_url,
-          paymentNameList: saleDetails.payment_name_list,
-          invoiceDate: saleDetails.invoice_date,
-          invoiceDueBy: saleDetails.invoice_due_by,
-          quotationId: saleDetails.quotation_id,
-          purchaseOrderId: saleDetails.po_id,
-          paymentTransactionsList: [
-            ...saleDetails.payment_transactions_list,
-            { ...formData, transaction_url: response.doc_url },
-          ],
-          gstinNumber: saleDetails.gstin_number,
-          panNumber: saleDetails.pan_number,
-          subtotalAmount: saleDetails.subtotal_amount,
-          discountAmount: saleDetails.discount_amount,
-          tdsAmount: saleDetails.tds_amount,
-          adjustmentAmount: saleDetails.adjustment_amount,
-          totalAmount: saleDetails.total_amount,
-          status: saleDetails.status,
-          terms: saleDetails.terms,
-          customerName: saleDetails.customer_name,
-          tdsReason: saleDetails.tds_reason,
-          companyId: companyDetails.company_id,
-          // userId: userId,
-          salesId: saleDetails.sales_id,
+          salesId: saleid,
+          amount: formData.amount,
+          timestamp: formatISODateToDDMMYYYY(Date.now() / 1000),
+          remark: formData.remark,
+          file: formData.file,
         },
-        {
-          headers: {
-            Authorization: token,
-          },
-        }
+        setisLoading
       );
-      if (res.data?.status && res.data.status.toLowerCase() !== "success") {
-        showToast("Somthing went wrong. Please try again", 1);
-        setisLoading(false);
-        return;
-      }
-
-      console.log(res);
       await getSaleDetails(saleid, setisSaleDetailLoading);
       handelClose();
     } catch (error) {

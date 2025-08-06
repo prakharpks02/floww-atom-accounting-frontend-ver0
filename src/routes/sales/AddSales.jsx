@@ -135,11 +135,26 @@ export const AddSales = () => {
               <button
                 disabled={isLoading}
                 tabIndex={0}
-                onClick={(e) => {
-                  salesid?.toLowerCase() === "new" &&
-                    createSales(e, setisLoading);
-                  salesid?.toLowerCase() !== "new" &&
-                    updateSales(salesid, setisLoading);
+                onClick={async (e) => {
+                  try {
+                    if (salesid?.toLowerCase() === "new") {
+                      await createSales(e, setisLoading);
+                      const searchParams = new URLSearchParams(
+                        window.location.search
+                      );
+                      const invoiceNo = searchParams.get("invoiceNo");
+                      if (invoiceNo) {
+                        navigate(`/sales/createInvoice?invoiceNo=${invoiceNo}`);
+                      } else {
+                        navigate("/sales/salesList");
+                      }
+                    } else {
+                      await updateSales(salesid, setisLoading);
+                      navigate(`/sales/saleDetails/${saleid}`);
+                    }
+                  } catch (error) {
+                    console.log(error);
+                  }
                 }}
                 className=" cursor-pointer justify-center flex items-center gap-2 bg-[#2543B1] hover:bg-[#252eb1] text-white font-medium px-6 py-4 rounded-xl transition-all duration-200"
               >
@@ -360,7 +375,6 @@ const ItemDetails = ({ saleDetails }) => {
     }
 
     setItems((prev) => {
-
       return [
         ...(prev.length == 1 && !prev[0].item_description ? [] : prev),
         ...(saleDetails?.list_items || []),
@@ -1218,7 +1232,9 @@ const PANNumberInputField = ({ saleDetails }) => {
 const SubTotal = ({ className, saleDetails }) => {
   const { createSaleForm, createSaleFormDispatch } = useContext(SalesContext);
   const [subtotal, setsubtotal] = useState(createSaleForm?.subtotalAmount || 0);
-  const [discount, setdiscount] = useState(Number(saleDetails?.discount_amount) || 0);
+  const [discount, setdiscount] = useState(
+    Number(saleDetails?.discount_amount) || 0
+  );
   const [isAdjustment, setisAdjustment] = useState(
     saleDetails?.adjustment_amount &&
       saleDetails?.adjustment_amount.toString().toLowerCase() === "true"
@@ -1276,7 +1292,7 @@ const SubTotal = ({ className, saleDetails }) => {
     createSaleFormDispatch({
       type: "UPDATE_FIELD",
       field: "discountAmount",
-      value: discount.toFixed(2),
+      value: Number(discount).toFixed(2),
     });
     setdiscountAmount(((subtotal * discount) / 100).toFixed(2));
   }, [discount, subtotal]);
@@ -1314,7 +1330,7 @@ const SubTotal = ({ className, saleDetails }) => {
     settaxableAmount(((subtotal * (100 - discount) * tax) / 10000).toFixed(2));
   }, [tds, subtotal, discount]);
 
-  console.log(saleDetails)
+  // console.log(typeof discount);
 
   return (
     <>
@@ -1325,7 +1341,7 @@ const SubTotal = ({ className, saleDetails }) => {
         {/* Subtotal */}
         <div className="text-[#4A4A4A] flex justify-between items-center mb-4 2xl:text-lg xl:text-base text-sm ">
           <span className="font-medium ">Sub Total</span>
-          <span className="">{subtotal.toFixed(2)}</span>
+          <span className="">{Number(subtotal).toFixed(2)}</span>
         </div>
 
         {/* Discount */}
