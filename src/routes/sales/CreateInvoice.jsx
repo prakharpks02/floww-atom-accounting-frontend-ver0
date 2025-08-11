@@ -1187,7 +1187,6 @@ const SalesIDInputField = ({ className, previousDetails }) => {
               }}
               className="sr-only"
             />
-            {/* custom styled circle */}
             <div
               className={`w-4 h-4 rounded-full border-[2.5px] flex items-center justify-center ${
                 isCustomSalesId ? "border-blue-800" : "border-gray-400"
@@ -1210,7 +1209,6 @@ const SalesIDInputField = ({ className, previousDetails }) => {
               onChange={(e) => setisCustomSalesId(false)}
               className="sr-only"
             />
-            {/* custom styled circle */}
             <div
               className={`w-4 h-4 rounded-full border-[2.5px] flex items-center justify-center ${
                 !isCustomSalesId ? "border-blue-800" : "border-gray-400"

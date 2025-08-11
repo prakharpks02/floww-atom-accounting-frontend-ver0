@@ -22,7 +22,12 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence, number } from "framer-motion";
 import { showToast } from "../../utils/showToast";
-import { useFetcher, useNavigate, useParams } from "react-router-dom";
+import {
+  useFetcher,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import { InputField } from "../../utils/ui/InputField";
 import { ToastContainer } from "react-toastify";
 import { ShowUploadedFiles } from "../../utils/ui/ShowUploadedFiles";
@@ -109,8 +114,8 @@ export const AddSales = () => {
                 Attachments
               </span>
 
-              <div className=" grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div
+              <div className=" grid grid-cols-1  gap-3">
+                {/* <div
                   tabIndex={0}
                   onClick={() => {
                     navigate("/sales/createInvoice");
@@ -124,7 +129,7 @@ export const AddSales = () => {
                   <p className="text-[#00000080] text-xs">
                     You can create your invoice here itself
                   </p>
-                </div>
+                </div> */}
 
                 <UploadDocuments saleDetails={saleDetails} />
               </div>
@@ -195,6 +200,18 @@ const UploadDocuments = ({ saleDetails }) => {
   const { createSaleFormDispatch } = useContext(SalesContext);
 
   useEffect(() => {
+    if (!files || files.length == 0) {
+      createSaleFormDispatch({
+        type: "UPDATE_FIELD",
+        field: "invoiceUrl",
+        value: [
+          {
+            invoice_url: "N/A",
+          },
+        ],
+      });
+      return;
+    }
     createSaleFormDispatch({
       type: "UPDATE_FIELD",
       field: "invoiceUrl",
@@ -292,7 +309,8 @@ const ItemDetails = ({ saleDetails }) => {
 
   const { createSaleFormDispatch, createSaleForm } = useContext(SalesContext);
   const { selectedQuotationItems } = useContext(QuotationContext);
-  const [items, setItems] = useState([blankItem]);
+  const [items, setItems] = useState(saleDetails?.list_items || [blankItem]);
+  const { pathname } = useLocation();
 
   // changes fields for particular item row
   const handleChange = (index, field, value) => {
@@ -349,69 +367,51 @@ const ItemDetails = ({ saleDetails }) => {
 
   // reset state value when no salesdata
   useEffect(() => {
-    if (!saleDetails) setItems([blankItem]);
-  }, [saleDetails]);
-
-  //first set all item details to create sales form
-  // useEffect(() => {
-  //   if (!selectedQuotationItems && !saleDetails) {
-  //     setItems([blankItem]);
-  //     return;
-  //   }
-  //   createSaleFormDispatch({
-  //     type: "UPDATE_FIELD",
-  //     field: "listItems",
-  //     value: [
-  //       ...(saleDetails?.list_items || []),
-  //       ...(selectedQuotationItems || []),
-  //     ],
-  //   });
-  // }, [saleDetails, selectedQuotationItems]);
-
-  useEffect(() => {
-    if (!selectedQuotationItems && !saleDetails) {
-      setItems([blankItem]);
-      return;
-    }
-
+    if (!selectedQuotationItems) return;
+    console.log("dsficsdnfv");
+    let temp;
     setItems((prev) => {
+      temp = prev;
       return [
-        ...(prev.length == 1 && !prev[0].item_description ? [] : prev),
-        ...(saleDetails?.list_items || []),
         ...(selectedQuotationItems || []),
+        ...(prev.length == 1 && !prev[0].item_description ? [] : prev),
+        // ...(purchaseOrderDetails?.list_items || []),
       ];
     });
-  }, [selectedQuotationItems, saleDetails, setItems]);
+  }, [selectedQuotationItems]);
 
   useEffect(() => {
-    items.forEach((item, index) => {
-      if (
-        item.discount &&
-        item.gross_amount &&
-        item.gst_amount &&
-        item.hsn_code &&
-        item.item_description &&
-        item.quantity &&
-        item.unit_price &&
-        item.item_name &&
-        item.base_amount
-      ) {
-        createSaleFormDispatch({
-          type: "ADD_ITEM",
-          item: item,
-        });
-      }
-      // for (const key in item) {
-      //   // Dispatch to reducer to update the item field
-      //   createSaleFormDispatch({
-      //     type: "UPDATE_ITEM_FIELD",
-      //     index,
-      //     key,
-      //     item: item[key],
-      //   });
-      // }
+    // items.forEach((item, index) => {
+    //   if (
+    //     item.discount &&
+    //     item.gross_amount &&
+    //     item.gst_amount &&
+    //     item.hsn_code &&
+    //     item.item_description &&
+    //     item.quantity &&
+    //     item.unit_price &&
+    //     item.item_name &&
+    //     item.base_amount
+    //   ) {
+    //     console.log("dviudsfnv");
+    //     createInvoiceDispatch({
+    //       type: "ADD_ITEM",
+    //       item: item,
+    //     });
+    //   }
+    // });
+
+    createSaleFormDispatch({
+      type: "UPDATE_FIELD",
+      value: items,
+      field: "listItems",
     });
   }, [items]);
+
+  // reset the create sale form to intial value when not in addSales page
+  useEffect(() => {
+    !pathname.toLowerCase().includes("sales/addSales") && setItems([blankItem]);
+  }, [pathname]);
 
   console.log(selectedQuotationItems);
 
@@ -565,6 +565,14 @@ const AdditionalNotes = ({ className, saleDetails }) => {
   const { createSaleFormDispatch } = useContext(SalesContext);
 
   useEffect(() => {
+    if (!notes) {
+      createSaleFormDispatch({
+        type: "UPDATE_FIELD",
+        field: "notes",
+        value: "N/A",
+      });
+      return;
+    }
     createSaleFormDispatch({
       type: "UPDATE_FIELD",
       field: "notes",
@@ -610,6 +618,18 @@ const TermsAndConditions = ({ className, saleDetails }) => {
   const { createSaleFormDispatch } = useContext(SalesContext);
 
   useEffect(() => {
+    if (!conditions) {
+      createSaleFormDispatch({
+        type: "UPDATE_FIELD",
+        field: "listToc",
+        value: [
+          {
+            terms_of_service: "N/A",
+          },
+        ],
+      });
+      return;
+    }
     createSaleFormDispatch({
       type: "UPDATE_FIELD",
       field: "listToc",
