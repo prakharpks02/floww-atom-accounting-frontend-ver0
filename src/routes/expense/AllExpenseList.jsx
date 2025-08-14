@@ -26,7 +26,6 @@ import { InputField } from "../../utils/ui/InputField";
 import { motion, AnimatePresence } from "framer-motion";
 import { exportToExcel } from "../../utils/downloadExcel";
 
-
 export const AllExpenseList = () => {
   const [tempExpenseList, settempExpenseList] = useState(null);
   const [isLoading, setisLoading] = useState(true);
@@ -177,7 +176,7 @@ const ShowAllExpenses = ({ AllExpense, getAllExpense, setisLoading }) => {
               </tr>
             </thead>
             <tbody>
-              {AllExpense.map((expense, idx) => {
+              {[...(AllExpense || [])].reverse().map((expense, idx) => {
                 return (
                   <tr
                     key={`${idx}`}
@@ -746,10 +745,15 @@ const StatusCell = ({ expense, getAllExpense, setisLoading }) => {
               </button>
             </>
           ) : (
-            <Edit
-              className="w-4 h-4 cursor-pointer text-gray-500 hover:text-black"
-              onClick={() => setIsEditing(true)}
-            />
+            !(
+              expense.expense_status?.toLowerCase() == "approved" ||
+              expense.expense_status?.toLowerCase() == "rejected"
+            ) && (
+              <Edit
+                className="w-4 h-4 cursor-pointer text-gray-500 hover:text-black"
+                onClick={() => setIsEditing(true)}
+              />
+            )
           )}
         </div>
       ) : (
@@ -878,10 +882,12 @@ const PaidOrUnpaidCell = ({ expense, getAllExpense, setisLoading }) => {
               </button>
             </>
           ) : (
-            <Edit
-              className="w-4 h-4 cursor-pointer text-gray-500 hover:text-black"
-              onClick={() => setIsEditing(true)}
-            />
+            !(expense.paid?.toLowerCase() == "paid") && (
+              <Edit
+                className="w-4 h-4 cursor-pointer text-gray-500 hover:text-black"
+                onClick={() => setIsEditing(true)}
+              />
+            )
           )}
         </div>
       ) : (

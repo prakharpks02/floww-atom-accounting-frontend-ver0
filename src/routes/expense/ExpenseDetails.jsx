@@ -42,7 +42,7 @@ export const ExpenseDetails = () => {
                 </p>
               </div>
 
-              <div className=" flex gap-3 w-fit">
+              {/* <div className=" flex gap-3 w-fit">
                 <button
                   onClick={() => {
                     navigate(`/expense/addExpense/${expenseid}`);
@@ -54,7 +54,7 @@ export const ExpenseDetails = () => {
                 {/* <button className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs bg-[#0033661A] text-[#2543B1] rounded-xl hover:bg-[#00336626] cursor-pointer transition">
                   <Upload className="w-5 h-5" /> Share
                 </button> */}
-              </div>
+              {/* </div> */} 
             </div>
           </div>
 

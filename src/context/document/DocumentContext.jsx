@@ -229,32 +229,32 @@ export const DocumentContextProvider = ({ children }) => {
   );
 
   //document list meta data
-  const totalDocument =
-    allDocumentList?.reduce(
-      (sum, item) => sum + (item.document_url?.length || 0),
-      0
-    ) || 0;
-  const uploadedDocumentThisMonth =
-    allDocumentList?.reduce((sum, item) => {
-      const d = new Date(parseInt(item.uploaded_on) * 1000);
-      console.log(d, parseInt(item.uploaded_on));
-      return d.getMonth() === new Date().getMonth() &&
-        d.getFullYear() === new Date().getFullYear()
-        ? sum + (item.document_url?.length || 0)
-        : sum;
-    }, 0) || 0;
-  const totalSize =
-    allDocumentList?.reduce(
-      (sum, item) =>
-        sum +
-        (item.document_url?.reduce(
-          (s, doc) => s + (Number(doc.doc_size) || 0),
-          0
-        ) || 0),
-      0
-    ) || 0;
-  const totalCategory =
-    new Set(allDocumentList?.map((item) => item.document_category)).size || 0;
+  // const totalDocument =
+  //   allDocumentList?.reduce(
+  //     (sum, item) => sum + (item.document_url?.length || 0),
+  //     0
+  //   ) || 0;
+  // const uploadedDocumentThisMonth =
+  //   allDocumentList?.reduce((sum, item) => {
+  //     const d = new Date(parseInt(item.uploaded_on) * 1000);
+  //     console.log(d, parseInt(item.uploaded_on));
+  //     return d.getMonth() === new Date().getMonth() &&
+  //       d.getFullYear() === new Date().getFullYear()
+  //       ? sum + (item.document_url?.length || 0)
+  //       : sum;
+  //   }, 0) || 0;
+  // const totalSize =
+  //   allDocumentList?.reduce(
+  //     (sum, item) =>
+  //       sum +
+  //       (item.document_url?.reduce(
+  //         (s, doc) => s + (Number(doc.doc_size) || 0),
+  //         0
+  //       ) || 0),
+  //     0
+  //   ) || 0;
+  // const totalCategory =
+  //   new Set(allDocumentList?.map((item) => item.document_category)).size || 0;
 
   //reset data on navigate
   useEffect(() => {
@@ -275,10 +275,10 @@ export const DocumentContextProvider = ({ children }) => {
         createDocument,
         getAllDocumentList,
         allDocumentList,
-        totalDocument,
-        uploadedDocumentThisMonth,
-        totalSize,
-        totalCategory,
+        // totalDocument,
+        // uploadedDocumentThisMonth,
+        // totalSize,
+        // totalCategory,
       }}
     >
       {children}
