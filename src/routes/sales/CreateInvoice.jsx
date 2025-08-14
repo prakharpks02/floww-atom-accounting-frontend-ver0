@@ -1905,7 +1905,7 @@ const TaxDropdown = ({ value, setvalue, isDisabled }) => {
       >
         <motion.button
           className={`w-full px-2 py-2 ${
-            isDisabled ? "bg-white" : "bg-white"
+            isDisabled ? "bg-gray-500/30" : "bg-white"
           } cursor-pointer border rounded-md lg:text-sm text-xs text-gray-700 flex items-center justify-between border-gray-400`}
           whileHover={{
             borderColor: "#9CA3AF",

@@ -199,7 +199,7 @@ const ShowPurchaseOrderInTable = ({ allPurchase }) => {
               </tr>
             </thead>
             <tbody>
-              {allPurchase?.map((purchase, idx) => {
+              {[...(allPurchase || [])].reverse()?.map((purchase, idx) => {
                 return purchase?.list_items?.map((item, index) => {
                   return purchase.po_url?.map((doc, i) => {
                     return (
@@ -212,7 +212,10 @@ const ShowPurchaseOrderInTable = ({ allPurchase }) => {
                             );
 
                           doc.invoice_url?.toLowerCase() != "n/a" &&
-                            downloadFile(doc.invoice_url,`Purchase-order-${purchase.po_id}`);
+                            downloadFile(
+                              doc.invoice_url,
+                              `Purchase-order-${purchase.po_id}`
+                            );
                         }}
                         className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
                       >
@@ -258,10 +261,7 @@ const ShowPurchaseOrderInTable = ({ allPurchase }) => {
                             ? `${item.item_name}`
                             : "--"}
                         </td>
-                        <td
-                          className=" text-center whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium"
-                         
-                        >
+                        <td className=" text-center whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
                           {doc.invoice_url?.toLowerCase() == "n/a"
                             ? `${item.quantity}`
                             : "--"}

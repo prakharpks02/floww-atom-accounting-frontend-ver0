@@ -178,7 +178,7 @@ const PrimaryContact = ({ className, customerDetails }) => {
             readOnly={true}
             value={salutation}
             setvalue={setsalutation}
-            label={"Primary Contact*"}
+            label={"Primary Contact"}
             placeholder={"Salutation"}
             dropDownData={salutations}
             dropDownType="default"
@@ -223,7 +223,7 @@ const CompanyName = ({ className, customerDetails }) => {
         required={true}
         value={company}
         setvalue={setcompany}
-        label={"Company name (as per gst and other documents)*"}
+        label={"Company name (as per gst and other documents)"}
         placeholder={"eg: XYZ pvt.ltd"}
       />
     </div>
@@ -255,25 +255,24 @@ const PhoneDetails = ({ className, customerDetails }) => {
     <div className={` grid grid-cols-2 gap-2 ${className}`}>
       <div>
         <InputField
-          autoComplete="off"
-          required={true}
-          value={workPhone}
-          setvalue={setworkPhone}
-          inputType={"tel"}
-          label={"Phone*"}
-          placeholder={"Work Phone"}
-        />
-      </div>
-      <div>
-        <InputField
           value={mobile}
           autoComplete="off"
           setvalue={setmobile}
           required={true}
           inputType={"tel"}
-          label={""}
+          label={"Mobile No"}
           maxLength={10}
           placeholder={"Mobile"}
+        />
+      </div>
+      <div>
+        <InputField
+          autoComplete="off"
+          value={workPhone}
+          setvalue={setworkPhone}
+          inputType={"tel"}
+          label={"Work phone"}
+          placeholder={"Work Phone"}
         />
       </div>
     </div>
@@ -286,7 +285,7 @@ const DisplayName = ({ className, customerDetails }) => {
   );
   const { handleChange } = useContext(CustomerContext);
   useEffect(() => {
-    handleChange("UPDATE_FIELD", "displayName", displayName);
+    handleChange("UPDATE_FIELD", "displayName", displayName || "N/A");
   }, [displayName]);
 
   // clear values when no customer details found
@@ -299,10 +298,9 @@ const DisplayName = ({ className, customerDetails }) => {
   return (
     <div className={`${className}`}>
       <InputField
-        required={true}
         value={displayName}
         setvalue={setdisplayName}
-        label={"Display name*"}
+        label={"Display name"}
         placeholder={"Type a display name"}
         isTextArea={true}
         minHeight={50}
@@ -329,7 +327,7 @@ const EmailAddress = ({ className, customerDetails }) => {
         required={true}
         value={email}
         setvalue={setemail}
-        label={"Email address*"}
+        label={"Email address"}
         placeholder={"Enter a valid email address"}
       />
     </div>
@@ -459,9 +457,9 @@ const OtherDetails = ({ className, customerDetails }) => {
   const [paymentTerm, setpaymentTerm] = useState(
     customerDetails?.payment_term || customerDetails?.payment_terms || ""
   );
-  const [files, setfiles] = useState(customerDetails?.related_documents || []);
+  const [files, setfiles] = useState(customerDetails?.related_documents[0]?.related_doc_url == "N/A" ? [] : [...(customerDetails?.related_documents || [])]);
 
-  const { handleChange } = useContext(CustomerContext);
+  const { handleChange, createCustomerForm } = useContext(CustomerContext);
   useEffect(() => {
     handleChange("UPDATE_FIELD", "gstNumber", gst);
   }, [gst]);
@@ -472,23 +470,30 @@ const OtherDetails = ({ className, customerDetails }) => {
     handleChange("UPDATE_FIELD", "openingBalance", openingBalance);
   }, [openingBalance]);
   useEffect(() => {
-    handleChange("UPDATE_FIELD", "paymentTerms", paymentTerm);
+    handleChange("UPDATE_FIELD", "paymentTerms", paymentTerm || "N/A");
   }, [paymentTerm]);
   useEffect(() => {
-    console.log("jdnfjdn");
-    if (files.length > 0) {
-      const value = [];
-      files.forEach((file, index) => {
-        value.push({
-          fileBlob: file || "N/A",
-          fileName: file.name || "N/A",
-          related_doc_name: file.related_doc_name || "N/A",
-          related_doc_url: file.related_doc_url || "N/A",
-        });
-      });
-      handleChange("UPDATE_FIELD", "relatedDocuments", value);
+    if (!files || files.length == 0) {
+      handleChange("UPDATE_FIELD", "relatedDocuments", [
+        {
+          related_doc_name: "N/A",
+          related_doc_url: "N/A",
+        },
+      ]);
+      return;
     }
-  }, [files, files.length]);
+
+    const value = [];
+    files.forEach((file, index) => {
+      value.push({
+        fileBlob: file || "N/A",
+        fileName: file.name || "N/A",
+        related_doc_name: file.related_doc_name || "N/A",
+        related_doc_url: file.related_doc_url || "N/A",
+      });
+    });
+    handleChange("UPDATE_FIELD", "relatedDocuments", value);
+  }, [files]);
 
   // clear values when no customer details found
   useEffect(() => {
@@ -501,6 +506,7 @@ const OtherDetails = ({ className, customerDetails }) => {
   }, [customerDetails]);
 
   console.log(files);
+
   return (
     <div
       className={`grid grid-cols-2 xl:gap-x-4 md:gap-x-2 space-y-4 ${className} `}
@@ -508,6 +514,11 @@ const OtherDetails = ({ className, customerDetails }) => {
       {/* pan  */}
       <div>
         <InputField
+          additionalNote={
+            createCustomerForm.customerType == "Business"
+              ? "Company PAN number"
+              : "Customer PAN number"
+          }
           value={panNumber}
           setvalue={setpanNumber}
           label={"PAN*"}
@@ -519,6 +530,11 @@ const OtherDetails = ({ className, customerDetails }) => {
       {/* gst  */}
       <div>
         <InputField
+          additionalNote={
+            createCustomerForm.customerType == "Business"
+              ? "Company GST number"
+              : "Customer GST number"
+          }
           value={gst}
           setvalue={setgst}
           label={"GST*"}
@@ -530,7 +546,7 @@ const OtherDetails = ({ className, customerDetails }) => {
       {/* opening balance  */}
       <div>
         <p className="font-normal text-[#000000] mb-1 2xl:text-lg xl:text-base lg:text-sm text-xs">
-          Opening Balance*
+          Opening Balance <span className=" text-red-600 ">*</span>
         </p>
         <div className=" flex items-end ">
           <div className="text-[#333333c6] w-fit font-normal 2xl:text-lg md:text-base px-3 py-2 border-[1.5px] border-[#0000001A] rounded-lg mr-3">
@@ -660,9 +676,7 @@ const Address = ({ className, customerDetails }) => {
 const BillingAddress = ({ className, customerDetails }) => {
   const { handleChange, createCustomerForm } = useContext(CustomerContext);
   const len = customerDetails?.address?.split(",").length;
-  const [attention, setattention] = useState(
-    customerDetails?.attention || "N/A"
-  );
+
   const [country, setcountry] = useState("India");
   const [street1, setstreet1] = useState(
     customerDetails?.address?.split(",")[0]?.trim() || ""
@@ -677,9 +691,6 @@ const BillingAddress = ({ className, customerDetails }) => {
   const [pinCode, setpinCode] = useState(
     customerDetails?.address?.split(",")[len - 1]?.split("-")[1]?.trim() || ""
   );
-  const [phone, setphone] = useState(
-    customerDetails?.contact_no || createCustomerForm["contactNo"] || ""
-  );
 
   useEffect(() => {
     if (!country || !(street1 || street2) || !city || !state || !pinCode)
@@ -692,20 +703,14 @@ const BillingAddress = ({ className, customerDetails }) => {
     );
   }, [country, street1, street2, city, state, pinCode]);
 
-  useEffect(() => {
-    handleChange("UPDATE_FIELD", "contactNo", phone);
-  }, [phone]);
-
   // clear values when no customer details found
   useEffect(() => {
     if (!customerDetails) {
-      setattention("");
       setstreet1("");
       setstreet2("");
       setcity("");
       setstate("");
       setpinCode("");
-      setphone("");
     }
   }, [customerDetails]);
 
@@ -731,7 +736,7 @@ const BillingAddress = ({ className, customerDetails }) => {
           <InputField
             value={country}
             setvalue={setcountry}
-            label={"Country/Region*"}
+            label={"Country/Region"}
             required={true}
             readOnly={true}
             placeholder={""}
@@ -740,7 +745,7 @@ const BillingAddress = ({ className, customerDetails }) => {
         {/* Address* */}
         <div>
           <p className=" font-normal text-[#000000] mb-1 2xl:text-lg xl:text-base lg:text-sm text-xs">
-            Address*
+            Address <span className=" text-red-600 ">*</span>
           </p>
           <InputField
             isTextArea={"true"}
@@ -765,7 +770,7 @@ const BillingAddress = ({ className, customerDetails }) => {
           <InputField
             value={city}
             setvalue={setcity}
-            label={"City*"}
+            label={"City"}
             required={true}
             placeholder={"Enter City"}
           />
@@ -775,7 +780,7 @@ const BillingAddress = ({ className, customerDetails }) => {
           <InputField
             value={state}
             setvalue={setstate}
-            label={"State*"}
+            label={"State"}
             required={true}
             readOnly={true}
             hasDropDown={true}
@@ -787,23 +792,10 @@ const BillingAddress = ({ className, customerDetails }) => {
         <div>
           <InputField
             value={pinCode}
-            label={"PIN Code*"}
+            label={"PIN Code"}
             setvalue={setpinCode}
             required={true}
             placeholder={"Enter PIN code"}
-          />
-        </div>
-        {/* Phone* */}
-        <div>
-          <InputField
-            autoComplete="off"
-            maxLength={10}
-            value={phone}
-            label={"Phone*"}
-            setvalue={setphone}
-            inputType={"tel"}
-            required={true}
-            placeholder={"Enter phone number"}
           />
         </div>
       </div>
@@ -836,11 +828,11 @@ const ContactPerson = ({ className, customerDetails }) => {
   const [email, setemail] = useState(
     customerDetails?.contact_person[0]?.email || ""
   );
-  const [workPhone, setworkPhone] = useState(
-    customerDetails?.contact_person[0]?.work_phone || ""
-  );
   const [mobile, setmobile] = useState(
     customerDetails?.contact_person[0]?.contact_no || ""
+  );
+  const [workPhone, setworkPhone] = useState(
+    customerDetails?.contact_person[0]?.work_phone || ""
   );
 
   // change create customer form
@@ -859,15 +851,6 @@ const ContactPerson = ({ className, customerDetails }) => {
     createCustomerFormDispatch({
       type: "UPDATE_ARRAY",
       parentField: "contactPerson",
-      value: workPhone,
-      index: 0,
-      field: "work_phone",
-    });
-  }, [workPhone]);
-  useEffect(() => {
-    createCustomerFormDispatch({
-      type: "UPDATE_ARRAY",
-      parentField: "contactPerson",
       value: mobile,
       index: 0,
       field: "contact_no",
@@ -882,6 +865,15 @@ const ContactPerson = ({ className, customerDetails }) => {
       field: "email",
     });
   }, [email]);
+  useEffect(() => {
+    createCustomerFormDispatch({
+      type: "UPDATE_ARRAY",
+      parentField: "contactPerson",
+      value: workPhone||"N/A",
+      index: 0,
+      field: "work_phone",
+    });
+  }, [workPhone]);
 
   // clear values when no customer details found
   useEffect(() => {
@@ -890,7 +882,6 @@ const ContactPerson = ({ className, customerDetails }) => {
       setfirstName("");
       setlastName("");
       setemail("");
-      setworkPhone("");
       setmobile("");
     }
   }, [customerDetails]);
@@ -915,6 +906,7 @@ const ContactPerson = ({ className, customerDetails }) => {
         {/* First name */}
         <div>
           <InputField
+            required={true}
             value={firstName}
             setvalue={setfirstName}
             label={"First name"}
@@ -924,6 +916,7 @@ const ContactPerson = ({ className, customerDetails }) => {
         {/* Last name */}
         <div>
           <InputField
+            required={true}
             value={lastName}
             setvalue={setlastName}
             label={"Last name"}
@@ -934,6 +927,7 @@ const ContactPerson = ({ className, customerDetails }) => {
         <div>
           <InputField
             value={email}
+            required={true}
             setvalue={setemail}
             inputType={"email"}
             label={"Email address"}
@@ -954,6 +948,7 @@ const ContactPerson = ({ className, customerDetails }) => {
         {/* Mobile */}
         <div>
           <InputField
+            required={true}
             autoComplete="off"
             value={mobile}
             setvalue={setmobile}
@@ -995,7 +990,7 @@ const Remarks = ({ className, customerDetails }) => {
     customerDetails?.remarks || customerDetails?.remark || ""
   );
   useEffect(() => {
-    handleChange("UPDATE_FIELD", "remarks", remark);
+    handleChange("UPDATE_FIELD", "remarks", remark || "N/A");
   }, [remark]);
   // clear values when no customer details found
   useEffect(() => {
@@ -1009,8 +1004,7 @@ const Remarks = ({ className, customerDetails }) => {
         value={remark}
         setvalue={setremark}
         isTextArea={true}
-        label={"Remarks (For Internal Use)*"}
-        required={true}
+        label={"Remarks (For Internal Use)"}
         placeholder={"Enter remarks for the customer"}
         minHeight={100}
       />

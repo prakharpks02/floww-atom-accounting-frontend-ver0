@@ -43,7 +43,7 @@ export const initialPurchaseOrderState = {
   ],
   listToc: [
     {
-      terms_of_service: "",
+      terms_of_service: "N/A",
     },
   ],
   listStatus: [
@@ -54,7 +54,7 @@ export const initialPurchaseOrderState = {
     },
   ],
   vendorId: "",
-  notes: "",
+  notes: "N/A",
   contactNo: "",
   email: "",
   poUrl: [{ invoice_url: "N/A" }],
@@ -75,7 +75,7 @@ export const initialPurchaseOrderState = {
   vendorName: "",
   paymentTerms: "",
   shipmentPreference: "",
-  reference: "",
+  reference: "N/A",
   subject: "",
 };
 

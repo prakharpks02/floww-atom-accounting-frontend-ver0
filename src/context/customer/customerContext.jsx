@@ -19,16 +19,16 @@ export const CustomerContext = createContext();
 export const initialCustomerState = {
   attention: "N/A",
   companyName: "",
-  remarks: "",
+  remarks: "N/A",
   customerType: "", // or "Individual"
-  workPhone: "",
-  displayName: "",
+  workPhone: "N/A",
+  displayName: "N/A",
   openingBalance: "", // INR
-  paymentTerms: "",
+  paymentTerms: "N/A",
   customerFirstName: "",
   customerLastName: "",
   customerSalutation: "",
-  contactPerson: [{ contact_person: "", contact_no: "", email: "" }],
+  contactPerson: [{ contact_person: "", contact_no: "", email: "" , work_phone:"N/A" }],
   bankDetails: [
     {
       bank_name: "N/A",
@@ -190,12 +190,14 @@ export const CustomerContextProvider = ({ children }) => {
         // upload documens
         for (let i = 0; i < createCustomerForm.relatedDocuments.length; i++) {
           const file = createCustomerForm.relatedDocuments[i];
-          const res = await uploadFile(file.fileName, file.fileBlob, token);
-          console.log(res);
-          createCustomerForm.relatedDocuments[i] = {
-            related_doc_name: res.file_name,
-            related_doc_url: res.doc_url,
-          };
+          if (file.fileBlob) {
+            const res = await uploadFile(file.fileName, file.fileBlob, token);
+            console.log(res);
+            createCustomerForm.relatedDocuments[i] = {
+              related_doc_name: res.file_name,
+              related_doc_url: res.doc_url,
+            };
+          }
         }
         console.log("file uploaded");
 

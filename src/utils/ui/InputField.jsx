@@ -27,6 +27,7 @@ const Vendors = [
 ];
 
 export const InputField = ({
+  additionalNote = "",
   isLoading = false,
   hasLabel = true,
   padding = 4,
@@ -100,6 +101,8 @@ export const InputField = ({
           {required ? <span className=" text-red-600 ">*</span> : ""}
         </label>
       )}
+
+      {additionalNote && <p className=" text-xs text-red-600 mb-1">{additionalNote}</p>}
 
       <div
         onClick={(e) => {
