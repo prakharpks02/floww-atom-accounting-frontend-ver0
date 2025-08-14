@@ -99,20 +99,20 @@ const dropDownDataList = {
   ],
   Purchase: [
     {
+      label: "Order List (PO)",
+      href: "/purchase/OrderList",
+    },
+    {
+      label: "Create Order (PO)",
+      href: "/purchase/createOrder/new",
+    },
+    {
       label: "Purchase List",
       href: "/purchase/purchaseList",
     },
     {
       label: "Add Purchase",
       href: "/purchase/addPurchase/new",
-    },
-    {
-      label: "Order List",
-      href: "/purchase/OrderList",
-    },
-    {
-      label: "Create Order",
-      href: "/purchase/createOrder/new",
     },
   ],
   Quotation: [

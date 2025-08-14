@@ -68,9 +68,6 @@ export const AddSales = () => {
         <p className="mb-6 font-medium text-xs md:text-sm lg:text-base xl:text-lg 2xl:text-xl text-[#A4A4A4]">
           Create a new sales record
         </p>
-        <p className="pl-3 underline underline-offset-8 mb-4 font-normal text-xs md:text-sm lg:text-base xl:text-lg 2xl:text-xl text-[#ff0000]">
-          Be ready with your invoice
-        </p>
 
         {isDataFechting && (
           <div className=" flex-1 flex justify-center items-center py-10 px-4 min-h-[300px]">
@@ -313,7 +310,7 @@ const ItemDetails = ({ saleDetails }) => {
   const { pathname } = useLocation();
 
   // changes fields for particular item row
-  const handleChange = (index, field, value) => {
+  const handleCustomItemChange = (index, field, value) => {
     // Update local items state
     const updatedItems = [...items];
     updatedItems[index][field] = value;
@@ -346,8 +343,56 @@ const ItemDetails = ({ saleDetails }) => {
     }
   };
 
+  // changes fields for particular item row ... item from the selected quotation
+  const handleQuotationItemChange = useCallback(
+    (index, field, value) => {
+      // Update local items state
+      const updatedItems = [...createSaleForm.selectedQuotationItems];
+      updatedItems[index][field] = value;
+      // setItems(updatedItems);
+      createSaleFormDispatch({
+        type: "UPDATE_FIELD",
+        field: "selectedQuotationItems",
+        value: updatedItems,
+      });
+
+      if (
+        updatedItems[index].unit_price &&
+        updatedItems[index].quantity &&
+        updatedItems[index].discount &&
+        updatedItems[index].gst_amount
+      ) {
+        console.log("'hiii");
+        updatedItems[index]["gross_amount"] = (
+          (Number(updatedItems[index].unit_price) *
+            Number(updatedItems[index].quantity) *
+            (100 - Number(updatedItems[index].discount)) *
+            (100 + Number(updatedItems[index].gst_amount))) /
+          10000
+        ).toFixed(2);
+        console.log(updatedItems);
+
+        //update gross amount on create salea form
+        createSaleFormDispatch({
+          type: "UPDATE_FIELD",
+          field: "selectedQuotationItems",
+          value: updatedItems,
+        });
+      } else {
+        updatedItems[index]["gross_amount"] = 0;
+        //update gross amount on create salea form
+        createSaleFormDispatch({
+          type: "UPDATE_FIELD",
+          field: "selectedQuotationItems",
+          value: updatedItems,
+        });
+      }
+    },
+    [createSaleForm]
+  );
+
   // add new row , also add the row to sales reducer
-  const addRow = () => {
+  const addCustomItemRow = () => {
     setItems([...items, blankItem]);
     createSaleFormDispatch({
       type: "ADD_ITEM",
@@ -356,7 +401,7 @@ const ItemDetails = ({ saleDetails }) => {
   };
 
   // remove a existing row , also remove the row to sales reducer
-  const removeRow = (index) => {
+  const removeCustomItemRow = (index) => {
     const updatedItems = items.filter((_, idx) => idx !== index);
     setItems(updatedItems);
     createSaleFormDispatch({
@@ -365,42 +410,7 @@ const ItemDetails = ({ saleDetails }) => {
     });
   };
 
-  // reset state value when no salesdata
   useEffect(() => {
-    if (!selectedQuotationItems) return;
-    console.log("dsficsdnfv");
-    let temp;
-    setItems((prev) => {
-      temp = prev;
-      return [
-        ...(selectedQuotationItems || []),
-        ...(prev.length == 1 && !prev[0].item_description ? [] : prev),
-        // ...(purchaseOrderDetails?.list_items || []),
-      ];
-    });
-  }, [selectedQuotationItems]);
-
-  useEffect(() => {
-    // items.forEach((item, index) => {
-    //   if (
-    //     item.discount &&
-    //     item.gross_amount &&
-    //     item.gst_amount &&
-    //     item.hsn_code &&
-    //     item.item_description &&
-    //     item.quantity &&
-    //     item.unit_price &&
-    //     item.item_name &&
-    //     item.base_amount
-    //   ) {
-    //     console.log("dviudsfnv");
-    //     createInvoiceDispatch({
-    //       type: "ADD_ITEM",
-    //       item: item,
-    //     });
-    //   }
-    // });
-
     createSaleFormDispatch({
       type: "UPDATE_FIELD",
       value: items,
@@ -413,12 +423,11 @@ const ItemDetails = ({ saleDetails }) => {
     !pathname.toLowerCase().includes("sales/addSales") && setItems([blankItem]);
   }, [pathname]);
 
-  console.log(selectedQuotationItems);
+  // console.log(selectedQuotationItems);
 
   return (
     <>
-      {items.map((item, index) => {
-        const isLast = index === items.length - 1;
+      {createSaleForm.selectedQuotationItems?.map((item, index) => {
         return (
           <div key={index} className="mb-4">
             <div className=" grid md:grid-cols-12 grid-cols-2 space-x-2 space-y-4 mb-6">
@@ -428,8 +437,8 @@ const ItemDetails = ({ saleDetails }) => {
                   autoComplete="off"
                   value={item.item_description}
                   setvalue={(val) => {
-                    handleChange(index, "item_name", val);
-                    handleChange(index, "item_description", val);
+                    handleQuotationItemChange(index, "item_name", val);
+                    handleQuotationItemChange(index, "item_description", val);
                   }}
                   label={"Item Details"}
                   placeholder={"Enter Item name"}
@@ -442,7 +451,7 @@ const ItemDetails = ({ saleDetails }) => {
                   padding={4}
                   value={item.hsn_code}
                   setvalue={(val) => {
-                    handleChange(index, "hsn_code", val);
+                    handleQuotationItemChange(index, "hsn_code", val);
                   }}
                   label={"HSN Code"}
                   placeholder={"ABCD"}
@@ -456,8 +465,8 @@ const ItemDetails = ({ saleDetails }) => {
                   padding={2}
                   value={item.unit_price}
                   setvalue={(val) => {
-                    handleChange(index, "unit_price", val);
-                    handleChange(index, "base_amount", val);
+                    handleQuotationItemChange(index, "unit_price", val);
+                    handleQuotationItemChange(index, "base_amount", val);
                   }}
                   label={"Rate"}
                   placeholder={"0.00"}
@@ -470,7 +479,9 @@ const ItemDetails = ({ saleDetails }) => {
                   required={true}
                   autoComplete="off"
                   value={item.quantity}
-                  setvalue={(val) => handleChange(index, "quantity", val)}
+                  setvalue={(val) =>
+                    handleQuotationItemChange(index, "quantity", val)
+                  }
                   label={"Qnty"}
                   placeholder={"0"}
                   inputType={"number"}
@@ -483,7 +494,9 @@ const ItemDetails = ({ saleDetails }) => {
                   max={100}
                   min={0}
                   value={item.discount}
-                  setvalue={(val) => handleChange(index, "discount", val)}
+                  setvalue={(val) =>
+                    handleQuotationItemChange(index, "discount", val)
+                  }
                   label={"Discount %"}
                   placeholder={"0.00"}
                   inputType={"number"}
@@ -496,7 +509,9 @@ const ItemDetails = ({ saleDetails }) => {
                   max={100}
                   min={0}
                   value={item.gst_amount}
-                  setvalue={(val) => handleChange(index, "gst_amount", val)}
+                  setvalue={(val) =>
+                    handleQuotationItemChange(index, "gst_amount", val)
+                  }
                   label={"GST %"}
                   placeholder={"0.00"}
                   inputType={"number"}
@@ -509,7 +524,162 @@ const ItemDetails = ({ saleDetails }) => {
                   padding={2}
                   readOnly={true}
                   value={item.gross_amount}
-                  setvalue={(val) => handleChange(index, "gross_amount", val)}
+                  setvalue={(val) =>
+                    handleQuotationItemChange(index, "gross_amount", val)
+                  }
+                  label={"Amount"}
+                  placeholder={"0.00"}
+                  icon={<IndianRupee className=" w-5 h-5 text-[#4A4A4A]" />}
+                  inputType={"rupee"}
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            {items.length +
+              (createSaleForm.selectedQuotationItems?.length || 0) ==
+              1 && (
+              <button
+                tabIndex={0}
+                onClick={addCustomItemRow}
+                className="hover:bg-[#0033662c] transition opacity-80 px-4 py-3 cursor-pointer flex items-center gap-2 rounded-xl text-[#2543B1] bg-[#0033661A] text-base font-medium"
+              >
+                <div className="p-0.5 rounded-full flex items-center bg-[#2543B1]">
+                  <Plus className="w-4 h-4 text-white" />
+                </div>
+                Add new row
+              </button>
+            )}
+            {items.length +
+              (createSaleForm.selectedQuotationItems?.length || 0) >
+              1 && (
+              <div className="flex gap-4 mb-6 w-full">
+                <button
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    createSaleFormDispatch({
+                      type: "UPDATE_FIELD",
+                      field: "selectedQuotationItems",
+                      value: createSaleForm.selectedQuotationItems.filter(
+                        (_, i) => i !== index
+                      ),
+                    });
+                  }}
+                  className="hover:bg-red-100 transition opacity-80 px-4 py-3 cursor-pointer flex items-center gap-2 rounded-xl text-red-600 bg-red-50 text-base font-medium"
+                >
+                  <div className="p-0.5 rounded-full flex items-center bg-red-600">
+                    <X className="w-4 h-4 text-white" />
+                  </div>
+                  Remove
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {items.map((item, index) => {
+        const isLast = index === items.length - 1;
+        return (
+          <div key={index} className="mb-4">
+            <div className=" grid md:grid-cols-12 grid-cols-2 space-x-2 space-y-4 mb-6">
+              <div className=" overflow-x-auto md:col-span-6 col-span-2">
+                <InputField
+                  required={true}
+                  autoComplete="off"
+                  value={item.item_description}
+                  setvalue={(val) => {
+                    handleCustomItemChange(index, "item_name", val);
+                    handleCustomItemChange(index, "item_description", val);
+                  }}
+                  label={"Item Details"}
+                  placeholder={"Enter Item name"}
+                />
+              </div>
+              <div className=" overflow-x-auto md:col-span-3 col-span-1">
+                <InputField
+                  required={true}
+                  autoComplete="off"
+                  padding={4}
+                  value={item.hsn_code}
+                  setvalue={(val) => {
+                    handleCustomItemChange(index, "hsn_code", val);
+                  }}
+                  label={"HSN Code"}
+                  placeholder={"ABCD"}
+                  inputType={"text"}
+                />
+              </div>
+              <div className=" overflow-x-auto md:col-span-3 col-span-1">
+                <InputField
+                  required={true}
+                  autoComplete="off"
+                  padding={2}
+                  value={item.unit_price}
+                  setvalue={(val) => {
+                    handleCustomItemChange(index, "unit_price", val);
+                    handleCustomItemChange(index, "base_amount", val);
+                  }}
+                  label={"Rate"}
+                  placeholder={"0.00"}
+                  icon={<IndianRupee className=" w-5 h-5 text-[#4A4A4A]" />}
+                  inputType={"rupee"}
+                />
+              </div>
+              <div className=" overflow-x-auto md:col-span-3 col-span-1">
+                <InputField
+                  required={true}
+                  autoComplete="off"
+                  value={item.quantity}
+                  setvalue={(val) =>
+                    handleCustomItemChange(index, "quantity", val)
+                  }
+                  label={"Qnty"}
+                  placeholder={"0"}
+                  inputType={"number"}
+                />
+              </div>
+              <div className=" overflow-x-auto md:col-span-3 col-span-1">
+                <InputField
+                  required={true}
+                  autoComplete="off"
+                  max={100}
+                  min={0}
+                  value={item.discount}
+                  setvalue={(val) =>
+                    handleCustomItemChange(index, "discount", val)
+                  }
+                  label={"Discount %"}
+                  placeholder={"0.00"}
+                  inputType={"number"}
+                />
+              </div>
+              <div className=" overflow-x-auto md:col-span-3 col-span-1">
+                <InputField
+                  required={true}
+                  autoComplete="off"
+                  max={100}
+                  min={0}
+                  value={item.gst_amount}
+                  setvalue={(val) =>
+                    handleCustomItemChange(index, "gst_amount", val)
+                  }
+                  label={"GST %"}
+                  placeholder={"0.00"}
+                  inputType={"number"}
+                />
+              </div>
+              <div className=" overflow-x-auto md:col-span-3 col-span-2">
+                <InputField
+                  required={true}
+                  autoComplete="off"
+                  padding={2}
+                  readOnly={true}
+                  value={item.gross_amount}
+                  setvalue={(val) =>
+                    handleCustomItemChange(index, "gross_amount", val)
+                  }
                   label={"Amount"}
                   placeholder={"0.00"}
                   icon={<IndianRupee className=" w-5 h-5 text-[#4A4A4A]" />}
@@ -523,7 +693,7 @@ const ItemDetails = ({ saleDetails }) => {
               {isLast && (
                 <button
                   tabIndex={0}
-                  onClick={addRow}
+                  onClick={addCustomItemRow}
                   className="hover:bg-[#0033662c] transition opacity-80 px-4 py-3 cursor-pointer flex items-center gap-2 rounded-xl text-[#2543B1] bg-[#0033661A] text-base font-medium"
                 >
                   <div className="p-0.5 rounded-full flex items-center bg-[#2543B1]">
@@ -532,10 +702,12 @@ const ItemDetails = ({ saleDetails }) => {
                   Add new row
                 </button>
               )}
-              {items.length > 1 && (
+              {items.length +
+                (createSaleForm.selectedQuotationItems?.length || 0) >
+                1 && (
                 <button
                   tabIndex={0}
-                  onClick={() => removeRow(index)}
+                  onClick={() => removeCustomItemRow(index)}
                   className="hover:bg-red-100 transition opacity-80 px-4 py-3 cursor-pointer flex items-center gap-2 rounded-xl text-red-600 bg-red-50 text-base font-medium"
                 >
                   <div className="p-0.5 rounded-full flex items-center bg-red-600">
@@ -961,7 +1133,7 @@ const QuotationIDInputField = ({ saleDetails }) => {
   const { setselectedQuotationItems, quotationList, getQuotationList } =
     useContext(QuotationContext);
   const [isLoading, setisLoading] = useState(false);
-  const [isCustomQuotation, setisCustomQuotation] = useState(true);
+  const [isCustomQuotation, setisCustomQuotation] = useState(false);
   const [isDropdownOpen, setisDropdownOpen] = useState(false);
   const [query, setquery] = useState("");
 
@@ -973,13 +1145,7 @@ const QuotationIDInputField = ({ saleDetails }) => {
       createSaleFormDispatch({
         type: "UPDATE_FIELD",
         field: "quotationId",
-        value: quotationid,
-      });
-    !quotationid &&
-      createSaleFormDispatch({
-        type: "UPDATE_FIELD",
-        field: "quotationId",
-        value: "N/A",
+        value: quotationid ? quotationid : "N/A",
       });
   }, [quotationid]);
 
@@ -1028,62 +1194,7 @@ const QuotationIDInputField = ({ saleDetails }) => {
         <label className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal mb-1">
           Quotation ID (Optional)
         </label>
-
-        {/* radio buttons for switch quotation id type  */}
-        <div className="mb-3 mt-1 flex items-center gap-8">
-          {/* radio button for custom input  */}
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="radio"
-              name="quotationIdType"
-              value={isCustomQuotation}
-              checked={isCustomQuotation}
-              onChange={(e) => {
-                setselectedQuotationItems([]);
-                setquotationid("");
-                setisCustomQuotation(true);
-              }}
-              className="sr-only"
-            />
-            {/* custom styled circle */}
-            <div
-              className={`w-4 h-4 rounded-full border-[2.5px] flex items-center justify-center ${
-                isCustomQuotation ? "border-blue-800" : "border-gray-400"
-              }`}
-            >
-              {isCustomQuotation && (
-                <div className="w-2 h-2 bg-blue-800 rounded-full" />
-              )}
-            </div>
-            <span className="text-sm font-medium capitalize">Custom</span>
-          </label>
-
-          {/* radio button for select dropdown input  */}
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="radio"
-              name="quotationIdType"
-              value={isCustomQuotation}
-              checked={!isCustomQuotation}
-              onChange={(e) => {
-                setisCustomQuotation(false);
-              }}
-              className="sr-only"
-            />
-            {/* custom styled circle */}
-            <div
-              className={`w-4 h-4 rounded-full border-[2.5px] flex items-center justify-center ${
-                !isCustomQuotation ? "border-blue-800" : "border-gray-400"
-              }`}
-            >
-              {!isCustomQuotation && (
-                <div className="w-2 h-2 bg-blue-800 rounded-full" />
-              )}
-            </div>
-            <span className="text-sm font-medium capitalize">Select</span>
-          </label>
-        </div>
-
+        
         {isCustomQuotation && (
           <InputField
             value={quotationid}
@@ -1171,7 +1282,12 @@ const QuotationIDInputField = ({ saleDetails }) => {
                           onClick={(e) => {
                             console.log(item.list_items);
                             setquotationid(item.quotation_id);
-                            setselectedQuotationItems(item.list_items);
+                            // setselectedQuotationItems(item.list_items);
+                            createSaleFormDispatch({
+                              type: "UPDATE_FIELD",
+                              value: item.list_items,
+                              field: "selectedQuotationItems",
+                            });
                             setisDropdownOpen(false);
                           }}
                           className="px-4 py-3 hover:bg-gray-100 cursor-pointer"
@@ -1253,7 +1369,7 @@ const SubTotal = ({ className, saleDetails }) => {
   const { createSaleForm, createSaleFormDispatch } = useContext(SalesContext);
   const [subtotal, setsubtotal] = useState(createSaleForm?.subtotalAmount || 0);
   const [discount, setdiscount] = useState(
-    Number(saleDetails?.discount_amount) || 0
+    Number(saleDetails?.discount_amount || 0)
   );
   const [isAdjustment, setisAdjustment] = useState(
     saleDetails?.adjustment_amount &&
@@ -1301,11 +1417,15 @@ const SubTotal = ({ className, saleDetails }) => {
 
   useEffect(() => {
     //calculate subtotal
-    setsubtotal(
+    const sum1 =
       createSaleForm?.listItems.reduce((acc, item) => {
         return acc + parseFloat(item.gross_amount || 0);
-      }, 0) || 0
-    );
+      }, 0) || 0;
+    const sum2 =
+      createSaleForm?.selectedQuotationItems.reduce((acc, item) => {
+        return acc + parseFloat(item.gross_amount || 0);
+      }, 0) || 0;
+    setsubtotal(sum1 + sum2);
   }, [createSaleForm]);
 
   useEffect(() => {
@@ -1316,6 +1436,7 @@ const SubTotal = ({ className, saleDetails }) => {
     });
     setdiscountAmount(((subtotal * discount) / 100).toFixed(2));
   }, [discount, subtotal]);
+
   useEffect(() => {
     createSaleFormDispatch({
       type: "UPDATE_FIELD",
@@ -1328,6 +1449,7 @@ const SubTotal = ({ className, saleDetails }) => {
       ((subtotal * (100 - discount) * (100 + tax)) / 10000).toFixed(2)
     );
   }, [tds, subtotal, discount]);
+
   useEffect(() => {
     createSaleFormDispatch({
       type: "UPDATE_FIELD",
@@ -1335,6 +1457,7 @@ const SubTotal = ({ className, saleDetails }) => {
       value: isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal,
     });
   }, [grandTotal, isAdjustment]);
+
   useEffect(() => {
     createSaleFormDispatch({
       type: "UPDATE_FIELD",

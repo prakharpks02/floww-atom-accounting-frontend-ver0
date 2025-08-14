@@ -178,7 +178,7 @@ const ShowPurchaseInTable = ({ AllPurchase }) => {
               </tr>
             </thead>
             <tbody>
-              {AllPurchase.map((purchase, idx) =>
+              {[...(AllPurchase || [])].reverse().map((purchase, idx) =>
                 purchase.list_items.map((item, index) => {
                   return (
                     <tr

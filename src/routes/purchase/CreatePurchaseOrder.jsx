@@ -65,7 +65,7 @@ export const CreatePurchaseOrder = () => {
           </div>
 
           {/* Tabs */}
-          {purchaseorderid == "new" && (
+          {/* {purchaseorderid == "new" && (
             <div className="mb-4 flex rounded-lg bg-[#0033661A] overflow-hidden xl:py-2 xl:px-3 p-1 w-full">
               <button
                 tabIndex={0}
@@ -92,7 +92,7 @@ export const CreatePurchaseOrder = () => {
                 Upload existing purchase order
               </button>
             </div>
-          )}
+          )} */}
 
           {/* main content */}
           {activeTab === "create" && (
@@ -643,12 +643,12 @@ const ItemDetails = ({ className, purchaseOrderDetails }) => {
 
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
-
           return (
             <div key={index} className=" space-y-3 mb-8">
               <div className=" grid grid-cols-5 gap-3">
                 <div className=" overflow-x-hidden col-span-3">
                   <InputField
+                    required={true}
                     autoComplete="off"
                     value={item.item_description}
                     setvalue={(val) => {
@@ -661,6 +661,7 @@ const ItemDetails = ({ className, purchaseOrderDetails }) => {
                 </div>
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    required={true}
                     autoComplete="off"
                     padding={2}
                     value={item.unit_price}
@@ -676,6 +677,7 @@ const ItemDetails = ({ className, purchaseOrderDetails }) => {
                 </div>
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    required={true}
                     autoComplete="off"
                     padding={2}
                     value={item.quantity}
@@ -689,6 +691,7 @@ const ItemDetails = ({ className, purchaseOrderDetails }) => {
               <div className=" grid grid-cols-3 gap-3">
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    required={true}
                     autoComplete="off"
                     max={100}
                     min={0}
@@ -701,6 +704,7 @@ const ItemDetails = ({ className, purchaseOrderDetails }) => {
                 </div>
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    required={true}
                     autoComplete="off"
                     max={100}
                     min={0}
@@ -713,6 +717,7 @@ const ItemDetails = ({ className, purchaseOrderDetails }) => {
                 </div>
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    required={true}
                     autoComplete="off"
                     padding={2}
                     readOnly={true}
@@ -1041,7 +1046,7 @@ const DeliveryAddressInputField = ({ className, purchaseOrderDetails }) => {
   return (
     <div className={`w-full  ${className}`}>
       <p className="font-normal mb-3 text-[#4A4A4A] 2xl:text-lg xl:text-base lg:text-sm md:text-xs ">
-        Delivery address
+        Delivery address <span className=" text-red-600 ">*</span>
       </p>
 
       {/* Radio buttons */}
@@ -1161,6 +1166,7 @@ const SubjectInputField = ({ className, purchaseOrderDetails }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+                    required={true}
           value={subject}
           setvalue={setsubject}
           label={"Subject"}
@@ -1190,6 +1196,7 @@ const DateInputField = ({ className, purchaseOrderDetails }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+                    required={true}
           value={date}
           setvalue={setdate}
           placeholder={new Date(Date.now()).toLocaleDateString()}
@@ -1219,6 +1226,7 @@ const ShipmentPreferenceInputField = ({ className, purchaseOrderDetails }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+                    required={true}
           value={preferece}
           setvalue={setpreferece}
           isTextArea={true}
@@ -1246,6 +1254,7 @@ const PaymentTermsInputField = ({ className, purchaseOrderDetails }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={term}
           setvalue={setterm}
           label={"Payment Terms"}
@@ -1276,6 +1285,7 @@ const DeliveryDateInputField = ({ className, purchaseOrderDetails }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={date}
           setvalue={setdate}
           label={"Delivery Date"}
@@ -1337,6 +1347,7 @@ const VendorNameInputField = ({ className, purchaseOrderDetails }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={vendor.vendor_name}
           setvalue={setvendor}
           isLoading={isLoading}
@@ -1374,6 +1385,7 @@ const CustomerNameInputField = ({ className, value, setvalue }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={customer.customer_name}
           setvalue={setcustomer}
           isLoading={isLoading}
@@ -1397,10 +1409,8 @@ const CustomerNameInputField = ({ className, value, setvalue }) => {
 const UploadPurchaseOrder = ({ purchaseOrderDetails }) => {
   const [files, setfiles] = useState([]);
   const [isLoading, setisLoading] = useState(false);
-  const {
-    createPurchaseOrderFormDispatch,
-    createPurchaseOrder,
-  } = useContext(PurchaseOrderContext);
+  const { createPurchaseOrderFormDispatch, createPurchaseOrder } =
+    useContext(PurchaseOrderContext);
 
   useEffect(() => {
     createPurchaseOrderFormDispatch({

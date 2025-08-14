@@ -291,7 +291,7 @@ const ShowSalesInTable = ({ AllSales }) => {
               </tr>
             </thead>
             <tbody>
-              {AllSales.map((sale, idx) =>
+              {[...(AllSales || [])].reverse().map((sale, idx) =>
                 sale.list_items.map((item, index) => (
                   <tr
                     key={`${idx}-${index}`}

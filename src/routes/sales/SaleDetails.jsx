@@ -44,6 +44,7 @@ export const SaleInfo = () => {
   const [isLoading, setisLoading] = useState(true);
   const { getSaleDetails, saleDetails } = useContext(SalesContext);
   const containerRef = useRef(null);
+  const [isDownloading, setisDownloading] = useState(false);
 
   useEffect(() => {
     getSaleDetails(saleid, setisLoading);
@@ -73,10 +74,30 @@ export const SaleInfo = () => {
             </h1>
             <div className=" flex items-center gap-3">
               <button
-                onClick={() => generatePDF(saleDetails)}
-                className="px-4 py-3 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
+              disabled={isDownloading}
+                onClick={async () => {
+                  try {
+                    setisDownloading(true);
+                    await generatePDF(saleDetails);
+                  } catch (error) {
+                    console.log(error);
+                  } finally {
+                    setisDownloading(false);
+                  }
+                }}
+                className="px-4 py-3 disabled:cursor-wait disabled:opacity-60 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
               >
-                <Download className="w-5 h-5" /> Download
+                {isDownloading ? (
+                  <>
+                    <Loader2 className=" inline-block w-5 animate-spin" />
+                    Downloading
+                  </>
+                ) : (
+                  <>
+                    {" "}
+                    <Download className="w-5 h-5" /> Download{" "}
+                  </>
+                )}
               </button>
               <button
                 onClick={() => {

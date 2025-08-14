@@ -65,12 +65,12 @@ export const initialPurchaseListState = {
   ],
   attachments: [
     {
-      related_doc_name: "",
-      related_doc_url: "",
+      related_doc_name: "N/A",
+      related_doc_url: "N/A",
     },
   ],
   vendorId: "",
-  notes: "",
+  notes: "N/A",
   contactNo: "",
   email: "",
   invoiceNo: "",
@@ -289,15 +289,15 @@ export const PurchaseListContextProvider = ({ children }) => {
         // upload documens
         for (let i = 0; i < createPurchaseListForm.attachments.length; i++) {
           const file = createPurchaseListForm.attachments[i];
-          const res = await uploadFile(file.fileName, file.fileBlob, token);
-          console.log(res);
-          createPurchaseListForm.attachments[i] = {
-            related_doc_name: res.file_name,
-            related_doc_url: res.doc_url,
-          };
+          if (file.fileBlob) {
+            const res = await uploadFile(file.fileName || `related-doc-${i+1}`, file.fileBlob, token);
+            console.log(res);
+            createPurchaseListForm.attachments[i] = {
+              related_doc_name: res.file_name,
+              related_doc_url: res.doc_url,
+            };
+          }
         }
-        console.log("file uploaded");
-
         console.log("file uploaded");
 
         const res = await axios.post(
@@ -526,7 +526,7 @@ export const PurchaseListContextProvider = ({ children }) => {
     [purchaseList, userDetails]
   );
 
-  console.log(purchaseList);
+  console.log(createPurchaseListForm);
 
   return (
     <PurchaseListContext.Provider

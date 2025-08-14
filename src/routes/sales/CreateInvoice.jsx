@@ -685,37 +685,14 @@ const ItemDetails = ({ className, previousDetails }) => {
   };
 
   useEffect(() => {
-    if (!saleDetails || !saleDetails.list_items) return;
+    if (!saleDetails || !saleDetails.list_items) {
+      setItems([blankItem]);
+      return;
+    }
     console.log("dsficsdnfv");
     let temp;
-    setItems((prev) => {
-      temp = prev;
-      return [
-        ...(saleDetails?.list_items || []),
-        ...(prev.length == 1 && !prev[0].item_description ? [] : prev),
-        // ...(purchaseOrderDetails?.list_items || []),
-      ];
-    });
-    // console.log([
-    //   ...(saleDetails?.list_items || []),
-    //   ...(temp.length == 1 && !temp[0].item_description ? [] : temp),
-    //   // ...(purchaseOrderDetails?.list_items || []),
-    // ]);
-
-    // const value = [
-    //   ...(saleDetails?.list_items || []),
-    //   ...(temp.length == 1 && !temp[0].item_description ? [] : temp),
-    //   // ...(purchaseOrderDetails?.list_items || []),
-    // ];
-
-    // createInvoiceDispatch({
-    //   type: "UPDATE_FIELD",
-    //   state: "listItems",
-    //   value: value,
-    // });
-
-    // setcount(saleDetails ? saleDetails.list_items.length : 0);
-  }, [saleDetails, setItems]);
+    setItems(saleDetails?.list_items || [blankItem]);
+  }, [saleDetails]);
 
   useEffect(() => {
     // items.forEach((item, index) => {
@@ -751,6 +728,8 @@ const ItemDetails = ({ className, previousDetails }) => {
       setItems([blankItem]);
   }, [pathname]);
 
+  if (!items || !items[0].item_description) return;
+
   return (
     <>
       <div className={`mb-6 ${className}`}>
@@ -764,6 +743,7 @@ const ItemDetails = ({ className, previousDetails }) => {
                 <div className=" overflow-x-hidden md:col-span-2 col-span-2">
                   <InputField
                     required={true}
+                    readOnly={true}
                     autoComplete="off"
                     value={item.item_description}
                     setvalue={(val) => {
@@ -776,6 +756,7 @@ const ItemDetails = ({ className, previousDetails }) => {
                 </div>
                 <div className=" overflow-x-hidden col-span-2">
                   <InputField
+                    readOnly={true}
                     autoComplete="off"
                     required={true}
                     value={item.hsn_code}
@@ -789,6 +770,7 @@ const ItemDetails = ({ className, previousDetails }) => {
                 </div>
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    readOnly={true}
                     required={true}
                     autoComplete="off"
                     padding={2}
@@ -807,6 +789,7 @@ const ItemDetails = ({ className, previousDetails }) => {
               <div className=" grid md:grid-cols-4 grid-cols-2 gap-3">
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    readOnly={true}
                     padding={3}
                     required={true}
                     autoComplete="off"
@@ -819,6 +802,7 @@ const ItemDetails = ({ className, previousDetails }) => {
                 </div>
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    readOnly={true}
                     padding={3}
                     required={true}
                     autoComplete="off"
@@ -833,6 +817,7 @@ const ItemDetails = ({ className, previousDetails }) => {
                 </div>
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    readOnly={true}
                     padding={3}
                     required={true}
                     autoComplete="off"
@@ -847,9 +832,9 @@ const ItemDetails = ({ className, previousDetails }) => {
                 </div>
                 <div className=" overflow-x-hidden md:col-span-1 col-span-2">
                   <InputField
+                    readOnly={true}
                     padding={3}
                     required={true}
-                    readOnly={true}
                     autoComplete="off"
                     value={item.gross_amount ? Number(item.gross_amount) : ""}
                     setvalue={(val) => handleChange(index, "gross_amount", val)}
@@ -863,7 +848,7 @@ const ItemDetails = ({ className, previousDetails }) => {
 
               {/* Action Buttons */}
               <div className="flex gap-4 mb-6 w-full">
-                {isLast && (
+                {/* {isLast && (
                   <button
                     tabIndex={0}
                     onClick={addRow}
@@ -874,7 +859,7 @@ const ItemDetails = ({ className, previousDetails }) => {
                     </div>
                     Add new row
                   </button>
-                )}
+                )} */}
                 {items.length > 1 && (
                   <button
                     tabIndex={0}
@@ -1112,7 +1097,7 @@ const OrderNumberInputField = ({ className, previousDetails }) => {
 const SalesIDInputField = ({ className, previousDetails }) => {
   const [salesId, setsalesId] = useState(previousDetails?.salesId ?? "");
   const [isLoading, setisLoading] = useState(false);
-  const [isCustomSalesId, setisCustomSalesId] = useState(true);
+  const [isCustomSalesId, setisCustomSalesId] = useState(false);
   const [isDropdownOpen, setisDropdownOpen] = useState(false);
   const [query, setquery] = useState("");
   const { createInvoiceDispatch, createInvoiceForm } =
@@ -1172,9 +1157,9 @@ const SalesIDInputField = ({ className, previousDetails }) => {
         </label>
 
         {/* radio buttons for switch saels id type  */}
-        <div className="mb-3 mt-1 flex items-center gap-8">
-          {/* radio button for custom input  */}
-          <label className="flex items-center gap-2 cursor-pointer select-none">
+        {/* <div className="mb-3 mt-1 flex items-center gap-8"> */}
+        {/* radio button for custom input  */}
+        {/* <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
               type="radio"
               name="salesIdType"
@@ -1197,10 +1182,10 @@ const SalesIDInputField = ({ className, previousDetails }) => {
               )}
             </div>
             <span className="text-sm font-medium capitalize">Custom</span>
-          </label>
+          </label> */}
 
-          {/* radio button for select dropdown input  */}
-          <label className="flex items-center gap-2 cursor-pointer select-none">
+        {/* radio button for select dropdown input  */}
+        {/* <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
               type="radio"
               name="salesIdType"
@@ -1219,8 +1204,8 @@ const SalesIDInputField = ({ className, previousDetails }) => {
               )}
             </div>
             <span className="text-sm font-medium capitalize">Select</span>
-          </label>
-        </div>
+          </label> */}
+        {/* </div> */}
 
         {isCustomSalesId && (
           <InputField
@@ -1688,24 +1673,25 @@ const UploadInvoice = () => {
 const SubTotal = ({ className, previousDetails }) => {
   const { createInvoiceForm, createInvoiceDispatch } =
     useContext(InvoiceContext);
+  const { saleDetails } = useContext(SalesContext);
   const [subtotal, setsubtotal] = useState(
-    Number(createInvoiceForm?.subtotalAmount).toFixed(2) || 0
+    Number(createInvoiceForm?.subtotalAmount) || 0
   );
   const [isTdsEnable, setisTdsEnable] = useState(true);
   const [discount, setdiscount] = useState(
-    previousDetails?.discountAmount || 0
+    Number(saleDetails?.discount_amount) || 0
   );
   const [isAdjustment, setisAdjustment] = useState(
-    previousDetails?.adjustmentAmount?.toString().toLowerCase() === "true"
+    saleDetails?.adjustment_amount?.toString().toLowerCase() === "true"
       ? true
       : false
   );
   const [tds, settds] = useState({
-    value: previousDetails?.tdsAmount || "0%",
-    name: previousDetails?.tds_reason || "N/A",
+    value: saleDetails?.tds_amount || "0%",
+    name: saleDetails?.tds_reason || "N/A",
   });
   const [grandTotal, setgrandTotal] = useState(
-    previousDetails?.totalAmount || 0.0
+    Number(saleDetails?.total_amount) || 0.0
   );
   const [discountAmount, setdiscountAmount] = useState(0);
   const [taxableAmount, settaxableAmount] = useState(0);
@@ -1728,25 +1714,6 @@ const SubTotal = ({ className, previousDetails }) => {
     });
   }, [isAdjustment]);
 
-  // calculate total when discount changes
-  useEffect(() => {
-    if (!tds.value) return;
-    const tax = Number(tds.value.split("%")[0]);
-    //update states
-    setgrandTotal(
-      ((subtotal * (100 - discount) * (100 + tax)) / 10000).toFixed(2)
-    );
-  }, [discount, tds, subtotal]);
-
-  useEffect(() => {
-    //calculate subtotal
-    setsubtotal(
-      createInvoiceForm?.listItems.reduce((acc, item) => {
-        return acc + Number(item.gross_amount || 0);
-      }, 0)
-    );
-  }, [createInvoiceForm]);
-
   useEffect(() => {
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
@@ -1762,13 +1729,7 @@ const SubTotal = ({ className, previousDetails }) => {
       field: "subtotalAmount",
       value: subtotal,
     });
-    if (!tds) return;
-    const tax = Number(tds.value.split("%")[0]);
-    //update states
-    setgrandTotal(
-      ((subtotal * (100 - discount) * (100 + tax)) / 10000).toFixed(2)
-    );
-  }, [subtotal, discount, tds]);
+  }, [subtotal]);
 
   useEffect(() => {
     createInvoiceDispatch({
@@ -1793,7 +1754,31 @@ const SubTotal = ({ className, previousDetails }) => {
     settaxableAmount(((subtotal * (100 - discount) * tax) / 10000).toFixed(2));
   }, [tds, discount, subtotal]);
 
-  // console.log(discount);
+  useEffect(() => {
+    if (!saleDetails) return;
+    setsubtotal(Number(saleDetails?.subtotal_amount));
+    setdiscount(Number(saleDetails?.discount_amount));
+    setisAdjustment(
+      saleDetails?.adjustment_amount?.toString().toLowerCase() === "true"
+        ? true
+        : false
+    );
+    settds({
+      value: saleDetails?.tds_amount || "0%",
+      name: saleDetails?.tds_reason || "N/A",
+    });
+    setgrandTotal(Number(saleDetails?.total_amount));
+  }, [saleDetails]);
+
+  useEffect(() => {
+    //calculate subtotal
+    setsubtotal(
+      createInvoiceForm?.listItems.reduce((acc, item) => {
+        return acc + Number(item.gross_amount || 0);
+      }, 0)
+    );
+  }, [createInvoiceForm]);
+
   return (
     <>
       <div
@@ -1803,7 +1788,7 @@ const SubTotal = ({ className, previousDetails }) => {
         {/* Subtotal */}
         <div className="text-[#4A4A4A] flex justify-between items-center mb-4 2xl:text-lg xl:text-base text-sm ">
           <span className="font-medium ">Sub Total</span>
-          <span className="">{subtotal}</span>
+          <span className="">{subtotal.toFixed(2)}</span>
         </div>
 
         {/* Discount */}
@@ -1814,12 +1799,10 @@ const SubTotal = ({ className, previousDetails }) => {
           <div className="px-3 py-2 w-fit rounded-lg border-[1px] ml-auto border-[#D2D2D2]">
             <input
               id="discount"
+              readOnly={true}
               type="number"
               placeholder={0}
               value={discount}
-              onChange={(e) => {
-                setdiscount(e.target.value);
-              }}
               className=" outline-none md:max-w-[100px] max-w-[50px] text-sm placeholder:text-[#8E8E8E] text-[#414141] "
             />
           </div>
@@ -1830,7 +1813,7 @@ const SubTotal = ({ className, previousDetails }) => {
         {/* Tax Type + Dropdown */}
         <div className="flex items-center justify-between text-[#4A4A4A] gap-3 mb-4">
           {/* Radio buttons */}
-          <div className=" flex items-center gap-2 cursor-pointer">
+          <div className=" flex items-center gap-2 cursor-pointer pointer-events-none">
             <label
               htmlFor="toggle tds"
               className=" md:text-sm text-xs font-medium flex items-center gap-2 cursor-pointer select-none text-[#4A4A4A]"
@@ -1843,22 +1826,16 @@ const SubTotal = ({ className, previousDetails }) => {
               TDS
             </label>
             <input
+              readOnly={true}
               id="toggle tds"
               type="checkbox"
               value={isTdsEnable}
-              onChange={() => {
-                setisTdsEnable(!isTdsEnable);
-              }}
               className=" cursor-pointer hidden"
             />
           </div>
 
           {/* Tax Dropdown */}
-          <TaxDropdown
-            value={tds.value}
-            setvalue={settds}
-            isDisabled={!isTdsEnable}
-          />
+          <TaxDropdown value={tds.value} setvalue={settds} isDisabled={true} />
 
           {/* Negative Tax Value */}
           <div className="text-gray-500 text-sm w-12 text-right">
@@ -1872,7 +1849,7 @@ const SubTotal = ({ className, previousDetails }) => {
         <div className="flex justify-between  items-center 2xl:text-2xl xl:text-xl lg:text-lg md:text-base text-sm font-medium text-[#333333]">
           <div className=" flex items-center gap-4">
             <span>Total</span>
-            <div className=" flex items-center gap-2 cursor-pointer">
+            <div className=" flex items-center gap-2 cursor-pointer pointer-events-none">
               <label
                 htmlFor="toggle adjustment"
                 className=" text-sm font-medium flex items-center gap-2 cursor-pointer select-none text-[#4A4A4A]"
@@ -1885,6 +1862,7 @@ const SubTotal = ({ className, previousDetails }) => {
                 Adjustment
               </label>
               <input
+                readOnly={true}
                 id="toggle adjustment"
                 type="checkbox"
                 value={isAdjustment}
@@ -1913,30 +1891,9 @@ const SubTotal = ({ className, previousDetails }) => {
 const TaxDropdown = ({ value, setvalue, isDisabled }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState(-1);
-  const dropdownRef = useRef(null);
-
-  const toggleDropdown = () => setIsOpen(!isOpen);
-
-  const handleOptionClick = (ind) => {
-    setSelectedOption(ind);
-    setvalue(TDSDropDown[ind]);
-    setIsOpen(false);
-  };
-
-  // Close on outside click
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   return (
     <div
-      ref={dropdownRef}
       className={`relative mx-auto w-full max-w-[200px] ${
         isDisabled ? "pointer-events-none" : ""
       }`}
@@ -1948,13 +1905,12 @@ const TaxDropdown = ({ value, setvalue, isDisabled }) => {
       >
         <motion.button
           className={`w-full px-2 py-2 ${
-            isDisabled ? "bg-gray-500/30" : "bg-white"
+            isDisabled ? "bg-white" : "bg-white"
           } cursor-pointer border rounded-md lg:text-sm text-xs text-gray-700 flex items-center justify-between border-gray-400`}
           whileHover={{
             borderColor: "#9CA3AF",
             boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
           }}
-          onClick={toggleDropdown}
         >
           {selectedOption >= 0
             ? TDSDropDown[selectedOption].value
@@ -1984,7 +1940,6 @@ const TaxDropdown = ({ value, setvalue, isDisabled }) => {
                   className={`px-4 py-2 cursor-pointer text-sm text-gray-700 ${
                     selectedOption === ind ? "bg-[#e8e8e8]" : "bg-white"
                   } hover:bg-[#F3F4F6] cursor-pointer`}
-                  onClick={() => handleOptionClick(ind)}
                 >
                   {option.name}
                 </motion.li>

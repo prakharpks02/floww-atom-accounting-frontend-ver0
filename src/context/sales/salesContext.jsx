@@ -44,6 +44,7 @@ export const initialSalesState = {
       gross_amount: "",
     },
   ],
+  selectedQuotationItems: [],
   listToc: [
     {
       terms_of_service: "N/A",
@@ -301,7 +302,13 @@ export const SalesContextProvider = ({ children }) => {
     async (e, setisLoading = () => {}) => {
       e.preventDefault();
 
-      const validationErrors = validateFields(createSaleForm);
+      const validationErrors = validateFields({
+        ...createSaleForm,
+        listItems: [
+          ...createSaleForm.listItems,
+          ...createSaleForm.selectedQuotationItems,
+        ],
+      });
 
       if (Object.keys(validationErrors).length > 0) {
         console.log(validationErrors);
@@ -330,10 +337,16 @@ export const SalesContextProvider = ({ children }) => {
         setisLoading(true);
 
         for (let i = 0; i < createSaleForm.invoiceUrl.length; i++) {
-          const file = createSaleForm.invoiceUrl[i];
-          const res = await uploadFile(file.fileName, file.fileBlob, token);
-          console.log(res);
-          createSaleForm.invoiceUrl[i] = { invoice_url: res.doc_url };
+          if (createSaleForm.invoiceUrl[i].fileBlob) {
+            const file = createSaleForm.invoiceUrl[i];
+            const res = await uploadFile(
+              file.fileName || `related-invoice-${i + 1}`,
+              file.fileBlob,
+              token
+            );
+            console.log(res);
+            createSaleForm.invoiceUrl[i] = { invoice_url: res.doc_url };
+          }
         }
 
         console.log("file uploaded");
@@ -345,6 +358,10 @@ export const SalesContextProvider = ({ children }) => {
             companyId: companyDetails.company_id,
             // userId: userId,
             ...createSaleForm,
+            listItems: [
+              ...createSaleForm.listItems,
+              ...createSaleForm.selectedQuotationItems,
+            ],
           },
           {
             headers: {
