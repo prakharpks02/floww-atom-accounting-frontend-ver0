@@ -140,19 +140,19 @@ export const AddSales = () => {
                 onClick={async (e) => {
                   try {
                     if (salesid?.toLowerCase() === "new") {
-                      await createSales(e, setisLoading);
+                      const newSalesId = await createSales(e, setisLoading);
                       const searchParams = new URLSearchParams(
                         window.location.search
                       );
                       const invoiceNo = searchParams.get("invoiceNo");
                       if (invoiceNo) {
-                        navigate(`/sales/createInvoice?invoiceNo=${invoiceNo}`);
+                        navigate(`/sales/createInvoice?salesId=${invoiceNo}`);
                       } else {
                         navigate("/sales/salesList");
                       }
                     } else {
                       await updateSales(salesid, setisLoading);
-                      navigate(`/sales/saleDetails/${saleid}`);
+                      navigate(`/sales/saleDetails/${salesid}`);
                     }
                   } catch (error) {
                     console.log(error);
@@ -220,7 +220,7 @@ const UploadDocuments = ({ saleDetails }) => {
         };
       }),
     });
-  }, [files]);
+  }, [files , createSaleFormDispatch]);
 
   return (
     <div className=" outline-[#00000029] rounded-lg p-3 border-2 border-[#00000033] border-dashed">
@@ -306,7 +306,7 @@ const ItemDetails = ({ saleDetails }) => {
 
   const { createSaleFormDispatch, createSaleForm } = useContext(SalesContext);
   const { selectedQuotationItems } = useContext(QuotationContext);
-  const [items, setItems] = useState(saleDetails?.list_items || [blankItem]);
+  const [items, setItems] = useState([blankItem]);
   const { pathname } = useLocation();
 
   // changes fields for particular item row
@@ -349,7 +349,6 @@ const ItemDetails = ({ saleDetails }) => {
       // Update local items state
       const updatedItems = [...createSaleForm.selectedQuotationItems];
       updatedItems[index][field] = value;
-      // setItems(updatedItems);
       createSaleFormDispatch({
         type: "UPDATE_FIELD",
         field: "selectedQuotationItems",
@@ -423,7 +422,9 @@ const ItemDetails = ({ saleDetails }) => {
     !pathname.toLowerCase().includes("sales/addSales") && setItems([blankItem]);
   }, [pathname]);
 
-  // console.log(selectedQuotationItems);
+  useEffect(() => {
+    setItems(saleDetails?.list_items || [blankItem]);
+  }, [saleDetails]);
 
   return (
     <>
@@ -1194,7 +1195,7 @@ const QuotationIDInputField = ({ saleDetails }) => {
         <label className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal mb-1">
           Quotation ID (Optional)
         </label>
-        
+
         {isCustomQuotation && (
           <InputField
             value={quotationid}
@@ -1378,7 +1379,7 @@ const SubTotal = ({ className, saleDetails }) => {
       : false
   );
   const [tds, settds] = useState({
-    value: Number(saleDetails?.tds_amount) || "0",
+    value: saleDetails?.tds_amount || "0%",
     name: saleDetails?.tds_reason || "N/A",
   });
   const [isTdsEnable, setisTdsEnable] = useState(true);
@@ -1472,8 +1473,6 @@ const SubTotal = ({ className, saleDetails }) => {
     const tax = Number(tds.value.split("%")[0] || 0);
     settaxableAmount(((subtotal * (100 - discount) * tax) / 10000).toFixed(2));
   }, [tds, subtotal, discount]);
-
-  // console.log(typeof discount);
 
   return (
     <>

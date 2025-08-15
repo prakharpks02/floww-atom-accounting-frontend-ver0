@@ -266,7 +266,6 @@ const SaleInfoRightPart = ({
                   item.transaction_url?.split("/")[
                     item.transaction_url?.split("/").length - 1
                   ];
-                console.log(fileName);
                 return (
                   <div
                     key={idx}

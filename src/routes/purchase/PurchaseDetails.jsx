@@ -862,15 +862,14 @@ const AmountPieChart = ({ className, totalAmount, amountPaid }) => {
   );
 };
 
-const Description = () => {
+const Description = ({ purchaseDetails }) => {
   return (
     <div className="w-full lg:p-6 p-4 rounded-xl border-[1.5px] border-[#E8E8E8]">
       <h2 className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-base text-sm font-semibold text-[#4A4A4A] mb-4">
         Description
       </h2>
-      <p className="text-xs text-[#8E8E8E] mt-2">
-        Purchase of office chairs, desks, and filing cabinets for the new
-        department.
+      <p className="text-xs text-[#6d6d6d] mt-2">
+        {purchaseDetails?.notes}
       </p>
     </div>
   );
@@ -911,7 +910,7 @@ const ShowFiles = ({ files }) => {
   return (
     <div className="max-h-[200px] w-full overflow-auto flex flex-wrap justify-center gap-3 pt-5">
       {files.map((file, index) => {
-        const ext = getFileExtension(file?.related_doc_name);
+        const ext = getFileExtension(file?.related_doc_url);
         return (
           <div
             key={index}

@@ -101,16 +101,18 @@ const CreateInvoiceForm = ({ activeTab }) => {
   const { createInvoice, createInvoiceForm } = useContext(InvoiceContext);
   const { companyDetails } = useContext(CompanyContext);
   const [previousDetails, setpreviousDetails] = useState(-1);
+  const { getSaleDetails, setsaleDetails } = useContext(SalesContext);
+  const [isSalesDetailsLoading, setisSalesDetailsLoading] = useState(true);
+
   useEffect(() => {
-    const invoiceNo = new URLSearchParams(window.location.search).get(
-      "invoiceNo"
-    );
-    const storedData = localStorage.getItem("createInvoiceForm");
-    if (invoiceNo && storedData) setpreviousDetails(JSON.parse(storedData));
-    else setpreviousDetails(null);
+    const salesId = new URLSearchParams(window.location.search).get("salesId");
+    if (!salesId) {
+      setsaleDetails(null);
+      setisSalesDetailsLoading(false);
+    } else getSaleDetails(salesId, isSalesDetailsLoading);
   }, []);
 
-  if (previousDetails == -1) {
+  if (isSalesDetailsLoading) {
     return (
       <div className=" flex-1 flex justify-center items-center py-10 px-4 min-h-[300px]">
         <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
@@ -131,7 +133,7 @@ const CreateInvoiceForm = ({ activeTab }) => {
           onClick={async (e) => {
             try {
               await createInvoice(e, setisLoading, activeTab);
-              localStorage.removeItem("createInvoiceForm");
+              // localStorage.removeItem("createInvoiceForm");
               await downloadInvoiceAsPDF(
                 companyDetails,
                 createInvoiceForm,
@@ -157,7 +159,7 @@ const CreateInvoiceForm = ({ activeTab }) => {
   );
 };
 
-const CreateInvoiceLeftPart = ({ previousDetails }) => {
+const CreateInvoiceLeftPart = ({}) => {
   return (
     <>
       <div className=" 2xl:p-8 xl:p-6 md:p-4 py-4 px-2 2xl:rounded-2xl xl:rounded-xl rounded-lg border-[1.5px] border-[#E8E8E8] ">
@@ -168,59 +170,35 @@ const CreateInvoiceLeftPart = ({ previousDetails }) => {
         {/* Invoice info */}
         <PurchaseOrderContextProvider>
           <div className=" grid md:grid-cols-2 grid-cols-1 gap-3 space-y-4 mb-4 w-full">
-            <InvoiceNumberInputField
-              className={" col-span-1"}
-              previousDetails={previousDetails}
-            />
-            <InvoiceDateInputField
-              className={" col-span-1"}
-              previousDetails={previousDetails}
-            />
-            <TermsInputField
-              className={" col-span-1"}
-              previousDetails={previousDetails}
-            />
-            <DueDateInputField
-              className={" col-span-1"}
-              previousDetails={previousDetails}
-            />
-            <CustomerNameInputField
-              className={" md:col-span-2 col-span-1"}
-              previousDetails={previousDetails}
-            />
-            <SubjectInputField
-              className={" md:col-span-2 col-span-1"}
-              previousDetails={previousDetails}
-            />
-            <OrderNumberInputField
-              className={" col-span-2"}
-              previousDetails={previousDetails}
-            />
-            <SalesIDInputField
-              className={" col-span-2"}
-              previousDetails={previousDetails}
-            />
+            <InvoiceNumberInputField className={" col-span-1"} />
+            <InvoiceDateInputField className={" col-span-1"} />
+            <TermsInputField className={" col-span-1"} />
+            <DueDateInputField className={" col-span-1"} />
+            <CustomerNameInputField className={" md:col-span-2 col-span-1"} />
+            <SubjectInputField className={" md:col-span-2 col-span-1"} />
+            <OrderNumberInputField className={" col-span-2"} />
+            <SalesIDInputField className={" col-span-2"} />
           </div>
 
           {/* Item Table */}
-          <ItemDetails previousDetails={previousDetails} />
+          <ItemDetails />
         </PurchaseOrderContextProvider>
 
         {/* Totals Section */}
-        <SubTotal className={"mb-6"} previousDetails={previousDetails} />
+        <SubTotal className={"mb-6"} />
 
         {/* Customer Note */}
-        <CustomerNotes previousDetails={previousDetails} />
+        <CustomerNotes />
 
         {/* Terms and Conditions */}
-        <TermsAndConditions previousDetails={previousDetails} />
+        <TermsAndConditions />
       </div>
     </>
   );
 };
 
-const CustomerNotes = ({ className, previousDetails }) => {
-  const [notes, setnotes] = useState(previousDetails?.notes ?? "");
+const CustomerNotes = ({ className }) => {
+  const [notes, setnotes] = useState("");
   const { createInvoiceDispatch } = useContext(InvoiceContext);
 
   useEffect(() => {
@@ -230,8 +208,6 @@ const CustomerNotes = ({ className, previousDetails }) => {
       value: notes || "N/A",
     });
   }, [notes]);
-
-  console.log(previousDetails);
 
   return (
     <>
@@ -252,10 +228,8 @@ const CustomerNotes = ({ className, previousDetails }) => {
   );
 };
 
-const TermsAndConditions = ({ className, previousDetails }) => {
-  const [toc, settoc] = useState(
-    previousDetails?.listToc[0]?.terms_of_service ?? ""
-  );
+const TermsAndConditions = ({ className }) => {
+  const [toc, settoc] = useState("");
   const { createInvoiceDispatch } = useContext(InvoiceContext);
 
   useEffect(() => {
@@ -600,7 +574,7 @@ const CreateInvoiceRightPart = ({
   );
 };
 
-const ItemDetails = ({ className, previousDetails }) => {
+const ItemDetails = ({ className }) => {
   const { saleDetails } = useContext(SalesContext);
   // const { purchaseOrderDetails } = useContext(PurchaseOrderContext);
   const blankItem = {
@@ -614,11 +588,7 @@ const ItemDetails = ({ className, previousDetails }) => {
     item_name: "",
     base_amount: "",
   };
-  const [items, setItems] = useState(
-    previousDetails?.listItems.length > 0
-      ? previousDetails?.listItems
-      : [blankItem]
-  );
+  const [items, setItems] = useState([blankItem]);
   const { createInvoiceDispatch } = useContext(InvoiceContext);
   const { pathname } = useLocation();
 
@@ -881,10 +851,8 @@ const ItemDetails = ({ className, previousDetails }) => {
   );
 };
 
-const InvoiceNumberInputField = ({ className, previousDetails }) => {
-  const [invoiceNumber, setinvoiceNumber] = useState(
-    previousDetails?.invoiceNumber ?? ""
-  );
+const InvoiceNumberInputField = ({ className }) => {
+  const [invoiceNumber, setinvoiceNumber] = useState("");
   const { createInvoiceDispatch } = useContext(InvoiceContext);
   useEffect(() => {
     createInvoiceDispatch({
@@ -893,8 +861,6 @@ const InvoiceNumberInputField = ({ className, previousDetails }) => {
       value: invoiceNumber,
     });
   }, [invoiceNumber]);
-
-  console.log(previousDetails?.invoiceNumber, invoiceNumber);
 
   return (
     <>
@@ -911,10 +877,8 @@ const InvoiceNumberInputField = ({ className, previousDetails }) => {
   );
 };
 
-const OrderNumberInputField = ({ className, previousDetails }) => {
-  const [orderNumber, setorderNumber] = useState(
-    previousDetails?.orderNumber ?? ""
-  );
+const OrderNumberInputField = ({ className }) => {
+  const [orderNumber, setorderNumber] = useState("");
   const [isLoading, setisLoading] = useState(false);
   const [isCustomPOId, setisCustomPOId] = useState(true);
   const [isDropdownOpen, setisDropdownOpen] = useState(false);
@@ -1094,8 +1058,8 @@ const OrderNumberInputField = ({ className, previousDetails }) => {
   );
 };
 
-const SalesIDInputField = ({ className, previousDetails }) => {
-  const [salesId, setsalesId] = useState(previousDetails?.salesId ?? "");
+const SalesIDInputField = ({ className }) => {
+  const [salesId, setsalesId] = useState("");
   const [isLoading, setisLoading] = useState(false);
   const [isCustomSalesId, setisCustomSalesId] = useState(false);
   const [isDropdownOpen, setisDropdownOpen] = useState(false);
@@ -1145,8 +1109,8 @@ const SalesIDInputField = ({ className, previousDetails }) => {
       window.removeEventListener("pointerdown", handelClickOutside);
     };
   }, [containerRef.current, dropDownRef.current]);
-  console.log(AllSalesList);
 
+  console.log(AllSalesList);
   return (
     <>
       <div
@@ -1155,57 +1119,6 @@ const SalesIDInputField = ({ className, previousDetails }) => {
         <label className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal mb-1">
           Sales ID <span className=" text-red-600 ">*</span>
         </label>
-
-        {/* radio buttons for switch saels id type  */}
-        {/* <div className="mb-3 mt-1 flex items-center gap-8"> */}
-        {/* radio button for custom input  */}
-        {/* <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="radio"
-              name="salesIdType"
-              value={isCustomSalesId}
-              checked={isCustomSalesId}
-              onChange={(e) => {
-                setsalesId("");
-                setsaleDetails(null);
-                setisCustomSalesId(true);
-              }}
-              className="sr-only"
-            />
-            <div
-              className={`w-4 h-4 rounded-full border-[2.5px] flex items-center justify-center ${
-                isCustomSalesId ? "border-blue-800" : "border-gray-400"
-              }`}
-            >
-              {isCustomSalesId && (
-                <div className="w-2 h-2 bg-blue-800 rounded-full" />
-              )}
-            </div>
-            <span className="text-sm font-medium capitalize">Custom</span>
-          </label> */}
-
-        {/* radio button for select dropdown input  */}
-        {/* <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input
-              type="radio"
-              name="salesIdType"
-              value={isCustomSalesId}
-              checked={!isCustomSalesId}
-              onChange={(e) => setisCustomSalesId(false)}
-              className="sr-only"
-            />
-            <div
-              className={`w-4 h-4 rounded-full border-[2.5px] flex items-center justify-center ${
-                !isCustomSalesId ? "border-blue-800" : "border-gray-400"
-              }`}
-            >
-              {!isCustomSalesId && (
-                <div className="w-2 h-2 bg-blue-800 rounded-full" />
-              )}
-            </div>
-            <span className="text-sm font-medium capitalize">Select</span>
-          </label> */}
-        {/* </div> */}
 
         {isCustomSalesId && (
           <InputField
@@ -1279,11 +1192,12 @@ const SalesIDInputField = ({ className, previousDetails }) => {
                     JSON.stringify(createInvoiceForm)
                   );
                   navigate(
-                    `${
-                      createInvoiceForm.invoiceNumber
-                        ? `/sales/addSales/new?invoiceNo=${createInvoiceForm.invoiceNumber}`
-                        : "/sales/addSales/new"
-                    }`
+                    // `${
+                    //   createInvoiceForm.invoiceNumber
+                    //     ? `/sales/addSales/new?invoiceNo=${createInvoiceForm.invoiceNumber}`
+                    //     : "/sales/addSales/new"
+                    // }`
+                    "/sales/addSales/new"
                   );
                 }}
                 className=" w-full hover:bg-[#f2f2f2] my-2 transition opacity-80 px-6 py-3 cursor-pointer flex items-center gap-2 rounded-xl text-[#2543B1] text-base font-medium"
@@ -1307,7 +1221,7 @@ const SalesIDInputField = ({ className, previousDetails }) => {
 
               {!isLoading && (
                 <ul className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal placeholder:text-[#00000080] text-[#000000a1]">
-                  {filteredData?.map((item, index) => {
+                  {[...(filteredData || [])].reverse()?.map((item, index) => {
                     if (item.list_items[0].item_name) {
                       return (
                         <li
@@ -1336,8 +1250,8 @@ const SalesIDInputField = ({ className, previousDetails }) => {
   );
 };
 
-const SubjectInputField = ({ className, previousDetails }) => {
-  const [subject, setsubject] = useState(previousDetails?.invoiceSubject ?? "");
+const SubjectInputField = ({ className }) => {
+  const [subject, setsubject] = useState("");
   const { createInvoiceDispatch } = useContext(InvoiceContext);
   useEffect(() => {
     createInvoiceDispatch({
@@ -1361,10 +1275,8 @@ const SubjectInputField = ({ className, previousDetails }) => {
   );
 };
 
-const InvoiceDateInputField = ({ className, previousDetails }) => {
-  const [invoiceDate, setinvoiceDate] = useState(
-    previousDetails?.invoiceDate?.split("-").reverse().join("-") ?? ""
-  );
+const InvoiceDateInputField = ({ className }) => {
+  const [invoiceDate, setinvoiceDate] = useState("");
   const { createInvoiceDispatch } = useContext(InvoiceContext);
   useEffect(() => {
     createInvoiceDispatch({
@@ -1390,8 +1302,8 @@ const InvoiceDateInputField = ({ className, previousDetails }) => {
   );
 };
 
-const TermsInputField = ({ className, previousDetails }) => {
-  const [terms, setterms] = useState(previousDetails?.terms ?? "");
+const TermsInputField = ({ className }) => {
+  const [terms, setterms] = useState("");
   const { createInvoiceDispatch } = useContext(InvoiceContext);
   useEffect(() => {
     createInvoiceDispatch({
@@ -1417,10 +1329,8 @@ const TermsInputField = ({ className, previousDetails }) => {
   );
 };
 
-const DueDateInputField = ({ className, previousDetails }) => {
-  const [dueDate, setdueDate] = useState(
-    previousDetails?.invoiceDueBy?.split("-").reverse().join("-") ?? ""
-  );
+const DueDateInputField = ({ className }) => {
+  const [dueDate, setdueDate] = useState("");
   const { createInvoiceDispatch } = useContext(InvoiceContext);
   useEffect(() => {
     createInvoiceDispatch({
@@ -1446,12 +1356,12 @@ const DueDateInputField = ({ className, previousDetails }) => {
   );
 };
 
-const CustomerNameInputField = ({ className, previousDetails }) => {
+const CustomerNameInputField = ({ className }) => {
   const [customer, setcustomer] = useState({
-    customer_id: previousDetails?.customerId ?? "",
-    gst_number: previousDetails?.gstNumber ?? "",
-    contact_no: previousDetails?.contactNo ?? "",
-    customer_name: previousDetails?.customerName ?? "",
+    customer_id: "",
+    gst_number: "",
+    contact_no: "",
+    customer_name: "",
   });
   const { createInvoiceDispatch } = useContext(InvoiceContext);
   const [isLoading, setisLoading] = useState(true);
@@ -1670,7 +1580,7 @@ const UploadInvoice = () => {
   );
 };
 
-const SubTotal = ({ className, previousDetails }) => {
+const SubTotal = ({ className }) => {
   const { createInvoiceForm, createInvoiceDispatch } =
     useContext(InvoiceContext);
   const { saleDetails } = useContext(SalesContext);

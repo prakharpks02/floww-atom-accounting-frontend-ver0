@@ -236,7 +236,39 @@ const PurchaseOrderNumber = ({ purchaseDetails, className }) => {
     };
   }, [containerRef.current, dropDownRef.current]);
 
-  // console.log(filteredData);
+  useEffect(() => {
+    if (!purchaseDetails) return;
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.po_number,
+      field: "poNumber",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.vendor_id,
+      field: "vendorId",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.contact_no,
+      field: "contactNo",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.email,
+      field: "email",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.vendor_name,
+      field: "vendorName",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.gst_number,
+      field: "gstNumber",
+    });
+  }, [purchaseDetails]);
 
   return (
     <div className={` relative ${className}`}>
@@ -890,8 +922,8 @@ const GSTNumberInputField = () => {
   );
 };
 
-const PANNumberInputField = () => {
-  const [pan, setpan] = useState("");
+const PANNumberInputField = ({ purchaseDetails }) => {
+  const [pan, setpan] = useState(purchaseDetails?.pan_number || "");
   const { createPurchaseListFormDispatch } = useContext(PurchaseListContext);
   useEffect(() => {
     createPurchaseListFormDispatch({
@@ -919,9 +951,9 @@ const PANNumberInputField = () => {
 
 const UploadInvoice = ({ purchaseDetails }) => {
   const [files, setfiles] = useState(
-    purchaseDetails?.attachments && purchaseDetails?.attachments[0]
-      ? purchaseDetails?.attachments
-      : []
+    purchaseDetails?.attachments[0]?.related_doc_url == "N/A"
+      ? []
+      : purchaseDetails?.attachments
   );
   const { createPurchaseListFormDispatch } = useContext(PurchaseListContext);
   useEffect(() => {
@@ -1097,7 +1129,7 @@ const SubTotal = ({ className, purchaseDetails }) => {
     createPurchaseListFormDispatch({
       type: "UPDATE_FIELD",
       field: "subtotalAmount",
-      value: subtotal,
+      value: Number(subtotal).toFixed(2),
     });
     if (!tds) return;
     const tax = Number(tds.value.split("%")[0]);

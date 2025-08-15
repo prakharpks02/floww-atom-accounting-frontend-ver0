@@ -23,6 +23,7 @@ import axios from "axios";
 import { validateFields } from "../../utils/checkFormValidation";
 import { UserContext } from "../userContext/UserContext";
 import { uploadFile } from "../../utils/uploadFiles";
+import { getFileNameFromURL } from "../../utils/getFileNameFromURL";
 
 export const SalesContext = createContext();
 
@@ -337,14 +338,13 @@ export const SalesContextProvider = ({ children }) => {
         setisLoading(true);
 
         for (let i = 0; i < createSaleForm.invoiceUrl.length; i++) {
-          if (createSaleForm.invoiceUrl[i].fileBlob) {
-            const file = createSaleForm.invoiceUrl[i];
+          const file = createSaleForm.invoiceUrl[i];
+          if (file.fileBlob) {
             const res = await uploadFile(
               file.fileName || `related-invoice-${i + 1}`,
               file.fileBlob,
               token
             );
-            console.log(res);
             createSaleForm.invoiceUrl[i] = { invoice_url: res.doc_url };
           }
         }
@@ -450,7 +450,18 @@ export const SalesContextProvider = ({ children }) => {
   //update existing sales
   const updateSales = useCallback(
     async (saleid, setisLoading = () => {}) => {
-      const validationErrors = validateFields(createSaleForm);
+      const validationErrors = validateFields({
+        ...createSaleForm,
+        listItems: [
+          ...createSaleForm.listItems,
+          ...createSaleForm.selectedQuotationItems,
+        ],
+        selectedQuotationItems: [
+          {
+            item_name: "N/A",
+          },
+        ],
+      });
 
       if (Object.keys(validationErrors).length > 0) {
         console.log(validationErrors);
@@ -479,14 +490,19 @@ export const SalesContextProvider = ({ children }) => {
       try {
         setisLoading(true);
 
+        console.log(createSaleForm.invoiceUrl);
+        console.log(getFileNameFromURL(createSaleForm.invoiceUrl[0].fileName));
         // upload documens
         for (let i = 0; i < createSaleForm.invoiceUrl.length; i++) {
-          if (createSaleForm.invoiceUrl[i].invoice_url.toLowerCase() != "n/a")
-            continue;
           const file = createSaleForm.invoiceUrl[i];
-          const res = await uploadFile(file.fileName, file.fileBlob, token);
-          console.log(res);
-          createSaleForm.invoiceUrl[i] = { invoice_url: res.doc_url };
+          if (file.invoice_url.toLowerCase() == "n/a") {
+            const res = await uploadFile(
+              file.fileName || `related-invoice-${i + 1}`,
+              file.fileBlob,
+              token
+            );
+            createSaleForm.invoiceUrl[i] = { invoice_url: res.doc_url };
+          }
         }
 
         console.log("file uploaded");
@@ -500,6 +516,10 @@ export const SalesContextProvider = ({ children }) => {
             companyId: companyDetails.company_id,
             // userId: userId,
             salesId: saleid,
+            listItems: [
+              ...createSaleForm.listItems,
+              ...createSaleForm.selectedQuotationItems,
+            ],
           },
           {
             headers: {
@@ -516,7 +536,7 @@ export const SalesContextProvider = ({ children }) => {
         // reset to initial value
         createSaleFormDispatch({ type: "RESET" });
         showToast("Sales updated");
-        navigate(`/sales/saleDetails/${saleid}`);
+        // navigate(`/sales/saleDetails/${saleid}`);
       } catch (error) {
         console.log(error);
         showToast(

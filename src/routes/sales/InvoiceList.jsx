@@ -226,7 +226,7 @@ console.log(isDownloading)
               </tr>
             </thead>
             <tbody>
-              {AllInvoice.map((invoice, idx) => {
+              {[...(AllInvoice || [])].reverse().map((invoice, idx) => {
                 // return invoice.list_items.map((item, index) => {
                 return (
                   <tr
@@ -234,7 +234,7 @@ console.log(isDownloading)
                     onClick={(e) => {
                       // navigate(`/sales/saleDetails/${invoice.sales_id}`);
                     }}
-                    className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
+                    className=" hover:bg-[#e6e6e6c4] border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
                   >
                     <td
                       onClick={async (e) => {
@@ -257,7 +257,7 @@ console.log(isDownloading)
 
                         setisDownloading(-1);
                       }}
-                      className=" text-center px-3 py-4 text-[#ffffff] font-medium"
+                      className=" text-center cursor-pointer px-3 py-4 text-[#ffffff] font-medium"
                     >
                       <button
                         disabled={isDownloading === idx}

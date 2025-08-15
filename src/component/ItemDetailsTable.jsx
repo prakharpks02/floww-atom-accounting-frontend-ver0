@@ -24,7 +24,10 @@ export const ItemDetailsTable = ({ dataList }) => {
           <div>
             <p className=" leading-5 font-semibold 2xl:text-2xl xl:text-xl lg:text-lg text-base text-[#4A4A4A] ">
               Total Amount: ₹
-              {dataList?.subtotal_amount || dataList?.sub_total_amount}
+              {
+                Number(dataList?.subtotal_amount || dataList?.sub_total_amount)
+                  .toFixed(2)
+              }
             </p>
             <span className=" font-medium xl:text-sm text-xs text-[#777777] -translate-y-5">
               (Before Tax Deductions)

@@ -8,7 +8,7 @@ export const uploadFile = async (fileName, fileBlob, authToken) => {
   }
 
   const formData = new FormData();
-  formData.append("fileName", fileName);
+  formData.append("fileName", fileName.split('.').slice(0, -1).join('.'));
   formData.append("fileBlob", fileBlob);
 
   try {
