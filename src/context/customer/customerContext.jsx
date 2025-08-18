@@ -12,6 +12,7 @@ import { CompanyContext } from "../company/CompanyContext";
 import axios from "axios";
 import { validateFields } from "../../utils/checkFormValidation";
 import { useNavigate } from "react-router-dom";
+import { uploadFile } from "../../utils/uploadFiles";
 
 export const CustomerContext = createContext();
 
@@ -185,6 +186,19 @@ export const CustomerContextProvider = ({ children }) => {
 
       try {
         setisLoading(true);
+
+        // upload documens
+        for (let i = 0; i < createCustomerForm.relatedDocuments.length; i++) {
+          const file = createCustomerForm.relatedDocuments[i];
+          const res = await uploadFile(file.fileName, file.fileBlob, token);
+          console.log(res);
+          createCustomerForm.relatedDocuments[i] = {
+            related_doc_name: res.file_name,
+            related_doc_url: res.doc_url,
+          };
+        }
+        console.log("file uploaded");
+
         const res = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/accounting/create-customer/`,
           {
@@ -282,6 +296,7 @@ export const CustomerContextProvider = ({ children }) => {
 
       if (Object.keys(validationErrors).length > 0) {
         setErrors(validationErrors);
+        console.log(validationErrors);
         showToast("All fields are required", 1);
         return;
       }
@@ -299,6 +314,25 @@ export const CustomerContextProvider = ({ children }) => {
 
       try {
         setisLoading(true);
+
+        // upload documens
+        for (let i = 0; i < createCustomerForm.relatedDocuments.length; i++) {
+          if (
+            createCustomerForm.relatedDocuments[
+              i
+            ].related_doc_url.toLowerCase() != "n/a"
+          )
+            continue;
+          const file = createCustomerForm.relatedDocuments[i];
+          const res = await uploadFile(file.fileName, file.fileBlob, token);
+          console.log(res);
+          createCustomerForm.relatedDocuments[i] = {
+            related_doc_name: res.file_name,
+            related_doc_url: res.doc_url,
+          };
+        }
+        console.log("file uploaded");
+
         const res = await axios.post(
           `${
             import.meta.env.VITE_BACKEND_URL

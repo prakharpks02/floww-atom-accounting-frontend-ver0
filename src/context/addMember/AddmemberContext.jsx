@@ -11,6 +11,7 @@ import axios from "axios";
 import { validateFields } from "../../utils/checkFormValidation";
 import { formatISODateToDDMMYYYY } from "../../utils/formateDate";
 import { UserContext } from "../userContext/UserContext";
+import { uploadFile } from "../../utils/uploadFiles";
 
 export const AddmemberContext = createContext();
 
@@ -75,16 +76,16 @@ export const AddMemberContextProvider = ({ children }) => {
 
       if (Object.keys(validationErrors).length > 0) {
         console.log(validationErrors);
-        showToast("All fields are required", 1);
+        // showToast("All fields are required", 1);
         throw new Error("All fields are required");
       }
 
       if (!companyDetails) {
-        showToast("Company details not found", 1);
+        // showToast("Company details not found", 1);
         throw new Error("Company details not found");
       }
       if (!companyDetails.company_id) {
-        showToast("Company ID not found", 1);
+        // showToast("Company ID not found", 1);
         throw new Error("Company ID not found");
       }
 
@@ -102,6 +103,15 @@ export const AddMemberContextProvider = ({ children }) => {
 
       try {
         setisLoading(true);
+
+        // upload documens
+        // const file = addMemberForm.profileIconUrl;
+        // const response = await uploadFile(file.fileName, file.fileBlob, token);
+        // console.log(response);
+        // addMemberForm.profileIconUrl = response.doc_url;
+
+        // console.log("profile image uploaded");
+
         const res = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/accounting/add-members/`,
           {
@@ -120,10 +130,10 @@ export const AddMemberContextProvider = ({ children }) => {
 
         if (res.data.status && res.data.status.toLowerCase() !== "success") {
           setisLoading(false);
-          showToast(
-            res.data?.message || "Somthing went wrong. Please try again",
-            1
-          );
+          // showToast(
+          //   res.data?.message || "Somthing went wrong. Please try again",
+          //   1
+          // );
           throw new Error(
             res.data?.message || "Somthing went wrong. Please try again"
           );
@@ -152,38 +162,39 @@ export const AddMemberContextProvider = ({ children }) => {
         setisLoading(false);
       }
     },
-    [addMemberForm , userDetails]
+    [addMemberForm, userDetails]
   );
 
   // get all members of a company with comanpany id
-  const getAllMemberList = useCallback(async (setisLoading = () => {}) => {
-    if (!companyDetails) {
-      showToast("No company details found", 1);
-      return;
-    }
-    const token = localStorage.getItem("token");
-    if (!token) {
-      showToast("Token not found", 1);
-      return;
-    }
+  const getAllMemberList = useCallback(
+    async (setisLoading = () => {}) => {
+      if (!companyDetails) {
+        showToast("No company details found", 1);
+        return;
+      }
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Token not found", 1);
+        return;
+      }
 
-    try {
-      setisLoading(true);
-      const res = await axios.get(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/accounting/get-list-members/?companyId=${
-          companyDetails.company_id
-        }`,
-        {
-          headers: {
-            Authorization: `${token}`,
-          },
-        }
-      );
+      try {
+        setisLoading(true);
+        const res = await axios.get(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/accounting/get-list-members/?companyId=${
+            companyDetails.company_id
+          }`,
+          {
+            headers: {
+              Authorization: `${token}`,
+            },
+          }
+        );
 
-      // console.log(res);
-     if (res.data.status && res.data.status.toLowerCase() !== "success") {
+        // console.log(res);
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
           setisLoading(false);
           showToast(
             res.data?.message || "Somthing went wrong. Please try again",
@@ -194,19 +205,21 @@ export const AddMemberContextProvider = ({ children }) => {
           );
         }
 
-      setallMemberList(res.data.data);
-    } catch (error) {
-      console.log(error);
-      showToast(
-        error.response?.data?.message ||
-          error.message ||
-          "Somthing went wrong. Please try again",
-        1
-      );
-    } finally {
-      setisLoading(false);
-    }
-  }, [userDetails]);
+        setallMemberList(res.data.data);
+      } catch (error) {
+        console.log(error);
+        showToast(
+          error.response?.data?.message ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+      } finally {
+        setisLoading(false);
+      }
+    },
+    [userDetails]
+  );
 
   //update member
   const updateMember = useCallback(
@@ -214,16 +227,16 @@ export const AddMemberContextProvider = ({ children }) => {
       console.log(data);
 
       if (!data) {
-        showToast("Member data not found", 1);
+        // showToast("Member data not found", 1);
         throw new Error("Member data not found");
       }
 
       if (!companyDetails) {
-        showToast("Company details not found", 1);
+        // showToast("Company details not found", 1);
         throw new Error("Company details not found");
       }
       if (!companyDetails.company_id) {
-        showToast("Company ID not found", 1);
+        // showToast("Company ID not found", 1);
         throw new Error("Company ID not found");
       }
 
@@ -235,7 +248,7 @@ export const AddMemberContextProvider = ({ children }) => {
 
       const token = localStorage.getItem("token");
       if (!token) {
-        showToast("Token not found", 1);
+        // showToast("Token not found", 1);
         throw new Error("Token not found");
       }
 
@@ -270,12 +283,12 @@ export const AddMemberContextProvider = ({ children }) => {
         );
         console.log(res);
         // console.log(res);
-       if (res.data.status && res.data.status.toLowerCase() !== "success") {
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
           setisLoading(false);
-          showToast(
-            res.data?.message || "Somthing went wrong. Please try again",
-            1
-          );
+          // showToast(
+          //   res.data?.message || "Somthing went wrong. Please try again",
+          //   1
+          // );
           throw new Error(
             res.data?.message || "Somthing went wrong. Please try again"
           );
@@ -307,7 +320,7 @@ export const AddMemberContextProvider = ({ children }) => {
         setisLoading(false);
       }
     },
-    [addMemberForm , userDetails]
+    [addMemberForm, userDetails]
   );
 
   // search on member list
@@ -348,7 +361,7 @@ export const AddMemberContextProvider = ({ children }) => {
 
       return filteredMember;
     },
-    [allMemberList , userDetails]
+    [allMemberList, userDetails]
   );
 
   console.log(addMemberForm);

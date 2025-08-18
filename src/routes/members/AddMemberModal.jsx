@@ -47,7 +47,10 @@ const AddMemberModal = ({
       addMemberFormdispatch({
         type: "UPDATE_FIELD",
         field: "profileIconUrl",
-        value: file.name,
+        value: {
+          fileBlob: file || "N/A",
+          fileName: file.name || "N/A",
+        },
       });
     }
   };
@@ -86,7 +89,7 @@ const AddMemberModal = ({
       }
       try {
         await createMember(e, setisLoading);
-        getAllMemberList(setisMemberListLoading);
+        await getAllMemberList(setisMemberListLoading);
         onClose();
         // window.location.reload()
       } catch (error) {

@@ -13,6 +13,7 @@ import axios from "axios";
 import { validateFields } from "../../utils/checkFormValidation";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../userContext/UserContext";
+import { uploadFile } from "../../utils/uploadFiles";
 
 export const VendorContext = createContext();
 
@@ -160,6 +161,19 @@ export const VendorContextProvider = ({ children }) => {
 
       try {
         setisLoading(true);
+
+        // upload documens
+        for (let i = 0; i < createVendorForm.relatedDocuments.length; i++) {
+          const file = createVendorForm.relatedDocuments[i];
+          const res = await uploadFile(file.fileName, file.fileBlob, token);
+          console.log(res);
+          createVendorForm.relatedDocuments[i] = {
+            related_doc_name: res.file_name,
+            related_doc_url: res.doc_url,
+          };
+        }
+        console.log("file uploaded");
+
         const res = await axios.post(
           `${import.meta.env.VITE_BACKEND_URL}/api/accounting/create-vendor/`,
           {
@@ -240,6 +254,26 @@ export const VendorContextProvider = ({ children }) => {
 
       try {
         setisLoading(true);
+
+        // upload documens
+        for (let i = 0; i < createVendorForm.relatedDocuments.length; i++) {
+          if (
+            createVendorForm.relatedDocuments[
+              i
+            ].related_doc_url.toLowerCase() != "n/a"
+          )
+            continue;
+            
+          const file = createVendorForm.relatedDocuments[i];
+          const res = await uploadFile(file.fileName, file.fileBlob, token);
+          console.log(res);
+          createVendorForm.relatedDocuments[i] = {
+            related_doc_name: res.file_name,
+            related_doc_url: res.doc_url,
+          };
+        }
+        console.log("file uploaded");
+
         const res = await axios.post(
           `${
             import.meta.env.VITE_BACKEND_URL

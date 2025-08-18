@@ -30,6 +30,7 @@ import {
   getLast10FinancialYears,
   getAllMonths,
 } from "../../utils/dropdownFields";
+import { downloadFile } from "../../utils/downloadFile";
 
 export const QuotationList = () => {
   const [tempAllQuotationList, settempAllQuotationList] = useState(null);
@@ -73,19 +74,40 @@ export const QuotationList = () => {
                 aria-label="download excel"
                 onClick={(e) => {
                   e.preventDefault();
-                  const expandedQuotation = tempAllQuotationList.flatMap(
-                    (Quotation) =>
-                      Quotation.list_items.map((item) => ({
-                        "Quotation ID": Quotation.quotation_id,
-                        Customer: Quotation.customer_name,
-                        Email: Quotation.email,
+
+                  // Filter quotations where invoice_url is "n/a"
+                  const expandedQuotation = tempAllQuotationList
+                    .filter(
+                      (quotation) =>
+                        quotation?.quotation_url?.[0]?.invoice_url?.toLowerCase() ===
+                        "n/a"
+                    )
+                    .flatMap((quotation) =>
+                      quotation.list_items.map((item) => ({
+                        "Quotation ID": quotation.quotation_id,
+                        Customer: quotation.customer_name,
+                        Email: quotation.email,
                         Item: item.item_description,
                         Quantity: item.quantity,
                         Amount: item.gross_amount,
-                        "Quote Date": Quotation.quotation_date,
+                        "Quote Date": quotation.quotation_date,
                       }))
-                  );
-                  exportToExcel(expandedQuotation, "Quotation-list.xlsx");
+                    );
+
+                  // Check if we have any valid data
+                  if (!expandedQuotation.length) {
+                    // alert("No matching quotations found.");
+                    return;
+                  }
+
+                  console.log(expandedQuotation);
+
+                  try {
+                    exportToExcel(expandedQuotation, "Quotation-list.xlsx");
+                  } catch (err) {
+                    console.error("Export failed:", err);
+                    showToast("Failed to export quotations. Please try again.");
+                  }
                 }}
                 className=" hover:bg-[#0033662b] transition-all cursor-pointer col-span-4 h-full flex items-center justify-center gap-2 px-2 xl:px-4 py-2 xl:py-3  bg-[#0033661A] text-[#2543B1] rounded-xl font-medium "
               >
@@ -128,7 +150,7 @@ const ShowQuotationInTable = ({ AllQuotation }) => {
   return (
     <>
       {AllQuotation && (
-        <div div className=" overflow-auto flex-1 min-h-[300px]">
+        <div div className=" overflow-auto flex-1 min-h-[400px]">
           <table className="min-w-full text-sm text-left ">
             <thead className=" text-sm lg:text-base xl:text-lg 2xl:text-xl text-[#4A4A4A] border-b-[#0000001A] border-b-[1px]  ">
               <tr className="">
@@ -180,43 +202,101 @@ const ShowQuotationInTable = ({ AllQuotation }) => {
               {AllQuotation?.map((Quotation, idx) => {
                 // console.log(Quotation)
                 return Quotation?.list_items?.map((item, index) => {
-                  return (
-                    <tr
-                      key={`${idx}-${index}`}
-                      onClick={(e) => {
-                        navigate(
-                          `/quotation/quotationDetails/${Quotation.quotation_id}`
-                        );
-                      }}
-                      className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
-                    >
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
-                        {Quotation.quotation_id}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
-                        {Quotation.customer_name}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
-                        {Quotation.email}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
-                        {item?.item_name}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium text-center">
-                        {item?.quantity}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
-                        ₹
-                        {Number(item?.gross_amount).toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
-                        {Quotation.quotation_date}
-                      </td>
-                    </tr>
-                  );
+                  return Quotation?.quotation_url?.map((doc, i) => {
+                    return (
+                      <tr
+                        key={`${idx}-${index}-${i}`}
+                        onClick={(e) => {
+                          doc.invoice_url?.toLowerCase() == "n/a" &&
+                            navigate(
+                              `/quotation/quotationDetails/${Quotation.quotation_id}`
+                            );
+
+                          doc.invoice_url?.toLowerCase() != "n/a" &&
+                            downloadFile(doc.invoice_url, `Quatation-${Quotation.quotation_id}`);
+                        }}
+                        className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
+                      >
+                        <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
+                          {Quotation.quotation_id}
+                        </td>
+                        <td
+                          className="w-full whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium"
+                          style={{
+                            textAlign:
+                              doc.invoice_url?.toLowerCase() == "n/a"
+                                ? "start"
+                                : "center",
+                          }}
+                        >
+                          {doc.invoice_url?.toLowerCase() == "n/a"
+                            ? `${Quotation.customer_name}`
+                            : "--"}
+                        </td>
+                        <td
+                          className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium"
+                          style={{
+                            textAlign:
+                              doc.invoice_url?.toLowerCase() == "n/a"
+                                ? "start"
+                                : "center",
+                          }}
+                        >
+                          {doc.invoice_url?.toLowerCase() == "n/a"
+                            ? `${Quotation.email}`
+                            : "--"}
+                        </td>
+                        <td
+                          className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium"
+                          style={{
+                            textAlign:
+                              doc.invoice_url?.toLowerCase() == "n/a"
+                                ? "start"
+                                : "center",
+                          }}
+                        >
+                          {doc.invoice_url?.toLowerCase() == "n/a"
+                            ? `${item?.item_name}`
+                            : "--"}
+                        </td>
+                        <td
+                          className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium text-center"
+                          style={{
+                            textAlign:
+                              doc.invoice_url?.toLowerCase() == "n/a"
+                                ? "start"
+                                : "center",
+                          }}
+                        >
+                          {doc.invoice_url?.toLowerCase() == "n/a"
+                            ? `${item?.quantity}`
+                            : "--"}
+                        </td>
+                        <td
+                          className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium"
+                          style={{
+                            textAlign:
+                              doc.invoice_url?.toLowerCase() == "n/a"
+                                ? "start"
+                                : "center",
+                          }}
+                        >
+                          {doc.invoice_url?.toLowerCase() == "n/a"
+                            ? `₹ ${Number(item?.gross_amount).toLocaleString(
+                                "en-IN",
+                                {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                }
+                              )}`
+                            : "--"}
+                        </td>
+                        <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
+                          {Quotation.quotation_date}
+                        </td>
+                      </tr>
+                    );
+                  });
                 });
               })}
             </tbody>

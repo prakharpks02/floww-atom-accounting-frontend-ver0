@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Smartphone, ArrowRight } from "lucide-react";
+import { Smartphone, ArrowRight, Upload, UserPlus } from "lucide-react";
 import { showToast } from "../../utils/showToast";
 import { useNavigate } from "react-router-dom";
 
@@ -34,17 +34,89 @@ export const SignupForm = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col items-center text-center">
-        <div className="w-14 h-14 bg-[#E8DFFF] rounded-full flex items-center justify-center mb-4">
-          <Smartphone className="w-6 h-6 text-[#9C6BFF]" />
+      {/* profile image  */}
+      {/* <div className="flex flex-col items-center text-center">
+        <div className="rounded-lg p-4 text-center">
+          {userData.imageUrl?.url ? (
+            <div className="space-y-2">
+              <img
+                src={userData.imageUrl.url}
+                alt="Preview"
+                className="w-24 h-24 mx-auto rounded-full object-cover"
+              />
+              <div className="flex justify-center gap-8 mt-5">
+                <button
+                  onClick={() =>
+                    document.getElementById("profile-imageInput")?.click()
+                  }
+                  className="text-blue-800 font-medium cursor-pointer text-sm"
+                >
+                  Change
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setuserData((prev) => {
+                      return {
+                        ...prev,
+                        imageUrl: {
+                          fileBlob: "N/A",
+                          fileName: "N/A",
+                          url: "/user.png",
+                        },
+                      };
+                    });
+                  }}
+                  className="text-red-500 font-medium cursor-pointer text-sm"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ) : (
+            <label
+              tabIndex={0}
+              htmlFor="profile-imageInput"
+              className="cursor-pointer flex flex-col items-center"
+            >
+              <Upload className=" w-5 h-5" />
+              <p className="mt-2 text-sm">Enter profile image</p>
+              <p className="text-xs text-gray-400">
+                Supported formats: jpeg, JPG, PNG (Max 5MB)
+              </p>
+            </label>
+          )}
         </div>
-        <h2 className="md:text-2xl text-xl font-medium text-gray-900">
-          Welcome Back
+        <input
+          type="file"
+          id="profile-imageInput"
+          accept=".jpg,.jpeg,.png"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file && file.size <= 5 * 1024 * 1024) {
+              setuserData((prev) => {
+                return {
+                  ...prev,
+                  imageUrl: {
+                    url: URL.createObjectURL(file),
+                    fileBlob: file || "N/A",
+                    fileName: file.name || "N/A",
+                  },
+                };
+              });
+            } else {
+              showToast("Maximum size is 5MB", 1);
+            }
+          }}
+        />
+      </div> */}
+
+      <div className="flex items-center justify-center gap-2 mb-8">
+        <UserPlus className="w-6 h-6 text-purple-500" />
+        <h2 className="text-2xl font-medium text-gray-800">
+          Create Your Account
         </h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Enter your mobile number to continue
-        </p>
       </div>
 
       {/* Form */}
@@ -78,7 +150,7 @@ export const SignupForm = ({
                     onChange={(e) => {
                       setuserData((prev) => ({
                         ...prev,
-                        name: e.target.value.trim(),
+                        name: e.target.value,
                       }));
                     }}
                     disabled={isLoading}

@@ -33,6 +33,7 @@ export const UserContextProvider = ({ children }) => {
 
     try {
       setisLoading(true);
+
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/auth/user/signup/`,
         {
@@ -40,6 +41,7 @@ export const UserContextProvider = ({ children }) => {
           phone_number: `+91${userData.mobileNumber}`,
           name: userData.name,
           email: userData.email,
+          icon_image: userData.imageUrl,
         }
       );
       console.log(res);
@@ -60,7 +62,7 @@ export const UserContextProvider = ({ children }) => {
         image: undefined,
       });
       navigate("/");
-      // showToast("User created successfully");
+      showToast("User created successfully");
     } catch (error) {
       console.log(error);
       showToast(
@@ -117,8 +119,9 @@ export const UserContextProvider = ({ children }) => {
         // navigate("/onBoarding");
         return;
       }
-
-      localStorage.setItem("companyid", res.data.data.member_company_id);
+      if (res.data?.data?.member_company_id) console.log("present");
+      res.data?.data?.member_company_id &&
+        localStorage.setItem("companyid", res.data.data.member_company_id);
       setuserDetails({
         // userId: res.data.data.user_id,
         name: res.data.data.name,
@@ -130,7 +133,7 @@ export const UserContextProvider = ({ children }) => {
         mobileNo:
           res.data.authType?.toLowerCase() === "member"
             ? "Member"
-            : res.data.data.emailres.data.data.phone_number,
+            : res.data.data.phone_number,
       });
       // navigate("/");
       // showToast("User created successfully");
@@ -169,7 +172,10 @@ export const UserContextProvider = ({ children }) => {
         );
 
         console.log(res);
-        if (!res.data.token || res.data?.message?.toLowerCase().includes("incorrect")) {
+        if (
+          !res.data.token ||
+          res.data?.message?.toLowerCase().includes("incorrect")
+        ) {
           showToast(
             res.data?.message || "Somthing went wrong. Please try again",
             1
@@ -180,7 +186,7 @@ export const UserContextProvider = ({ children }) => {
         showToast("Member logged in successfully");
         localStorage.setItem("token", res.data.token);
         // localStorage.setItem("companyid", res.data.data.company_id);
-        await getUserDetails()
+        await getUserDetails();
 
         navigate("/");
       } catch (error) {
@@ -334,7 +340,9 @@ export const UserContextProvider = ({ children }) => {
       console.log(res);
       if (
         res.data.error ||
-        (res.data.status && res.data.status?.toLowerCase() !== "success")
+        (res.data.status && res.data.status?.toLowerCase() !== "success") ||
+        !res.data.token ||
+        res.data?.message?.toLowerCase().includes("incorrect")
       ) {
         showToast(res.data.error || "Fail to Login user", 1);
         setisLoading(false);
@@ -343,8 +351,9 @@ export const UserContextProvider = ({ children }) => {
       }
       localStorage.setItem("token", res.data.token);
       showToast("User login successfully");
+      await getUserDetails();
+
       navigate("/");
-      // window.location.reload();
     } catch (error) {
       console.log(error);
       showToast(
@@ -441,7 +450,6 @@ export const UserContextProvider = ({ children }) => {
   if (!userDetails) {
     return (
       <>
-        <ToastContainer />
         <UserContext.Provider
           value={{
             loginMember,

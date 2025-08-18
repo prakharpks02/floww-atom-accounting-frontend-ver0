@@ -342,7 +342,7 @@ const RelatedDocuments = ({ className, customerDetails }) => {
         <h2 className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-base text-sm font-semibold text-[#4A4A4A]">
           Related Documents
         </h2>
-        <button
+        {/* <button
           onClick={downloadAllFiles}
           tabIndex={0}
           disabled={isZipping}
@@ -358,7 +358,7 @@ const RelatedDocuments = ({ className, customerDetails }) => {
               <Download className="w-4 h-4" /> Download all
             </>
           )}
-        </button>
+        </button> */}
       </div>
 
       <div className="flex flex-wrap items-center justify-start gap-2 mb-4 max-h-[250px] overflow-auto">
