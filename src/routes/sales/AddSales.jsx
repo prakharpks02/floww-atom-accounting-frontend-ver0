@@ -187,9 +187,12 @@ export const AddSales = () => {
 const UploadDocuments = ({ saleDetails }) => {
   const [files, setfiles] = useState(
     saleDetails?.invoice_url &&
-      saleDetails?.invoice_url[0]?.invoice_url != "N/A"
+      saleDetails?.invoice_url[0]?.related_doc_url != "N/A"
       ? saleDetails?.invoice_url?.map((item) => {
-          return { name: item.invoice_url, related_doc_url: item.invoice_url };
+          return {
+            related_doc_name: item.related_doc_name,
+            related_doc_url: item.related_doc_url,
+          };
         })
       : []
   );
@@ -217,7 +220,7 @@ const UploadDocuments = ({ saleDetails }) => {
         return {
           fileBlob: item || "N/A",
           fileName: item.name || "N/A",
-          related_doc_name: item.related_doc_url || "N/A",
+          related_doc_name: item.related_doc_name || "N/A",
           related_doc_url: item.related_doc_url || "N/A",
         };
       }),
@@ -860,6 +863,7 @@ const CustomerNameInputField = ({ saleDetails }) => {
   const navigate = useNavigate();
   const { createSaleFormDispatch } = useContext(SalesContext);
   const { AllCustomersList, getAllCustomers } = useContext(CustomerContext);
+  const { salesid } = useParams();
 
   useEffect(() => {
     customer.customer_id &&
@@ -927,7 +931,11 @@ const CustomerNameInputField = ({ saleDetails }) => {
 
   return (
     <>
-      <div className=" md:col-span-2 flex flex-col overflow-y-visible relative">
+      <div
+        className={`md:col-span-2 flex flex-col overflow-y-visible relative ${
+          salesid ? "pointer-events-none" : ""
+        }`}
+      >
         <InputField
           value={customer.customer_name}
           setvalue={setcustomer}
@@ -1139,6 +1147,7 @@ const QuotationIDInputField = ({ saleDetails }) => {
   const [isCustomQuotation, setisCustomQuotation] = useState(false);
   const [isDropdownOpen, setisDropdownOpen] = useState(false);
   const [query, setquery] = useState("");
+  const { salesid } = useParams();
 
   const dropDownRef = useRef();
   const containerRef = useRef();
@@ -1193,7 +1202,11 @@ const QuotationIDInputField = ({ saleDetails }) => {
 
   return (
     <>
-      <div className="flex flex-col overflow-y-visible relative col-span-2">
+      <div
+        className={`flex flex-col overflow-y-visible relative col-span-2 ${
+          salesid ? "pointer-events-none" : ""
+        }`}
+      >
         <label className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal mb-1">
           Quotation ID (Optional)
         </label>

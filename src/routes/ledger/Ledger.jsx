@@ -166,7 +166,7 @@ const ShowAllLedgers = ({ AllLedger }) => {
                   scope="col"
                   className="px-4 py-4 whitespace-nowrap font-medium "
                 >
-                  Description
+                  Quotation ID / Purchase Order No
                 </th>
                 <th
                   scope="col"

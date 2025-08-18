@@ -713,13 +713,7 @@ const RelatedDocuments = ({ purchaseDetails }) => {
   const [files, setFile] = useState(
     purchaseDetails?.attachments?.length > 0 &&
       purchaseDetails?.attachments[0]?.related_doc_url != "N/A"
-      ? (purchaseDetails?.attachments || []).map((item) => {
-          return {
-            related_doc_name: item.related_doc_name,
-            related_doc_url: item.related_doc_url,
-            invoice_url: item.related_doc_url,
-          };
-        })
+      ? purchaseDetails?.attachments
       : null
   );
 
@@ -763,7 +757,7 @@ const RelatedDocuments = ({ purchaseDetails }) => {
       </div>
 
       <div className="flex flex-wrap items-center justify-start gap-2 mb-4 max-h-[250px] overflow-auto">
-        {files ? (
+        {files && files.length > 0  ? (
           <ShowFiles files={files} />
         ) : (
           <div className=" w-full flex flex-col items-center gap-4">

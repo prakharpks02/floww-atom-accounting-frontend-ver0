@@ -37,6 +37,7 @@ import { UserContext } from "../../context/userContext/UserContext";
 import { CompanyContext } from "../../context/company/CompanyContext";
 import { uploadFile } from "../../utils/uploadFiles";
 import { generatePDF } from "../../utils/downloadSalesInPdf";
+import { getFileNameFromURL } from "../../utils/getFileNameFromURL";
 
 export const SaleInfo = () => {
   const navigate = useNavigate();
@@ -74,7 +75,7 @@ export const SaleInfo = () => {
             </h1>
             <div className=" flex items-center gap-3">
               <button
-              disabled={isDownloading}
+                disabled={isDownloading}
                 onClick={async () => {
                   try {
                     setisDownloading(true);
@@ -153,16 +154,12 @@ const SaleInfoLeftPart = ({ className, saleDetails }) => {
   );
 };
 
-const SaleInfoRightPart = ({
-  className,
-  saleDetails,
-  setisLoading,
-  getSaleDetails,
-}) => {
+const SaleInfoRightPart = ({ className, saleDetails }) => {
   const [isModalOpen, setisModalOpen] = useState(false);
-  const [amountPaid, setamountPaid] = useState(
-    Number(saleDetails.total_amount)
-  );
+  const [isLoading, setisLoading] = useState(true);
+  const { getSalesTimeLine, salesTimeLine } = useContext(SalesContext);
+  const { saleid } = useParams();
+
   const iconMap = {
     Approved: <CheckCircle size={18} />,
     Sent: <Send size={18} />,
@@ -203,22 +200,25 @@ const SaleInfoRightPart = ({
   };
 
   useEffect(() => {
-    const totalAmount = saleDetails.payment_transactions_list?.reduce(
-      (sum, txn) => {
-        return sum + parseFloat(txn.amount || "0");
-      },
-      0
+    getSalesTimeLine(saleid, setisLoading);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className={` py-8 px-3 flex justify-center ${className}`}>
+        <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
+      </div>
     );
-    setamountPaid(totalAmount);
-  }, [saleDetails]);
+  }
+
+  console.log(salesTimeLine);
 
   return (
     <>
       <UpdateTimeLineModal
-        amountPaid={amountPaid}
-        setisSaleDetailLoading={setisLoading}
-        getSaleDetails={getSaleDetails}
-        saleDetails={saleDetails}
+        setisTimeLineLoading={setisLoading}
+        getSalesTimeLine={getSalesTimeLine}
+        timeLineDetails={salesTimeLine}
         isOpen={isModalOpen}
         setisOpen={setisModalOpen}
       />
@@ -226,11 +226,7 @@ const SaleInfoRightPart = ({
         className={`h-fit w-full grid lg:grid-cols-1 grid-cols-2 gap-4 ${className}`}
       >
         {/* amount pie chart  */}
-        <AmountPieChart
-          className={" h-fit"}
-          totalAmount={Number(saleDetails.total_amount)}
-          amountPaid={amountPaid}
-        />
+        <AmountPieChart className={" h-fit"} />
         <div
           className={`rounded-lg w-full h-fit 2xl:p-8 xl:p-6 md:p-4 p-2 border-[1.5px] border-[#E8E8E8] `}
         >
@@ -238,15 +234,17 @@ const SaleInfoRightPart = ({
             Timeline
           </h2>
           <div className=" mb-6 flex flex-wrap justify-between items-center">
-            <button
-              onClick={() => {
-                setisModalOpen(true);
-              }}
-              className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs 
+            {Number(salesTimeLine.remaining_balance) > 0 && (
+              <button
+                onClick={() => {
+                  setisModalOpen(true);
+                }}
+                className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs 
           bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
-            >
-              Update Timeline <History className="w-5 h-5 rotate-y-180" />
-            </button>
+              >
+                Update Timeline <History className="w-5 h-5 rotate-y-180" />
+              </button>
+            )}
             {/* <button
               onClick={() => {
                 setisModalOpen(true);
@@ -258,14 +256,10 @@ const SaleInfoRightPart = ({
             </button> */}
           </div>
           <div className="space-y-4">
-            {[...(saleDetails?.payment_transactions_list ?? [])]
+            {[...(salesTimeLine?.timeline ?? [])]
               ?.reverse()
               ?.map((item, idx) => {
                 const ext = getFileExtension(item?.transaction_url);
-                const fileName =
-                  item.transaction_url?.split("/")[
-                    item.transaction_url?.split("/").length - 1
-                  ];
                 return (
                   <div
                     key={idx}
@@ -291,15 +285,20 @@ const SaleInfoRightPart = ({
                             e.stopPropagation();
                             window.open(item?.transaction_url, "_blank");
                           }}
-                          className="ml-11 cursor-pointer bg-white border-[#0000001A] border-1  shadow-sm rounded-lg flex items-center gap-3 px-2 py-2 w-fit text-sm"
+                          className="ml-11 cursor-pointer bg-white border-[#0000001A] border-1  shadow-sm rounded-lg flex items-center gap-2 px-2 py-2 w-fit text-sm"
                         >
-                          <div className=" text-white w-15 py-2 rounded text-xs font-semibold">
+                          <div
+                            className={`text-white ${
+                              isImage(ext) ? "w-30" : "w-10"
+                            } py-2 rounded text-xs font-semibold`}
+                          >
                             {getFilePreview(item?.transaction_url, ext)}
                           </div>
-                          <span className="text-[#606060] font-medium xl:text-base md:text-sm text-xs">
-                            {fileName.includes(".")
+                          <span className="text-[#606060] font-medium  xl:text-sm text-xs">
+                            {/* {fileName.includes(".")
                               ? fileName.substring(0, fileName.lastIndexOf("."))
-                              : fileName}
+                              : fileName} */}
+                            {getFileNameFromURL(item.transaction_url)}
                           </span>
                         </div>
                       )}
@@ -314,16 +313,14 @@ const SaleInfoRightPart = ({
 };
 
 const UpdateTimeLineModal = ({
-  amountPaid,
   isOpen,
   setisOpen,
-  saleDetails,
-  setisSaleDetailLoading,
-  getSaleDetails,
+  timeLineDetails,
+  setisTimeLineLoading,
+  getSalesTimeLine,
 }) => {
   const [formData, setformData] = useState({
     transaction_id: "N/A",
-    timestamp: Date.now(),
     amount: "",
     remark: "",
     file: null,
@@ -332,6 +329,7 @@ const UpdateTimeLineModal = ({
   const { companyDetails } = useContext(CompanyContext);
   const { updateSalesTimeLine } = useContext(SalesContext);
   const [isLoading, setisLoading] = useState(false);
+
   const { saleid } = useParams();
 
   const handleSubmit = async () => {
@@ -358,15 +356,15 @@ const UpdateTimeLineModal = ({
       return;
     }
 
-    if (
-      Number(formData.amount) >
-      Number(saleDetails.total_amount) - amountPaid
-    ) {
+    if (Number(formData.amount) > Number(timeLineDetails?.remaining_balance)) {
       // console.log(
       //   Number(saleDetails.total_amount) - amountPaid,
       //   Number(formData.amount)
       // );
-      showToast("Amount must less than leftover amount", 1);
+      showToast(
+        `Amount must less than remaining amount - ${timeLineDetails?.remaining_balance}`,
+        1
+      );
       return;
     }
 
@@ -380,7 +378,7 @@ const UpdateTimeLineModal = ({
         },
         setisLoading
       );
-      await getSaleDetails(saleid, setisSaleDetailLoading);
+      await getSalesTimeLine(saleid, setisTimeLineLoading);
       handelClose();
     } catch (error) {
       console.log(error);
@@ -391,7 +389,7 @@ const UpdateTimeLineModal = ({
     } finally {
       setisLoading(false);
     }
-  }, [formData, userDetails, saleDetails, companyDetails]);
+  }, [formData, userDetails, timeLineDetails, companyDetails]);
 
   if (!isOpen) return null;
 
@@ -568,16 +566,16 @@ const UploadDocuments = ({ setSelectedFile }) => {
   );
 };
 
-const AmountPieChart = ({ className, totalAmount, amountPaid }) => {
+const AmountPieChart = ({ className }) => {
   // const totalAmount = amountPaid + amountLeft ;
   // const amountPaid = 600000;
-  const amountLeft = Number((totalAmount - amountPaid).toFixed(2));
+  const { salesTimeLine } = useContext(SalesContext);
 
   // console.log(totalAmount, amountPaid, amountLeft);
 
   const data = [
-    { name: "Amount Left", value: amountLeft },
-    { name: "Amount Paid", value: amountPaid },
+    { name: "Amount Left", value: salesTimeLine?.remaining_balance || 0 },
+    { name: "Amount Paid", value: salesTimeLine?.total_paid || 0 },
   ];
 
   const COLORS = ["#FB3748", "#2543B1"];
@@ -618,7 +616,7 @@ const AmountPieChart = ({ className, totalAmount, amountPaid }) => {
 
         <div className="absolute inset-0 flex flex-col items-center justify-center 2xl:text-3xl xl:text-2xl lg:text-xl md:text-lg text-base font-semibold text-[#4A4A4A]">
           <span className=" ">Total Amount</span>
-          <span className=" ">₹ {totalAmount}</span>
+          <span className=" ">₹ {salesTimeLine?.total_amount}</span>
         </div>
       </div>
 
@@ -631,7 +629,7 @@ const AmountPieChart = ({ className, totalAmount, amountPaid }) => {
           <div>
             <span>Amount Paid</span>
             <br />
-            <span>₹ {amountPaid}</span>
+            <span>₹ {salesTimeLine?.total_paid}</span>
           </div>
         </div>
         <div className="flex items-center font-medium text-[#606060] ">
@@ -644,7 +642,7 @@ const AmountPieChart = ({ className, totalAmount, amountPaid }) => {
             <br />
             <span>
               ₹{" "}
-              {amountLeft.toLocaleString("en-IN", {
+              {salesTimeLine?.remaining_balance.toLocaleString("en-IN", {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 2,
               })}
@@ -769,14 +767,8 @@ const Description = ({ saleDetails }) => {
 const RelatedDocuments = ({ saleDetails }) => {
   const [files, setFile] = useState(
     saleDetails?.invoice_url?.length > 0 &&
-      saleDetails?.invoice_url[0]?.invoice_url != "N/A"
-      ? (saleDetails?.invoice_url || []).map((item) => {
-          return {
-            related_doc_name: item.invoice_url,
-            related_doc_url: item.invoice_url,
-            invoice_url: item.invoice_url,
-          };
-        })
+      saleDetails?.invoice_url[0]?.related_doc_url != "N/A"
+      ? saleDetails?.invoice_url
       : null
   );
   const [isDownloading, setisDownloading] = useState(false);
@@ -902,10 +894,12 @@ const ShowFiles = ({ files }) => {
     }
   };
 
+  console.log(files)
+
   return (
     <div className="max-h-[200px] w-full overflow-y-auto flex flex-wrap justify-center gap-3 pt-5">
       {files.map((file, index) => {
-        const ext = getFileExtension(file?.related_doc_name);
+        const ext = getFileExtension(file?.related_doc_url);
         return (
           <div
             key={index}

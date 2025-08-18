@@ -105,10 +105,10 @@ export const AddMemberContextProvider = ({ children }) => {
         setisLoading(true);
 
         // upload documens
-        // const file = addMemberForm.profileIconUrl;
-        // const response = await uploadFile(file.fileName, file.fileBlob, token);
-        // console.log(response);
-        // addMemberForm.profileIconUrl = response.doc_url;
+        const file = addMemberForm.profileIconUrl;
+        const response = await uploadFile(file.fileName, file.fileBlob, token);
+        console.log(response);
+        addMemberForm.profileIconUrl = response.doc_url;
 
         // console.log("profile image uploaded");
 

@@ -10,7 +10,7 @@ import { CompanyContext } from "../company/CompanyContext";
 import { showToast } from "../../utils/showToast";
 import axios from "axios";
 import { validateFields } from "../../utils/checkFormValidation";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   FilterDataOnAmount,
   FilterDataOnDate,
@@ -61,6 +61,7 @@ export const initialPurchaseOrderState = {
   poUrl: [{ invoice_url: "N/A" }],
   poDate: "",
   gstNumber: "",
+  vendorPanNumber:"",
   tdsAmount: "",
   tdsReason: "",
   adjustmentAmount: "",
@@ -120,13 +121,15 @@ export const PurchaseOrderReducer = (state, action) => {
 export const PurchaseOrderContextProvider = ({ children }) => {
   const [purchaseOrderList, setpurchaseOrderList] = useState(null);
   const [purchaseOrderDetails, setpurchaseOrderDetails] = useState(null);
-  const { companyDetails } = useContext(CompanyContext);
   //create purchase order reducer
   const [createPurchaseOrderForm, createPurchaseOrderFormDispatch] = useReducer(
     PurchaseOrderReducer,
     initialPurchaseOrderState
   );
+
+  const { companyDetails } = useContext(CompanyContext);
   const { userDetails } = useContext(UserContext);
+  const { pathname } = useLocation();
 
   const navigate = useNavigate();
 
@@ -237,9 +240,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
     async (e, setisLoading = () => {}) => {
       e.preventDefault();
 
-      if (
-        !createPurchaseOrderForm.poUrl[0]?.fileBlob
-      ) {
+      if (!createPurchaseOrderForm.poUrl[0]?.fileBlob) {
         const validationErrors = validateFields(createPurchaseOrderForm);
 
         if (Object.keys(validationErrors).length > 0) {
@@ -274,9 +275,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
         setisLoading(true);
 
         // upload documents when document present
-        if (
-          createPurchaseOrderForm.poUrl[0]?.fileBlob
-        ) {
+        if (createPurchaseOrderForm.poUrl[0]?.fileBlob) {
           for (let i = 0; i < createPurchaseOrderForm.poUrl.length; i++) {
             const file = createPurchaseOrderForm.poUrl[i];
             const response = await uploadFile(
@@ -522,11 +521,11 @@ export const PurchaseOrderContextProvider = ({ children }) => {
     [purchaseOrderList, userDetails]
   );
 
-  //  useEffect(() => {
-  //   setpurchaseDetails(null);
-  //   !pathname.toLowerCase().includes("/addPurchase") &&
-  //     createPurchaseListFormDispatch({ type: "RESET" });
-  // }, [pathname]);
+  useEffect(() => {
+    setpurchaseOrderDetails(null);
+    !pathname.toLowerCase().includes("/createorder") &&
+      createPurchaseOrderFormDispatch({ type: "RESET" });
+  }, [pathname]);
 
   return (
     <PurchaseOrderContext.Provider
@@ -541,7 +540,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
         updatePurchaseOrder,
         searchPurchaseOrder,
         handelMultipleFilter,
-        setpurchaseOrderDetails
+        setpurchaseOrderDetails,
       }}
     >
       {children}

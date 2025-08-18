@@ -1304,6 +1304,7 @@ const VendorNameInputField = ({ className, purchaseOrderDetails }) => {
     vendor_name: purchaseOrderDetails?.vendor_name || "",
     email: purchaseOrderDetails?.email || "",
     gst_number: purchaseOrderDetails?.gst_number || "",
+    vendor_pan_number : purchaseOrderDetails?.vendor_pan_number || "",
     contact_no: purchaseOrderDetails?.contact_no || "",
   });
   const { createPurchaseOrderFormDispatch } = useContext(PurchaseOrderContext);
@@ -1331,6 +1332,11 @@ const VendorNameInputField = ({ className, purchaseOrderDetails }) => {
       type: "UPDATE_FIELD",
       field: "gstNumber",
       value: vendor?.gst_number || "",
+    });
+    createPurchaseOrderFormDispatch({
+      type: "UPDATE_FIELD",
+      field: "vendorPanNumber",
+      value: vendor?.pan_number || "",
     });
     createPurchaseOrderFormDispatch({
       type: "UPDATE_FIELD",

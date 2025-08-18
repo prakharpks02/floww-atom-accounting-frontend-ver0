@@ -103,13 +103,15 @@ const CreateInvoiceForm = ({ activeTab }) => {
   const [previousDetails, setpreviousDetails] = useState(-1);
   const { getSaleDetails, setsaleDetails } = useContext(SalesContext);
   const [isSalesDetailsLoading, setisSalesDetailsLoading] = useState(true);
+  const [salesId, setsalesId] = useState(null);
 
   useEffect(() => {
-    const salesId = new URLSearchParams(window.location.search).get("salesId");
-    if (!salesId) {
+    const temp = new URLSearchParams(window.location.search).get("salesId");
+    setsalesId(temp);
+    if (!temp) {
       setsaleDetails(null);
       setisSalesDetailsLoading(false);
-    } else getSaleDetails(salesId, isSalesDetailsLoading);
+    } else getSaleDetails(temp, setisSalesDetailsLoading);
   }, []);
 
   if (isSalesDetailsLoading) {
@@ -123,7 +125,10 @@ const CreateInvoiceForm = ({ activeTab }) => {
   return (
     <>
       <div className=" grid lg:grid-cols-2 grid-cols-1 gap-x-2 gap-y-4 mb-4">
-        <CreateInvoiceLeftPart previousDetails={previousDetails} />
+        <CreateInvoiceLeftPart
+          previousDetails={previousDetails}
+          salesId={salesId}
+        />
         <CreateInvoiceRightPart handelDownloadInvoice={downloadInvoiceAsPDF} />
       </div>
       {/* Action Buttons */}
@@ -159,7 +164,7 @@ const CreateInvoiceForm = ({ activeTab }) => {
   );
 };
 
-const CreateInvoiceLeftPart = ({}) => {
+const CreateInvoiceLeftPart = ({ salesId }) => {
   return (
     <>
       <div className=" 2xl:p-8 xl:p-6 md:p-4 py-4 px-2 2xl:rounded-2xl xl:rounded-xl rounded-lg border-[1.5px] border-[#E8E8E8] ">
@@ -170,7 +175,10 @@ const CreateInvoiceLeftPart = ({}) => {
         {/* Invoice info */}
         <PurchaseOrderContextProvider>
           <div className=" grid md:grid-cols-2 grid-cols-1 gap-3 space-y-4 mb-4 w-full">
-            <SalesIDInputField className={" col-span-2"} />
+            <SalesIDInputField
+              className={" col-span-2"}
+              hasSalesId={salesId ? true : false}
+            />
             <InvoiceNumberInputField className={" col-span-1"} />
             <InvoiceDateInputField className={" col-span-1"} />
             <TermsInputField className={" col-span-1"} />
@@ -1054,16 +1062,16 @@ const OrderNumberInputField = ({ className }) => {
   );
 };
 
-const SalesIDInputField = ({ className }) => {
-  const [salesId, setsalesId] = useState("");
+const SalesIDInputField = ({ className, hasSalesId }) => {
   const [isLoading, setisLoading] = useState(false);
   const [isCustomSalesId, setisCustomSalesId] = useState(false);
   const [isDropdownOpen, setisDropdownOpen] = useState(false);
   const [query, setquery] = useState("");
   const { createInvoiceDispatch, createInvoiceForm } =
     useContext(InvoiceContext);
-  const { getAllSales, AllSalesList, setsaleDetails } =
+  const { getAllSales, AllSalesList, setsaleDetails ,saleDetails } =
     useContext(SalesContext);
+  const [salesId, setsalesId] = useState("");
   const dropDownRef = useRef();
   const containerRef = useRef();
   const navigate = useNavigate();
@@ -1106,11 +1114,16 @@ const SalesIDInputField = ({ className }) => {
     };
   }, [containerRef.current, dropDownRef.current]);
 
-  console.log(AllSalesList);
+  useEffect(() => {
+    setsalesId(saleDetails?.sales_id || "");
+  }, [saleDetails]);
+
   return (
     <>
       <div
-        className={`flex flex-col overflow-y-visible relative w-full ${className}`}
+        className={`flex flex-col overflow-y-visible relative w-full ${
+          hasSalesId ? "pointer-events-none" : ""
+        } ${className}`}
       >
         <label className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal mb-1">
           Sales ID <span className=" text-red-600 ">*</span>
@@ -1193,7 +1206,7 @@ const SalesIDInputField = ({ className }) => {
                     //     ? `/sales/addSales/new?invoiceNo=${createInvoiceForm.invoiceNumber}`
                     //     : "/sales/addSales/new"
                     // }`
-                    "/sales/addSales/new"
+                    "/sales/addSales/new?invoiceNo=new"
                   );
                 }}
                 className=" w-full hover:bg-[#f2f2f2] my-2 transition opacity-80 px-6 py-3 cursor-pointer flex items-center gap-2 rounded-xl text-[#2543B1] text-base font-medium"
@@ -1409,7 +1422,6 @@ const CustomerNameInputField = ({ className }) => {
     });
   }, [saleDetails]);
 
-  console.log(saleDetails);
 
   return (
     <>

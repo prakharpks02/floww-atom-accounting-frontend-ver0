@@ -150,6 +150,7 @@ export const SalesReducer = (state, action) => {
 export const SalesContextProvider = ({ children }) => {
   const [AllSalesList, setAllSalesList] = useState(null);
   const [saleDetails, setsaleDetails] = useState(null);
+  const [salesTimeLine, setsalesTimeLine] = useState(null);
   //create sales reducer
   const [createSaleForm, createSaleFormDispatch] = useReducer(
     SalesReducer,
@@ -351,7 +352,10 @@ export const SalesContextProvider = ({ children }) => {
               file.fileBlob,
               token
             );
-            createSaleForm.invoiceUrl[i] = { invoice_url: res.doc_url };
+            createSaleForm.invoiceUrl[i] = {
+              related_doc_name: file.fileName || `related-invoice-${i + 1}`,
+              related_doc_url: res.doc_url,
+            };
           }
         }
 
@@ -385,7 +389,7 @@ export const SalesContextProvider = ({ children }) => {
         // reset to initial value
         createSaleFormDispatch({ type: "RESET" });
         showToast("Sale created");
-        return res.data.data.sales_id
+        return res.data.data.sales_id;
       } catch (error) {
         console.log(error);
         showToast(
@@ -451,7 +455,7 @@ export const SalesContextProvider = ({ children }) => {
         setisLoading(false);
       }
     },
-    [userDetails]
+    []
   );
 
   //update existing sales
@@ -497,18 +501,19 @@ export const SalesContextProvider = ({ children }) => {
       try {
         setisLoading(true);
 
-        console.log(createSaleForm.invoiceUrl);
-        console.log(getFileNameFromURL(createSaleForm.invoiceUrl[0].fileName));
         // upload documens
         for (let i = 0; i < createSaleForm.invoiceUrl.length; i++) {
           const file = createSaleForm.invoiceUrl[i];
-          if (file.invoice_url.toLowerCase() == "n/a") {
+          if (file.related_doc_url.toLowerCase() == "n/a") {
             const res = await uploadFile(
               file.fileName || `related-invoice-${i + 1}`,
               file.fileBlob,
               token
             );
-            createSaleForm.invoiceUrl[i] = { invoice_url: res.doc_url };
+            createSaleForm.invoiceUrl[i] = {
+              related_doc_name: file.fileName || `related-invoice-${i + 1}`,
+              related_doc_url: res.doc_url,
+            };
           }
         }
 
@@ -618,9 +623,8 @@ export const SalesContextProvider = ({ children }) => {
         );
         console.log(res);
         if (res.data?.status && res.data.status.toLowerCase() !== "success") {
-          showToast("Somthing went wrong. Please try again", 1);
           setisLoading(false);
-          return;
+          throw new Error("Somthing went wrong. Please try again", 1);
         }
 
         // reset to initial value
@@ -650,6 +654,52 @@ export const SalesContextProvider = ({ children }) => {
     [saleDetails]
   );
 
+  //get sales timeline details
+  const getSalesTimeLine = useCallback(
+    async (saleid, setisLoading = () => {}) => {
+      if (!saleid) {
+        showToast("Please provide sales id", 1);
+        return;
+      }
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Token not found", 1);
+        return;
+      }
+      try {
+        setisLoading(true);
+        const res = await axios.get(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/accounting/sales/timeline?salesId=${saleid}`,
+          {
+            headers: {
+              Authorization: token,
+            },
+          }
+        );
+        console.log(res);
+        if (res.data?.status && res.data.status.toLowerCase() !== "success") {
+          setisLoading(false);
+          throw new Error("Somthing went wrong. Please try again", 1);
+        }
+
+        setsalesTimeLine(res.data);
+      } catch (error) {
+        console.log(error);
+        showToast(
+          error.response?.data?.message ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+      } finally {
+        setisLoading(false);
+      }
+    },
+    []
+  );
+
   // reset the create sale form to intial value when not in addSales page
   useEffect(() => {
     !pathname.toLowerCase().includes("/addsales") &&
@@ -674,6 +724,8 @@ export const SalesContextProvider = ({ children }) => {
         saleDetails,
         setsaleDetails,
         updateSalesTimeLine,
+        getSalesTimeLine,
+        salesTimeLine,
       }}
     >
       {children}

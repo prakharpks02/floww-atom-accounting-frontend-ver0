@@ -192,6 +192,11 @@ const PurchaseOrderNumber = ({ purchaseDetails, className }) => {
       });
       createPurchaseListFormDispatch({
         type: "UPDATE_FIELD",
+        value: item.vendor_pan_number,
+        field: "panNumber",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
         value: item.sub_total_amount,
         field: "subtotalAmount",
       });
@@ -300,6 +305,11 @@ const PurchaseOrderNumber = ({ purchaseDetails, className }) => {
     });
     createPurchaseListFormDispatch({
       type: "UPDATE_FIELD",
+      value: purchaseDetails.pan_number,
+      field: "panNumber",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
       value: purchaseDetails.subtotal_amount,
       field: "subtotalAmount",
     });
@@ -330,10 +340,13 @@ const PurchaseOrderNumber = ({ purchaseDetails, className }) => {
     });
   }, [purchaseDetails]);
 
-  console.log(purchaseDetails);
-
+  console.log(filteredData);
   return (
-    <div className={` relative ${className} ${purchaseDetails ? "pointer-events-none" : ""}`}>
+    <div
+      className={` relative ${className} ${
+        purchaseDetails ? "pointer-events-none" : ""
+      }`}
+    >
       <label className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal mb-1">
         Purchase Order no <span className=" text-red-600 ">*</span>
       </label>
@@ -403,7 +416,7 @@ const PurchaseOrderNumber = ({ purchaseDetails, className }) => {
 
           {!isLoading && (
             <ul className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal placeholder:text-[#00000080] text-[#000000a1]">
-              {filteredData?.map((item, index) => {
+              {[...(filteredData || [])].reverse().map((item, index) => {
                 if (item.list_items[0].item_name) {
                   return (
                     <li
@@ -940,21 +953,17 @@ const GSTNumberInputField = () => {
 
 const PANNumberInputField = ({ purchaseDetails }) => {
   const [pan, setpan] = useState(purchaseDetails?.pan_number || "");
-  const { createPurchaseListFormDispatch } = useContext(PurchaseListContext);
+  const { createPurchaseListForm } = useContext(PurchaseListContext);
   useEffect(() => {
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "panNumber",
-      value: pan,
-    });
-  }, [pan]);
+    setpan(createPurchaseListForm?.panNumber || "");
+  }, [createPurchaseListForm]);
 
   return (
     <>
       <div className="flex flex-col overflow-y-visible relative">
         <InputField
           required={true}
-          readOnly={false}
+          readOnly={true}
           value={pan}
           setvalue={setpan}
           label={"PAN Number"}
@@ -967,9 +976,10 @@ const PANNumberInputField = ({ purchaseDetails }) => {
 
 const UploadInvoice = ({ purchaseDetails }) => {
   const [files, setfiles] = useState(
-    purchaseDetails?.attachments[0]?.related_doc_url == "N/A"
-      ? []
-      : purchaseDetails?.attachments
+    purchaseDetails?.attachments?.length > 0 &&
+      purchaseDetails?.attachments[0]?.related_doc_url != "N/A"
+      ? purchaseDetails?.attachments
+      : []
   );
   const { createPurchaseListFormDispatch } = useContext(PurchaseListContext);
   useEffect(() => {
@@ -999,6 +1009,8 @@ const UploadInvoice = ({ purchaseDetails }) => {
       }),
     });
   }, [files]);
+
+  console.log(files)
 
   return (
     <div className=" mb-6 outline-[#00000029] rounded-lg px-3 py-6 border-2 border-[#00000033] border-dashed">
@@ -1058,7 +1070,9 @@ const UploadInvoice = ({ purchaseDetails }) => {
 
           // Do something with the valid files (e.g. store them in state)
           console.log("Valid files:", validFiles);
-          setfiles((prev) => [...prev, ...validFiles]);
+          setfiles((prev) => {
+            return [...prev, ...validFiles];
+          });
 
           // Clear the input to allow re-uploading the same files
           e.target.value = "";
