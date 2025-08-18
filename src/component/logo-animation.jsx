@@ -11,7 +11,7 @@ const LoadingOverlay = ({ show }) => {
       {/* Image Container */}
       <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[9999]">
         <img
-          src="https://floww0.blob.core.windows.net/websitegraphics/graphics/floww/new-preloader.gif"
+          src="https://cdn.gofloww.co/websitegraphics/graphics/floww/new-preloader.gif"
           alt="Loading"
           className="w-full max-w-[200px] mx-auto"
         />

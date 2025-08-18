@@ -62,7 +62,7 @@ const ImgUpload = () => {
   const containerName = "consoleupload"; // From your existing code
   const sasToken = import.meta.env.VITE_SAS_TOKEN ; 
 
-  const sasUrl = `https://floww0.blob.core.windows.net/consoleupload?${sasToken}`;
+  const sasUrl = `https://cdn.gofloww.co/consoleupload?${sasToken}`;
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     setFile(selectedFile);
