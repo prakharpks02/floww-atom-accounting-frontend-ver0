@@ -170,6 +170,7 @@ const CreateInvoiceLeftPart = ({}) => {
         {/* Invoice info */}
         <PurchaseOrderContextProvider>
           <div className=" grid md:grid-cols-2 grid-cols-1 gap-3 space-y-4 mb-4 w-full">
+            <SalesIDInputField className={" col-span-2"} />
             <InvoiceNumberInputField className={" col-span-1"} />
             <InvoiceDateInputField className={" col-span-1"} />
             <TermsInputField className={" col-span-1"} />
@@ -177,7 +178,6 @@ const CreateInvoiceLeftPart = ({}) => {
             <CustomerNameInputField className={" md:col-span-2 col-span-1"} />
             <SubjectInputField className={" md:col-span-2 col-span-1"} />
             <OrderNumberInputField className={" col-span-2"} />
-            <SalesIDInputField className={" col-span-2"} />
           </div>
 
           {/* Item Table */}
@@ -705,8 +705,6 @@ const ItemDetails = ({ className }) => {
       <div className={`mb-6 ${className}`}>
         <h3 className="text-lg font-semibold text-gray-800 mb-3">Item Table</h3>
         {items.map((item, index) => {
-          const isLast = index === items.length - 1;
-
           return (
             <div key={index} className=" space-y-3 mb-8">
               <div className=" grid md:grid-cols-5 grid-cols-2 gap-3">
@@ -927,8 +925,6 @@ const OrderNumberInputField = ({ className }) => {
       window.removeEventListener("pointerdown", handelClickOutside);
     };
   }, [containerRef.current, dropDownRef.current]);
-
-  console.log(filteredData);
 
   return (
     <>
@@ -1357,6 +1353,7 @@ const DueDateInputField = ({ className }) => {
 };
 
 const CustomerNameInputField = ({ className }) => {
+  const { saleDetails } = useContext(SalesContext);
   const [customer, setcustomer] = useState({
     customer_id: "",
     gst_number: "",
@@ -1403,23 +1400,35 @@ const CustomerNameInputField = ({ className }) => {
     });
   }, [customer]);
 
+  useEffect(() => {
+    setcustomer({
+      customer_id: saleDetails?.customer_id || "",
+      gst_number: saleDetails?.gstin_number || "",
+      contact_no: saleDetails?.contact_no || "",
+      customer_name: saleDetails?.customer_name || "",
+    });
+  }, [saleDetails]);
+
+  console.log(saleDetails);
+
   return (
     <>
       <div className={`${className} w-full`}>
         <InputField
+          readOnly={true}
           required={true}
           value={customer.customer_name}
           isLoading={isLoading}
           setvalue={setcustomer}
           label={"Customer name"}
           placeholder={"Select or add Customer"}
-          hasDropDown={true}
-          dropDownType="usersData"
-          dropDownData={AllCustomersList || []}
+          // hasDropDown={true}
+          // dropDownType="usersData"
+          // dropDownData={AllCustomersList || []}
           addnew={"customer"}
-          onClickAddNew={() => {
-            navigate("/customer/addCustomer/new");
-          }}
+          // onClickAddNew={() => {
+          //   navigate("/customer/addCustomer/new");
+          // }}
         />
       </div>
     </>

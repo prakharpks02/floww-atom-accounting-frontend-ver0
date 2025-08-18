@@ -35,7 +35,7 @@ export const SignupForm = ({
   return (
     <div className="space-y-6">
       {/* profile image  */}
-      {/* <div className="flex flex-col items-center text-center">
+      <div className="flex flex-col items-center text-center">
         <div className="rounded-lg p-4 text-center">
           {userData.imageUrl?.url ? (
             <div className="space-y-2">
@@ -110,14 +110,14 @@ export const SignupForm = ({
             }
           }}
         />
-      </div> */}
+      </div>
 
-      <div className="flex items-center justify-center gap-2 mb-8">
+      {/* <div className="flex items-center justify-center gap-2 mb-8">
         <UserPlus className="w-6 h-6 text-purple-500" />
         <h2 className="text-2xl font-medium text-gray-800">
           Create Your Account
         </h2>
-      </div>
+      </div> */}
 
       {/* Form */}
       <form className="space-y-4" onSubmit={handleSubmit}>

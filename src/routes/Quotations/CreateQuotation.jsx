@@ -66,7 +66,7 @@ export const CreateQuotation = () => {
           </div>
 
           {/* Tabs */}
-          {quotationid == "new" && (
+          {/* {quotationid == "new" && (
             <div className="mb-4 flex rounded-lg bg-[#0033661A] overflow-hidden xl:py-2 xl:px-3 p-1 w-full">
               <button
                 tabIndex={0}
@@ -93,7 +93,7 @@ export const CreateQuotation = () => {
                 Upload new Quotation
               </button>
             </div>
-          )}
+          )} */}
 
           {/* main content */}
           {activeTab === "create" && (

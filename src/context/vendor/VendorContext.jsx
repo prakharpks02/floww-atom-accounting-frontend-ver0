@@ -261,7 +261,7 @@ export const VendorContextProvider = ({ children }) => {
         // upload documens
         for (let i = 0; i < createVendorForm.relatedDocuments.length; i++) {
           const file = createVendorForm.relatedDocuments[i];
-          if (file.fileBlob) {
+          if (file.related_doc_url.toLowerCase() === "n/a") {
             const res = await uploadFile(file.fileName, file.fileBlob, token);
             createVendorForm.relatedDocuments[i] = {
               related_doc_name: res.file_name,

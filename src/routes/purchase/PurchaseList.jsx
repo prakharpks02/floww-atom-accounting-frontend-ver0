@@ -10,6 +10,7 @@ import {
   CalendarDays,
   ChevronDown,
   Download,
+  Eye,
   Filter,
   FilterIcon,
   Loader2,
@@ -30,6 +31,7 @@ import {
   getAllMonths,
   getLast10FinancialYears,
 } from "../../utils/dropdownFields";
+import { ItemToolTip } from "../../component/ItemToolTip";
 
 export const PurchaseList = () => {
   const [tempAllPurchaseList, settempAllPurchaseList] = useState(null);
@@ -119,7 +121,7 @@ export const PurchaseList = () => {
 
 const ShowPurchaseInTable = ({ AllPurchase }) => {
   const navigate = useNavigate();
-
+  console.log(AllPurchase);
   return (
     <>
       {AllPurchase && (
@@ -149,12 +151,6 @@ const ShowPurchaseInTable = ({ AllPurchase }) => {
                   scope="col"
                   className="px-3 py-4 whitespace-nowrap font-medium "
                 >
-                  Items
-                </th>
-                <th
-                  scope="col"
-                  className="px-3 py-4 whitespace-nowrap font-medium "
-                >
                   No. of Items
                 </th>
                 <th
@@ -178,56 +174,60 @@ const ShowPurchaseInTable = ({ AllPurchase }) => {
               </tr>
             </thead>
             <tbody>
-              {[...(AllPurchase || [])].reverse().map((purchase, idx) =>
-                purchase.list_items.map((item, index) => {
-                  return (
-                    <tr
-                      key={`${idx}-${index}`}
-                      onClick={(e) => {
-                        navigate(
-                          `/purchase/purchaseDetails/${purchase.purchase_id}`
-                        );
-                      }}
-                      className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
+              {[...(AllPurchase || [])].reverse().map((purchase, idx) => {
+                return (
+                  <tr
+                    key={`${idx}-${1}`}
+                    onClick={(e) => {
+                      navigate(
+                        `/purchase/purchaseDetails/${purchase.purchase_id}`
+                      );
+                    }}
+                    className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
+                  >
+                    <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
+                      {purchase.purchase_id}
+                    </td>
+                    <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
+                      {purchase.vendor_name}
+                    </td>
+                    <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
+                      {purchase.email}
+                    </td>
+                    <td className="flex items-center justify-center gap-2 whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium text-center">
+                      {purchase.list_items.length}
+                      <div className=" relative group">
+                        <Eye className=" w-5 " />
+                        <ItemToolTip
+                          items={purchase.list_items}
+                          className={
+                            " hidden group-hover:block top-0 left-[110%]"
+                          }
+                        />
+                      </div>
+                    </td>
+                    <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
+                      ₹
+                      {Number(purchase.total_amount).toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </td>
+                    <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
+                      {purchase.purchase_date}
+                    </td>
+                    <td
+                      className={`whitespace-nowrap px-3 py-4 ${
+                        purchase.status?.toLowerCase() === "paid"
+                          ? "text-[#1FC16B]"
+                          : "text-[#FB3748]"
+                      } font-medium`}
                     >
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
-                        {purchase.purchase_id}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
-                        {purchase.vendor_name}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
-                        {purchase.email}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
-                        {item.item_name}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium text-center">
-                        {item.quantity}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
-                        ₹
-                        {Number(item.gross_amount).toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </td>
-                      <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
-                        {purchase.purchase_date}
-                      </td>
-                      <td
-                        className={`whitespace-nowrap px-3 py-4 ${
-                          purchase.status?.toLowerCase() === "paid"
-                            ? "text-[#1FC16B]"
-                            : "text-[#FB3748]"
-                        } font-medium`}
-                      >
-                        {purchase.status}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
+                      {purchase.status}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

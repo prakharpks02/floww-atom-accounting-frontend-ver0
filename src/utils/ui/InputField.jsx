@@ -102,7 +102,9 @@ export const InputField = ({
         </label>
       )}
 
-      {additionalNote && <p className=" text-xs text-red-600 mb-1">{additionalNote}</p>}
+      {additionalNote && (
+        <p className=" text-xs text-red-600 mb-1">{additionalNote}</p>
+      )}
 
       <div
         onClick={(e) => {
@@ -132,18 +134,10 @@ export const InputField = ({
             onPaste={(e) => {
               if (
                 inputType === "num" ||
-                (inputType === "rupee" && e.target.value < 0)
+                (inputType === "rupee" && Number(e.target.value) < 0)
               ) {
                 showToast("Negative numbers not allowed.", 1);
                 return;
-              }
-
-              if (inputType === "rupee") {
-                const pasted = e.clipboardData.getData("Text");
-                if (/\D/.test(pasted)) {
-                  e.preventDefault(); // Cancel paste if it contains non-digits
-                  showToast("Only numbers are allowed.", 1);
-                }
               }
 
               if (maxLength && e.target.value.length > maxLength) {
@@ -151,7 +145,11 @@ export const InputField = ({
                 return;
               }
 
-              if (inputType === "tel") {
+              if (
+                inputType === "rupee" ||
+                inputType === "num" ||
+                inputType === "tel"
+              ) {
                 const pasted = e.clipboardData.getData("Text");
                 if (/\D/.test(pasted)) {
                   e.preventDefault(); // Cancel paste if it contains non-digits
@@ -165,20 +163,11 @@ export const InputField = ({
                 return;
               }
 
-              if (inputType === "rupee") {
-                const newValue = e.target.value;
-                const lastChar = newValue.slice(-1); // get the last character typed
-                // console.log(lastChar);
-                // If last character is not a digit, show alert
-                if (lastChar && /\D/.test(lastChar)) {
-                  showToast("Only numbers are allowed.", 1);
-                  return; // don't update state with invalid input
-                }
-              }
-
-              // console.log(e.target.value)
               if (
-                (inputType === "num" && isNaN(Number(e.target.value))) ||
+                ((inputType === "rupee" ||
+                  inputType === "num" ||
+                  inputType === "tel") &&
+                  isNaN(Number(e.target.value))) ||
                 Number(e.target.value || 0) < 0
               ) {
                 const newValue = e.target.value;
@@ -193,18 +182,7 @@ export const InputField = ({
                 showToast("Negative numbers not allowed.", 1);
                 return;
               }
-
-              if (inputType === "tel") {
-                const newValue = e.target.value;
-                const lastChar = newValue.slice(-1); // get the last character typed
-                // console.log(lastChar);
-                // If last character is not a digit, show alert
-                if (lastChar && /\D/.test(lastChar)) {
-                  showToast("Only numbers are allowed.", 1);
-                  return; // don't update state with invalid input
-                }
-              }
-
+             
               handelFormData && handelFormData(e);
 
               setvalue && setvalue(e.target.value);

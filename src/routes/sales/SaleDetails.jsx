@@ -375,7 +375,6 @@ const UpdateTimeLineModal = ({
         {
           salesId: saleid,
           amount: formData.amount,
-          timestamp: formatISODateToDDMMYYYY(Date.now() / 1000),
           remark: formData.remark,
           file: formData.file,
         },

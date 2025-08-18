@@ -24,6 +24,7 @@ import { validateFields } from "../../utils/checkFormValidation";
 import { UserContext } from "../userContext/UserContext";
 import { uploadFile } from "../../utils/uploadFiles";
 import { getFileNameFromURL } from "../../utils/getFileNameFromURL";
+import { formatISODateToDDMMYYYY } from "../../utils/formateDate";
 
 export const SalesContext = createContext();
 
@@ -63,7 +64,12 @@ export const initialSalesState = {
   contactNo: "",
   email: "",
   address: "",
-  invoiceUrl: [{ invoice_url: "N/A" }],
+  invoiceUrl: [
+    {
+      related_doc_name: "N/A",
+      related_doc_url: "N/A",
+    },
+  ],
   paymentNameList: [
     {
       payment_name: "N/A",
@@ -379,6 +385,7 @@ export const SalesContextProvider = ({ children }) => {
         // reset to initial value
         createSaleFormDispatch({ type: "RESET" });
         showToast("Sale created");
+        return res.data.data.sales_id
       } catch (error) {
         console.log(error);
         showToast(
@@ -566,8 +573,8 @@ export const SalesContextProvider = ({ children }) => {
         throw new Error("Please provide the data", 1);
       }
 
-      const { salesId, amount, timestamp, remark, file } = data;
-      if (!salesId || !amount || !timestamp || !remark || !file) {
+      const { salesId, amount, remark, file } = data;
+      if (!salesId || !amount || !remark || !file) {
         showToast("All fields are required", 1);
         throw new Error("All fields are required", 1);
       }
@@ -580,13 +587,14 @@ export const SalesContextProvider = ({ children }) => {
 
       try {
         setisLoading(true);
-
+        let transactionUrl = "N/A";
         // upload documens
-        const reponse = await uploadFile(file.name, file, token);
-        console.log(reponse);
-        const transactionUrl = reponse.doc_url;
-
-        console.log("file uploaded");
+        if (file) {
+          const reponse = await uploadFile(file.name, file, token);
+          console.log(reponse);
+          transactionUrl = reponse.doc_url;
+          console.log("file uploaded");
+        }
 
         const res = await axios.post(
           `${
@@ -594,10 +602,13 @@ export const SalesContextProvider = ({ children }) => {
           }/api/accounting/update-sales-timeline-details/`,
           {
             salesId: salesId,
-            amount,
-            timestamp,
-            transactionUrl,
-            remark,
+            transaction: {
+              transaction_id: "TRN001",
+              amount: amount,
+              timestamp: formatISODateToDDMMYYYY(Date.now() / 1000),
+              transaction_url: transactionUrl,
+              remark: remark,
+            },
           },
           {
             headers: {

@@ -146,7 +146,7 @@ export const AddSales = () => {
                       );
                       const invoiceNo = searchParams.get("invoiceNo");
                       if (invoiceNo) {
-                        navigate(`/sales/createInvoice?salesId=${invoiceNo}`);
+                        navigate(`/sales/createInvoice?salesId=${newSalesId}`);
                       } else {
                         navigate("/sales/salesList");
                       }
@@ -203,7 +203,8 @@ const UploadDocuments = ({ saleDetails }) => {
         field: "invoiceUrl",
         value: [
           {
-            invoice_url: "N/A",
+            related_doc_name: "N/A",
+            related_doc_url: "N/A",
           },
         ],
       });
@@ -216,11 +217,12 @@ const UploadDocuments = ({ saleDetails }) => {
         return {
           fileBlob: item || "N/A",
           fileName: item.name || "N/A",
-          invoice_url: item.related_doc_url || "N/A",
+          related_doc_name: item.related_doc_url || "N/A",
+          related_doc_url: item.related_doc_url || "N/A",
         };
       }),
     });
-  }, [files , createSaleFormDispatch]);
+  }, [files, createSaleFormDispatch]);
 
   return (
     <div className=" outline-[#00000029] rounded-lg p-3 border-2 border-[#00000033] border-dashed">

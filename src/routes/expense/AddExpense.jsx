@@ -56,7 +56,7 @@ export const AddExpense = () => {
               </h2>
             </div>
 
-            <div className=" grid md:grid-cols-2 grid-cols-1 xl:gap-4 md:gap-2">
+            <div className=" grid md:grid-cols-2 grid-cols-1 space-y-4 gap-x-3">
               <ExpenseTitle expenseDetails={expenseDetails} />
               <Category expenseDetails={expenseDetails} />
               <ExpenseDate expenseDetails={expenseDetails} />
@@ -214,7 +214,7 @@ const ExpenseDesciption = ({ className, expenseDetails }) => {
   useEffect(() => {
     createExpenseFormdispatch({
       type: "UPDATE_FIELD",
-      field: "description",
+      field: "deception",
       value: desc,
     });
   }, [desc]);

@@ -11,6 +11,7 @@ import {
 } from "../../utils/dropdownFields";
 import { CustomerContext } from "../../context/customer/customerContext";
 import { useLocation, useParams } from "react-router-dom";
+import { getCityStateByPinCode } from "../../utils/getCItyStateByPinCode";
 
 export const AddCustomer = () => {
   const { customerid } = useParams();
@@ -261,7 +262,7 @@ const PhoneDetails = ({ className, customerDetails }) => {
           required={true}
           inputType={"tel"}
           label={"Mobile No"}
-          maxLength={10}
+          // maxLength={10}
           placeholder={"Mobile"}
         />
       </div>
@@ -457,7 +458,11 @@ const OtherDetails = ({ className, customerDetails }) => {
   const [paymentTerm, setpaymentTerm] = useState(
     customerDetails?.payment_term || customerDetails?.payment_terms || ""
   );
-  const [files, setfiles] = useState(customerDetails?.related_documents[0]?.related_doc_url == "N/A" ? [] : [...(customerDetails?.related_documents || [])]);
+  const [files, setfiles] = useState(
+    customerDetails?.related_documents[0]?.related_doc_url == "N/A"
+      ? []
+      : [...(customerDetails?.related_documents || [])]
+  );
 
   const { handleChange, createCustomerForm } = useContext(CustomerContext);
   useEffect(() => {
@@ -714,6 +719,12 @@ const BillingAddress = ({ className, customerDetails }) => {
     }
   }, [customerDetails]);
 
+  // get city and state autometically when pincode is typed
+  useEffect(() => {
+    if (!pinCode || pinCode.length != 6) return;
+    getCityStateByPinCode(pinCode, setcity, setstate);
+  }, [pinCode]);
+
   return (
     <div className={`${className}`}>
       <h2 className=" text-[#4A4A4A] font-medium 2xl:text-2xl xl:text-xl lg:text-lg text-base mb-5">
@@ -740,6 +751,18 @@ const BillingAddress = ({ className, customerDetails }) => {
             required={true}
             readOnly={true}
             placeholder={""}
+          />
+        </div>
+        {/* PIN Code* */}
+        <div>
+          <InputField
+            inputType={"num"}
+            maxLength={6}
+            value={pinCode}
+            label={"PIN Code"}
+            setvalue={setpinCode}
+            required={true}
+            placeholder={"Enter PIN code"}
           />
         </div>
         {/* Address* */}
@@ -786,16 +809,6 @@ const BillingAddress = ({ className, customerDetails }) => {
             hasDropDown={true}
             placeholder={"Select state"}
             dropDownData={indianStates || []}
-          />
-        </div>
-        {/* PIN Code* */}
-        <div>
-          <InputField
-            value={pinCode}
-            label={"PIN Code"}
-            setvalue={setpinCode}
-            required={true}
-            placeholder={"Enter PIN code"}
           />
         </div>
       </div>
@@ -869,7 +882,7 @@ const ContactPerson = ({ className, customerDetails }) => {
     createCustomerFormDispatch({
       type: "UPDATE_ARRAY",
       parentField: "contactPerson",
-      value: workPhone||"N/A",
+      value: workPhone || "N/A",
       index: 0,
       field: "work_phone",
     });
@@ -952,7 +965,7 @@ const ContactPerson = ({ className, customerDetails }) => {
             autoComplete="off"
             value={mobile}
             setvalue={setmobile}
-            maxLength={10}
+            // maxLength={11}
             inputType={"tel"}
             label={"Mobile"}
             placeholder={"Mobile"}

@@ -190,6 +190,36 @@ const PurchaseOrderNumber = ({ purchaseDetails, className }) => {
         value: item.gst_number,
         field: "gstNumber",
       });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.sub_total_amount,
+        field: "subtotalAmount",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.discount_amount,
+        field: "discountAmount",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.tds_amount,
+        field: "tdsAmount",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.tds_reason,
+        field: "tdsReason",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.adjustment_amount,
+        field: "adjustmentAmount",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.total_amount,
+        field: "totalAmount",
+      });
     },
     [createPurchaseListFormDispatch]
   );
@@ -268,10 +298,42 @@ const PurchaseOrderNumber = ({ purchaseDetails, className }) => {
       value: purchaseDetails.gst_number,
       field: "gstNumber",
     });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.subtotal_amount,
+      field: "subtotalAmount",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.discount_amount,
+      field: "discountAmount",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.tds_amount,
+      field: "tdsAmount",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.tds_reason,
+      field: "tdsReason",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.adjustment_amount,
+      field: "adjustmentAmount",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.total_amount,
+      field: "totalAmount",
+    });
   }, [purchaseDetails]);
 
+  console.log(purchaseDetails);
+
   return (
-    <div className={` relative ${className}`}>
+    <div className={` relative ${className} ${purchaseDetails ? "pointer-events-none" : ""}`}>
       <label className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal mb-1">
         Purchase Order no <span className=" text-red-600 ">*</span>
       </label>
@@ -370,20 +432,20 @@ const PurchaseOrderNumber = ({ purchaseDetails, className }) => {
 };
 
 const InvoiceNumber = ({ purchaseDetails }) => {
-  const [orderNo, setorderNo] = useState(purchaseDetails?.invoice_no || "");
+  const [invoiceNo, setinvoiceNo] = useState(purchaseDetails?.invoice_no || "");
   const { createPurchaseListFormDispatch } = useContext(PurchaseListContext);
   useEffect(() => {
     createPurchaseListFormDispatch({
       type: "UPDATE_FIELD",
       field: "invoiceNo",
-      value: orderNo,
+      value: invoiceNo || "N/A",
     });
-  }, [orderNo]);
+  }, [invoiceNo]);
   return (
     <div>
       <InputField
-        value={orderNo}
-        setvalue={setorderNo}
+        value={invoiceNo}
+        setvalue={setinvoiceNo}
         label={"Invoice no (optional)"}
         placeholder={"Enter invoice no"}
       />
@@ -722,58 +784,12 @@ const AdditionalNotes = ({ className, purchaseDetails }) => {
 };
 
 const VendorNameInputField = ({ className, purchaseDetails }) => {
-  // const [vendor, setvendor] = useState({
-  //   vendor_id: purchaseDetails?.vendor_id || "",
-  //   vendor_name: purchaseDetails?.vendor_name || "",
-  //   email: purchaseDetails?.email || "",
-  //   contact_no: purchaseDetails?.contact_no || "",
-  //   gst_number: purchaseDetails?.gst_number || "",
-  //   pan_number: purchaseDetails?.pan_number || "",
-  // });
   const { createPurchaseListForm } = useContext(PurchaseListContext);
   const [vendorName, setvendorName] = useState("");
   const { createPurchaseListFormDispatch } = useContext(PurchaseListContext);
   const [isLoading, setisLoading] = useState(true);
   const navigate = useNavigate();
   const { AllVendorList, getAllVendors } = useContext(VendorContext);
-
-  // useEffect(() => {
-  //   createPurchaseListFormDispatch({
-  //     type: "UPDATE_FIELD",
-  //     field: "vendorId",
-  //     value: vendor?.vendor_id,
-  //   });
-  //   createPurchaseListFormDispatch({
-  //     type: "UPDATE_FIELD",
-  //     field: "vendorName",
-  //     value: vendor?.vendor_name,
-  //   });
-  //   createPurchaseListFormDispatch({
-  //     type: "UPDATE_FIELD",
-  //     field: "email",
-  //     value: vendor?.email,
-  //   });
-  //   createPurchaseListFormDispatch({
-  //     type: "UPDATE_FIELD",
-  //     field: "contactNo",
-  //     value: vendor?.contact_no,
-  //   });
-  //   createPurchaseListFormDispatch({
-  //     type: "UPDATE_FIELD",
-  //     field: "gstNumber",
-  //     value: vendor?.gst_number,
-  //   });
-  //   createPurchaseListFormDispatch({
-  //     type: "UPDATE_FIELD",
-  //     field: "panNumber",
-  //     value: vendor?.pan_number,
-  //   });
-  // }, [vendor]);
-
-  // get all customer list
-  // useEffect(() => {
-  //   getAllVendors(setisLoading);
-  // }, []);
 
   useEffect(() => {
     setvendorName(createPurchaseListForm?.vendorName || "");
@@ -1090,74 +1106,22 @@ const SubTotal = ({ className, purchaseDetails }) => {
   });
 
   useEffect(() => {
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "adjustmentAmount",
-      value: isAdjustment,
-    });
-  }, [isAdjustment]);
-
-  // calculate total when discount changes
-  useEffect(() => {
-    if (!tds.value) return;
-    const tax = Number(tds.value.split("%")[0]);
-    //update states
-    setgrandTotal(
-      ((subtotal * (100 - discount) * (100 + tax)) / 10000).toFixed(2)
-    );
-  }, [discount, tds, discount]);
-
-  useEffect(() => {
     //calculate subtotal
-    setsubtotal(
-      createPurchaseListForm?.listItems.reduce((acc, item) => {
-        return acc + parseFloat(item.gross_amount || 0);
-      }, 0) || 0
-    );
+    setsubtotal(createPurchaseListForm.subtotalAmount);
+    setdiscount(createPurchaseListForm.discountAmount);
+    setisAdjustment(createPurchaseListForm.adjustmentAmount);
+    settds({
+      value: createPurchaseListForm?.tdsAmount || "0%",
+      name: createPurchaseListForm?.tdsReason || "N/A",
+    });
+    setgrandTotal(createPurchaseListForm.totalAmount);
   }, [createPurchaseListForm]);
 
   useEffect(() => {
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "discountAmount",
-      value: discount,
-    });
     setdiscountAmount(((subtotal * discount) / 100).toFixed(2));
   }, [discount, subtotal]);
 
   useEffect(() => {
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "subtotalAmount",
-      value: Number(subtotal).toFixed(2),
-    });
-    if (!tds) return;
-    const tax = Number(tds.value.split("%")[0]);
-    //update states
-    setgrandTotal(
-      ((subtotal * (100 - discount) * (100 + tax)) / 10000).toFixed(2)
-    );
-  }, [subtotal, discount, tds]);
-
-  useEffect(() => {
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "totalAmount",
-      value: isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal,
-    });
-  }, [grandTotal, isAdjustment]);
-
-  useEffect(() => {
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "tdsAmount",
-      value: tds.value,
-    });
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "tdsReason",
-      value: tds.name || "N/A",
-    });
     const tax = Number(tds.value.split("%")[0]);
     settaxableAmount(((subtotal * (100 - discount) * tax) / 10000).toFixed(2));
   }, [tds, subtotal, discount]);
@@ -1183,6 +1147,7 @@ const SubTotal = ({ className, purchaseDetails }) => {
             <input
               id="discount"
               type="number"
+              readOnly
               placeholder={0}
               value={discount}
               onChange={(e) => {
@@ -1198,7 +1163,7 @@ const SubTotal = ({ className, purchaseDetails }) => {
         {/* Tax Type + Dropdown */}
         <div className="flex items-center justify-between text-[#4A4A4A] gap-3 mb-4">
           {/* Radio buttons */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 pointer-events-none">
             <label
               htmlFor="toggle tds"
               className=" md:text-sm text-xs font-medium flex items-center gap-2 cursor-pointer select-none text-[#4A4A4A]"
@@ -1222,11 +1187,7 @@ const SubTotal = ({ className, purchaseDetails }) => {
           </div>
 
           {/* Tax Dropdown */}
-          <TaxDropdown
-            value={tds.value}
-            setvalue={settds}
-            isDisabled={!isTdsEnable}
-          />
+          <TaxDropdown value={tds.value} setvalue={settds} isDisabled={true} />
 
           {/* Negative Tax Value */}
           <div className="text-gray-500 text-sm w-12 text-right">
@@ -1240,7 +1201,7 @@ const SubTotal = ({ className, purchaseDetails }) => {
         <div className="flex justify-between  items-center 2xl:text-2xl xl:text-xl lg:text-lg md:text-base font-medium text-[#333333]">
           <div className=" flex items-center gap-4">
             <span>Total</span>
-            <div className=" flex items-center gap-2 cursor-pointer">
+            <div className=" flex items-center gap-2 pointer-events-none">
               <label
                 htmlFor="toggle adjustment"
                 className=" text-sm font-medium flex items-center gap-2 cursor-pointer select-none text-[#4A4A4A]"

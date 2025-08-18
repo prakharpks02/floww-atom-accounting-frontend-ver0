@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useReducer,
   useState,
 } from "react";
@@ -520,7 +521,12 @@ export const PurchaseOrderContextProvider = ({ children }) => {
     },
     [purchaseOrderList, userDetails]
   );
-  console.log(createPurchaseOrderForm);
+
+  //  useEffect(() => {
+  //   setpurchaseDetails(null);
+  //   !pathname.toLowerCase().includes("/addPurchase") &&
+  //     createPurchaseListFormDispatch({ type: "RESET" });
+  // }, [pathname]);
 
   return (
     <PurchaseOrderContext.Provider
