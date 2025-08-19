@@ -91,7 +91,6 @@ export const UserContextProvider = ({ children }) => {
         (res.data.status && res.data.status.toLowerCase() !== "success")
       ) {
         showToast(res.data.error || "Fail to create user", 1);
-        // navigate("/onBoarding");
         return;
       }
       localStorage.setItem("token", res.data.token);
@@ -113,7 +112,6 @@ export const UserContextProvider = ({ children }) => {
           "Something went wrong. Please try again",
         1
       );
-      // navigate("/onBoarding");
     } finally {
       setisLoading(false);
       setisLoading(false);
@@ -157,7 +155,6 @@ export const UserContextProvider = ({ children }) => {
       ) {
         showToast(res.data.error || "Fail to create user", 1);
         setisAuthenticating(false);
-        // navigate("/onBoarding");
         return;
       }
       if (res.data?.data?.member_company_id) console.log("present");
@@ -187,7 +184,6 @@ export const UserContextProvider = ({ children }) => {
           "Something went wrong. Please try again",
         1
       );
-      // navigate("/onBoarding");
     } finally {
       setisAuthenticating(false);
     }
@@ -387,7 +383,6 @@ export const UserContextProvider = ({ children }) => {
       ) {
         showToast(res.data.error || "Fail to Login user", 1);
         setisLoading(false);
-        // navigate("/onBoarding");
         return;
       }
       localStorage.setItem("token", res.data.token);
@@ -404,7 +399,6 @@ export const UserContextProvider = ({ children }) => {
           "Something went wrong. Please try again",
         1
       );
-      // navigate("/onBoarding");
     } finally {
       setisAuthenticating(false);
       setisLoading(false);

@@ -165,7 +165,7 @@ function App() {
 
               <Route path="/ledger" element={<Ledger />} />
               <Route path="/addMembers" element={<AllMembersList />} />
-              <Route path="/onBoarding" element={<OnBoardingPage />} />
+              <Route path="/onBoarding/:companyId" element={<OnBoardingPage />} />
               <Route path="/login" element={<UserLoginPage />} />
               <Route path="/signup" element={<UserSignupPage />} />
             </Routes>

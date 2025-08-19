@@ -80,7 +80,7 @@ export default function TopBar() {
               >
                 <button
                   onClick={() => {
-                    navigate("/onBoarding");
+                    navigate("/onBoarding/new");
                     setOpen(false);
                   }}
                   className="w-full whitespace-nowrap cursor-pointer text-left text-sm px-3 py-2 hover:bg-gray-100 rounded"
