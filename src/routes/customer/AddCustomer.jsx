@@ -11,7 +11,7 @@ import {
 } from "../../utils/dropdownFields";
 import { CustomerContext } from "../../context/customer/customerContext";
 import { useLocation, useParams } from "react-router-dom";
-import { getCityStateByPinCode } from "../../utils/getCItyStateByPinCode";
+import { getCityStateByPinCode } from "../../utils/getCityStateByPinCode";
 
 export const AddCustomer = () => {
   const { customerid } = useParams();
