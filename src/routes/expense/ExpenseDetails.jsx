@@ -1,10 +1,12 @@
-import { Download, Edit, FileText, Loader2, Upload } from "lucide-react";
+import { Download, Edit, FileIcon, FileText, Loader2, Upload } from "lucide-react";
 import React, { useContext, useEffect, useState } from "react";
 import { ShowUploadedFiles } from "../../utils/ui/ShowUploadedFiles";
 import { ToastContainer } from "react-toastify";
 import { showToast } from "../../utils/showToast";
 import { useNavigate, useParams } from "react-router-dom";
 import { ExpenseContext } from "../../context/expense/ExpenseContext";
+import { downloadAsZip } from "../../utils/downloadAsZip";
+import { defaultStyles } from "react-file-icon";
 
 export const ExpenseDetails = () => {
   const { getExpenseDetails, expenseDetails } = useContext(ExpenseContext);
@@ -15,6 +17,8 @@ export const ExpenseDetails = () => {
   useEffect(() => {
     getExpenseDetails(expenseid, setisLoading);
   }, []);
+
+  console.log(expenseDetails);
 
   return (
     <>
@@ -39,7 +43,7 @@ export const ExpenseDetails = () => {
                 </p>
               </div>
 
-              <div className=" flex gap-3 w-fit">
+              {/* <div className=" flex gap-3 w-fit">
                 <button
                   onClick={() => {
                     navigate(`/expense/addExpense/${expenseid}`);
@@ -51,7 +55,7 @@ export const ExpenseDetails = () => {
                 {/* <button className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs bg-[#0033661A] text-[#2543B1] rounded-xl hover:bg-[#00336626] cursor-pointer transition">
                   <Upload className="w-5 h-5" /> Share
                 </button> */}
-              </div>
+              {/* </div> */}
             </div>
           </div>
 
@@ -115,13 +119,34 @@ const BesicDetails = ({ className, expenseDetails }) => {
             ₹{expenseDetails?.amount}
           </p>
         </div>
+        {expenseDetails?.deception && (
+          <div className=" col-span-4 overflow-x-auto">
+            <p className="text-[#777777] font-medium 2xl:text-xl xl:text-lg lg:text-base text-sm">
+              Description
+            </p>
+            <p className=" font-medium 2xl:text-xl xl:text-lg lg:text-base sm:text-sm text-xs text-[#4A4A4A]">
+              {expenseDetails?.deception}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 const RelatedDocuments = ({ expenseDetails }) => {
-  const [files, setFile] = useState(expenseDetails?.attachments || []);
+  const [files, setFile] = useState(
+    expenseDetails.attachments?.length > 0 &&
+      expenseDetails.attachments[0]?.related_doc_url != "N/A"
+      ? (expenseDetails.attachments || []).map((item) => {
+          return {
+            related_doc_name: item.related_doc_name,
+            related_doc_url: item.related_doc_url,
+            invoice_url: item.related_doc_url,
+          };
+        })
+      : null
+  );
   const [isZipping, setisZipping] = useState(false);
 
   const downloadAllFiles = async (e) => {
@@ -131,7 +156,7 @@ const RelatedDocuments = ({ expenseDetails }) => {
 
     try {
       setisZipping(true);
-      await downloadAsZip(files);
+      await downloadAsZip(files, "expense-related-documents.zip");
     } catch (error) {
       showToast(error.message, 1);
     } finally {
@@ -145,7 +170,7 @@ const RelatedDocuments = ({ expenseDetails }) => {
         <h2 className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-base text-sm font-semibold text-[#4A4A4A]">
           Documents Related to Expense
         </h2>
-        {/* <button
+        <button
           onClick={downloadAllFiles}
           tabIndex={0}
           disabled={isZipping}
@@ -161,7 +186,7 @@ const RelatedDocuments = ({ expenseDetails }) => {
               <Download className="w-4 h-4" /> Download all
             </>
           )}
-        </button> */}
+        </button>
       </div>
 
       <div className="flex flex-wrap items-center justify-start gap-2 mb-4 max-h-[250px] overflow-auto">
@@ -215,7 +240,7 @@ const ShowFiles = ({ files }) => {
   return (
     <div className="max-h-[200px] w-full overflow-auto flex flex-wrap justify-center gap-3 pt-5">
       {files.map((file, index) => {
-        const ext = getFileExtension(file?.related_doc_name);
+        const ext = getFileExtension(file?.related_doc_url);
         return (
           <div
             key={index}

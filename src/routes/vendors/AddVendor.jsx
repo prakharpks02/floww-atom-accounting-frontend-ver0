@@ -131,8 +131,6 @@ const PrimaryContact = ({ className = "", vendorDetails }) => {
       ""
   );
 
-  console.log(vendorDetails?.vendor_name);
-
   // reset value when vendor details changes
   useEffect(() => {
     setsalutation(
@@ -173,7 +171,7 @@ const PrimaryContact = ({ className = "", vendorDetails }) => {
             readOnly={true}
             value={salutation}
             setvalue={setsalutation}
-            label={"Primary Contact*"}
+            label={"Primary Contact"}
             placeholder={"Salutation"}
             dropDownData={salutations}
             dropDownType="default"
@@ -217,7 +215,7 @@ const CompanyName = ({ className = "", vendorDetails }) => {
         required={true}
         value={company}
         setvalue={setcompany}
-        label={"Company name*"}
+        label={"Company name"}
         placeholder={"XYZ Company"}
       />
     </div>
@@ -239,21 +237,11 @@ const PhoneDetails = ({ className = "", vendorDetails }) => {
     handleChange("UPDATE_FIELD", "contactNo", mobile);
   }, [mobile]);
   useEffect(() => {
-    handleChange("UPDATE_FIELD", "workPhone", workPhone);
+    handleChange("UPDATE_FIELD", "workPhone", workPhone || "N/A");
   }, [workPhone]);
 
   return (
     <div className={` grid grid-cols-2 xl:gap-4 md:gap-2 ${className}`}>
-      <div>
-        <InputField
-          required={true}
-          value={workPhone}
-          setvalue={setworkPhone}
-          inputType={"tel"}
-          label={"Phone*"}
-          placeholder={"Work Phone"}
-        />
-      </div>
       <div>
         <InputField
           value={mobile}
@@ -261,7 +249,18 @@ const PhoneDetails = ({ className = "", vendorDetails }) => {
           required={true}
           inputType={"tel"}
           maxLength={10}
+          label={"Mobile No"}
+          autoComplete="off"
           placeholder={"Mobile"}
+        />
+      </div>
+      <div>
+        <InputField
+          value={workPhone}
+          setvalue={setworkPhone}
+          inputType={"tel"}
+          label={"Work Phone No"}
+          placeholder={"Work Phone"}
         />
       </div>
     </div>
@@ -286,7 +285,7 @@ const EmailAddress = ({ className = "", vendorDetails }) => {
         required={true}
         value={email}
         setvalue={setemail}
-        label={"Email address*"}
+        label={"Email address"}
         placeholder={"Enter a valid email address"}
       />
     </div>
@@ -428,7 +427,11 @@ const OtherDetails = ({ className = "", vendorDetails }) => {
       : false
   );
   const [tds, settds] = useState(vendorDetails?.tds || "");
-  const [files, setfiles] = useState(vendorDetails?.related_documents || []);
+  const [files, setfiles] = useState(
+    vendorDetails?.related_documents[0]?.related_doc_url == "N/A"
+      ? []
+      : [...(vendorDetails?.related_documents || [])]
+  );
 
   const { handleChange } = useContext(VendorContext);
 
@@ -457,7 +460,7 @@ const OtherDetails = ({ className = "", vendorDetails }) => {
     handleChange("UPDATE_FIELD", "openingBalance", openingBalance);
   }, [openingBalance]);
   useEffect(() => {
-    handleChange("UPDATE_FIELD", "paymentTerms", paymentTerm);
+    handleChange("UPDATE_FIELD", "paymentTerms", paymentTerm || "N/A");
   }, [paymentTerm]);
   useEffect(() => {
     handleChange("UPDATE_FIELD", "msmeRegisteredOrNot", isMSME);
@@ -466,21 +469,27 @@ const OtherDetails = ({ className = "", vendorDetails }) => {
     handleChange("UPDATE_FIELD", "tds", tds);
   }, [tds]);
   useEffect(() => {
-    if (files.length > 0) {
-      const value = [];
-      files.forEach((file, index) => {
-        value.push({
-          fileBlob: file || "N/A",
-          fileName: file.name || "N/A",
-          related_doc_name: file.related_doc_name || "N/A",
-          related_doc_url: file.related_doc_url || "N/A",
-        });
-      });
-      handleChange("UPDATE_FIELD", "relatedDocuments", value);
+    if (!files || files.length == 0) {
+      handleChange("UPDATE_FIELD", "relatedDocuments", [
+        {
+          related_doc_name: "N/A",
+          related_doc_url: "N/A",
+        },
+      ]);
+      return;
     }
-  }, [files, files.length]);
 
-  console.log(isMSME, vendorDetails?.msme_registered_or_not);
+    const value = [];
+    files.forEach((file, index) => {
+      value.push({
+        fileBlob: file || "N/A",
+        fileName: file.name || "N/A",
+        related_doc_name: file.related_doc_name || "N/A",
+        related_doc_url: file.related_doc_url || "N/A",
+      });
+    });
+    handleChange("UPDATE_FIELD", "relatedDocuments", value);
+  }, [files]);
 
   return (
     <div className={`grid grid-cols-2 gap-x-4 space-y-4 ${className} `}>
@@ -489,7 +498,7 @@ const OtherDetails = ({ className = "", vendorDetails }) => {
         <InputField
           value={panNumber}
           setvalue={setpanNumber}
-          label={"PAN*"}
+          label={"PAN"}
           required={true}
           placeholder={"Enter a valid PAN number"}
         />
@@ -500,7 +509,7 @@ const OtherDetails = ({ className = "", vendorDetails }) => {
         <InputField
           value={gst}
           setvalue={setgst}
-          label={"GST*"}
+          label={"GST"}
           required={true}
           placeholder={"Enter a valid GST number"}
         />
@@ -509,7 +518,7 @@ const OtherDetails = ({ className = "", vendorDetails }) => {
       {/* opening balance  */}
       <div>
         <p className="font-normal text-[#000000] mb-1 2xl:text-lg xl:text-base lg:text-sm text-xs">
-          Opening Balance*
+          Opening Balance <span className=" text-red-600 ">*</span>
         </p>
         <div className=" flex items-end ">
           <div className="text-[#333333c6] w-fit font-normal 2xl:text-lg md:text-base px-3 py-2 border-[1.5px] border-[#0000001A] rounded-lg mr-3">
@@ -574,6 +583,7 @@ const OtherDetails = ({ className = "", vendorDetails }) => {
       <div>
         <InputField
           value={tds}
+          required={true}
           setvalue={settds}
           placeholder={"Select a Tax"}
           label={"TDS"}
@@ -690,7 +700,6 @@ const BillingAddress = ({ className = "", vendorDetails }) => {
   const [pinCode, setpinCode] = useState(
     vendorDetails?.address?.split(",")[len - 1]?.split("-")[1]?.trim() || ""
   );
-  const [phone, setphone] = useState(vendorDetails?.contact_no || "");
 
   // reset value when vendor details changes
   useEffect(() => {
@@ -703,7 +712,6 @@ const BillingAddress = ({ className = "", vendorDetails }) => {
     setpinCode(
       vendorDetails?.address?.split(",")[len - 1]?.split("-")[1]?.trim() || ""
     );
-    setphone(vendorDetails?.contact_no || "");
   }, [vendorDetails]);
 
   useEffect(() => {
@@ -717,10 +725,6 @@ const BillingAddress = ({ className = "", vendorDetails }) => {
     );
   }, [country, street1, street2, city, state, pinCode]);
 
-  useEffect(() => {
-    handleChange("UPDATE_FIELD", "contactNo", phone);
-  }, [phone]);
-
   return (
     <div className={`${className}`}>
       <h2 className=" text-[#4A4A4A] font-medium 2xl:text-2xl xl:text-xl lg:text-lg text-base mb-5">
@@ -728,22 +732,12 @@ const BillingAddress = ({ className = "", vendorDetails }) => {
       </h2>
 
       <div className=" space-y-4">
-        {/* Attention* */}
-        {/* <div>
-          <InputField
-            value={attention}
-            setvalue={setattention}
-            label={"Attention*"}
-            required={true}
-            placeholder={""}
-          />
-        </div> */}
         {/* Country/Region* */}
         <div>
           <InputField
             value={country}
             setvalue={setcountry}
-            label={"Country/Region*"}
+            label={"Country/Region"}
             required={true}
             readOnly={true}
             placeholder={""}
@@ -752,7 +746,7 @@ const BillingAddress = ({ className = "", vendorDetails }) => {
         {/* Address* */}
         <div>
           <p className=" font-normal text-[#000000] mb-1 2xl:text-lg xl:text-base lg:text-sm text-xs">
-            Address*
+            Address <span className=" text-red-600 ">*</span>
           </p>
           <InputField
             isTextArea={"true"}
@@ -777,7 +771,7 @@ const BillingAddress = ({ className = "", vendorDetails }) => {
           <InputField
             value={city}
             setvalue={setcity}
-            label={"City*"}
+            label={"City"}
             required={true}
             placeholder={"Enter City"}
           />
@@ -787,7 +781,7 @@ const BillingAddress = ({ className = "", vendorDetails }) => {
           <InputField
             value={state}
             setvalue={setstate}
-            label={"State*"}
+            label={"State"}
             required={true}
             readOnly={true}
             hasDropDown={true}
@@ -799,22 +793,10 @@ const BillingAddress = ({ className = "", vendorDetails }) => {
         <div>
           <InputField
             value={pinCode}
-            label={"PIN Code*"}
+            label={"PIN Code"}
             setvalue={setpinCode}
             required={true}
             placeholder={"Enter PIN code"}
-          />
-        </div>
-        {/* Phone* */}
-        <div>
-          <InputField
-            maxLength={10}
-            value={phone}
-            label={"Phone*"}
-            setvalue={setphone}
-            inputType={"tel"}
-            required={true}
-            placeholder={"Enter phone number"}
           />
         </div>
       </div>
@@ -909,7 +891,7 @@ const ContactPerson = ({ className = "", vendorDetails }) => {
     createVendorFormDispatch({
       type: "UPDATE_ARRAY",
       parentField: "contactPerson",
-      value: workPhone,
+      value: workPhone || "N/A",
       index: 0,
       field: "work_phone",
     });
@@ -944,6 +926,7 @@ const ContactPerson = ({ className = "", vendorDetails }) => {
         {/* First name */}
         <div>
           <InputField
+            required={true}
             value={firstName}
             setvalue={setfirstName}
             label={"First name"}
@@ -953,6 +936,7 @@ const ContactPerson = ({ className = "", vendorDetails }) => {
         {/* Last name */}
         <div>
           <InputField
+            required={true}
             value={lastName}
             setvalue={setlastName}
             label={"Last name"}
@@ -962,11 +946,24 @@ const ContactPerson = ({ className = "", vendorDetails }) => {
         {/* email */}
         <div>
           <InputField
+            required={true}
             value={email}
             setvalue={setemail}
             inputType={"email"}
             label={"Email address"}
             placeholder={"Email address"}
+          />
+        </div>
+        {/* Mobile */}
+        <div>
+          <InputField
+            required={true}
+            value={mobile}
+            setvalue={setmobile}
+            maxLength={10}
+            inputType={"tel"}
+            label={"Mobile"}
+            placeholder={"Mobile"}
           />
         </div>
         {/* work phone */}
@@ -977,17 +974,6 @@ const ContactPerson = ({ className = "", vendorDetails }) => {
             inputType={"tel"}
             label={"Work Phone"}
             placeholder={"Work Phone"}
-          />
-        </div>
-        {/* Mobile */}
-        <div>
-          <InputField
-            value={mobile}
-            setvalue={setmobile}
-            maxLength={10}
-            inputType={"tel"}
-            label={"Mobile"}
-            placeholder={"Mobile"}
           />
         </div>
       </div>
@@ -1104,7 +1090,7 @@ const BankDetails = ({ className = "", vendorDetails }) => {
             setvalue={setholder}
             placeholder={"Enter name"}
             required={true}
-            label={"Account holder name*"}
+            label={"Account holder name"}
           />
         </div>
 
@@ -1115,7 +1101,7 @@ const BankDetails = ({ className = "", vendorDetails }) => {
             setvalue={setbankName}
             placeholder={"Enter bank name"}
             required={true}
-            label={"Bank name*"}
+            label={"Bank name"}
           />
         </div>
 
@@ -1128,7 +1114,7 @@ const BankDetails = ({ className = "", vendorDetails }) => {
             inputType={"password"}
             placeholder={"Enter account number"}
             required={true}
-            label={"Account number*"}
+            label={"Account number"}
           />
         </div>
 
@@ -1142,7 +1128,7 @@ const BankDetails = ({ className = "", vendorDetails }) => {
             inputType={"password"}
             placeholder={"Re-enter account number"}
             required={true}
-            label={"Re-enter Account number*"}
+            label={"Re-enter Account number"}
           />
         </div>
 
@@ -1153,7 +1139,7 @@ const BankDetails = ({ className = "", vendorDetails }) => {
             setvalue={setifscCode}
             placeholder={"Enter IFSC Code"}
             required={true}
-            label={"IFSC Code*"}
+            label={"IFSC Code"}
           />
         </div>
       </div>
@@ -1184,7 +1170,7 @@ const Remarks = ({ className, vendorDetails }) => {
 
   const { handleChange } = useContext(VendorContext);
   useEffect(() => {
-    handleChange("UPDATE_FIELD", "remarks", remark);
+    handleChange("UPDATE_FIELD", "remarks", remark || "N/A");
   }, [remark]);
   return (
     <div className={`${className}`}>
@@ -1192,8 +1178,7 @@ const Remarks = ({ className, vendorDetails }) => {
         value={remark}
         setvalue={setremark}
         isTextArea={true}
-        label={"Remarks (For Internal Use)*"}
-        required={true}
+        label={"Remarks (For Internal Use)"}
         placeholder={"Enter remarks for the vendor"}
         minHeight={100}
       />

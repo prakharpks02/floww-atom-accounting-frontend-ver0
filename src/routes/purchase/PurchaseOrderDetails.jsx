@@ -150,7 +150,7 @@ const PurchaseOrderInfoLeftPart = ({ className, purchaseOrderDetails }) => {
       />
       <VendorDetails purchaseOrderDetails={purchaseOrderDetails} />
       <ItemDetailsTable dataList={purchaseOrderDetails} />
-      <RelatedDocuments purchaseOrderDetails={purchaseOrderDetails} />
+      {/* <RelatedDocuments purchaseOrderDetails={purchaseOrderDetails} /> */}
       <Description purchaseOrderDetails={purchaseOrderDetails} />
     </div>
   );

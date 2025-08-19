@@ -66,7 +66,7 @@ export const CreateQuotation = () => {
           </div>
 
           {/* Tabs */}
-          {quotationid == "new" && (
+          {/* {quotationid == "new" && (
             <div className="mb-4 flex rounded-lg bg-[#0033661A] overflow-hidden xl:py-2 xl:px-3 p-1 w-full">
               <button
                 tabIndex={0}
@@ -93,7 +93,7 @@ export const CreateQuotation = () => {
                 Upload new Quotation
               </button>
             </div>
-          )}
+          )} */}
 
           {/* main content */}
           {activeTab === "create" && (
@@ -443,7 +443,7 @@ const TermsAndConditions = ({ quotationDetails }) => {
       field: "listToc",
       value: [
         {
-          terms_of_service: toc,
+          terms_of_service: toc || "N/A",
         },
       ],
     });
@@ -721,7 +721,7 @@ const ItemDetails = ({ className, quotationDetails }) => {
     gross_amount: "",
     gst_amount: "",
     discount: "",
-    hsn_code: "N/A",
+    hsn_code: "",
   };
   const [items, setItems] = useState(
     quotationDetails?.list_items || [blankItem]
@@ -819,8 +819,9 @@ const ItemDetails = ({ className, quotationDetails }) => {
 
               <div className=" space-y-3 mb-8">
                 <div className=" grid grid-cols-5 gap-3">
-                  <div className=" overflow-x-hidden col-span-3">
+                  <div className=" overflow-x-hidden col-span-2">
                     <InputField
+                      required={true}
                       autoComplete="off"
                       value={item.item_description}
                       setvalue={(val) => {
@@ -831,8 +832,21 @@ const ItemDetails = ({ className, quotationDetails }) => {
                       placeholder={"Enter Item name"}
                     />
                   </div>
+                  <div className=" overflow-x-hidden col-span-2">
+                    <InputField
+                      required={true}
+                      autoComplete="off"
+                      value={item.hsn_code}
+                      setvalue={(val) => {
+                        handleChange(index, "hsn_code", val);
+                      }}
+                      label={"HSN Code"}
+                      placeholder={"Hsn Code"}
+                    />
+                  </div>
                   <div className=" overflow-x-hidden col-span-1">
                     <InputField
+                      required={true}
                       autoComplete="off"
                       padding={2}
                       value={item.unit_price}
@@ -846,8 +860,11 @@ const ItemDetails = ({ className, quotationDetails }) => {
                       inputType={"rupee"}
                     />
                   </div>
+                </div>
+                <div className=" grid grid-cols-4 gap-3">
                   <div className=" overflow-x-hidden col-span-1">
                     <InputField
+                      required={true}
                       autoComplete="off"
                       padding={2}
                       value={item.quantity}
@@ -857,10 +874,9 @@ const ItemDetails = ({ className, quotationDetails }) => {
                       inputType={"number"}
                     />
                   </div>
-                </div>
-                <div className=" grid grid-cols-3 gap-3">
                   <div className=" overflow-x-hidden col-span-1">
                     <InputField
+                      required={true}
                       autoComplete="off"
                       max={100}
                       min={0}
@@ -873,6 +889,7 @@ const ItemDetails = ({ className, quotationDetails }) => {
                   </div>
                   <div className=" overflow-x-hidden col-span-1">
                     <InputField
+                      required={true}
                       autoComplete="off"
                       max={100}
                       min={0}
@@ -885,6 +902,7 @@ const ItemDetails = ({ className, quotationDetails }) => {
                   </div>
                   <div className=" overflow-x-hidden col-span-1">
                     <InputField
+                      required={true}
                       autoComplete="off"
                       padding={2}
                       readOnly={true}
@@ -958,7 +976,7 @@ const ReferenceInputField = ({ className, quotationDetails }) => {
     createQuotationFormDispatch({
       type: "UPDATE_FIELD",
       field: "refrence",
-      value: reference,
+      value: reference || "N/A",
     });
   }, [reference]);
 
@@ -983,7 +1001,7 @@ const SubjectInputField = ({ className, quotationDetails }) => {
     createQuotationFormDispatch({
       type: "UPDATE_FIELD",
       field: "subject",
-      value: subject,
+      value: subject || "N/A",
     });
   }, [subject]);
   return (
@@ -1016,6 +1034,7 @@ const QuoteDateInputField = ({ className, quotationDetails }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={date}
           setvalue={setdate}
           placeholder={new Date(Date.now()).toLocaleDateString()}
@@ -1035,7 +1054,7 @@ const ProjectNameInputField = ({ className, quotationDetails }) => {
     createQuotationFormDispatch({
       type: "UPDATE_FIELD",
       field: "projectName",
-      value: project,
+      value: project || "N/A",
     });
   }, [project]);
   return (
@@ -1071,6 +1090,7 @@ const ExpiryDateInputField = ({ className, quotationDetails }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={date}
           setvalue={setdate}
           label={"Expiry Date"}
@@ -1126,6 +1146,7 @@ const CustomerNameInputField = ({ className, quotationDetails }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={customer.customer_name}
           setvalue={setcustomer}
           readOnly={true}
@@ -1287,7 +1308,7 @@ const SubTotal = ({ className, quotationDetails }) => {
   const { createQuotationFormDispatch, createQuotationForm } =
     useContext(QuotationContext);
   const [subtotal, setsubtotal] = useState(
-    createQuotationForm?.subtotalAmount || 0
+    Number(createQuotationForm?.subtotalAmount || 0)
   );
   const [discount, setdiscount] = useState(
     quotationDetails?.discount_amount || 0
@@ -1297,9 +1318,10 @@ const SubTotal = ({ className, quotationDetails }) => {
       ? true
       : false
   );
+  const [isTdsEnable, setisTdsEnable] = useState(true);
   const [tds, settds] = useState({
-    value: quotationDetails?.tds_amount || "",
-    name: quotationDetails?.tds_reason || "",
+    value: quotationDetails?.tds_amount || "0%",
+    name: quotationDetails?.tds_reason || "N/A",
   });
   const [grandTotal, setgrandTotal] = useState(
     quotationDetails?.total_amount || 0.0
@@ -1350,7 +1372,7 @@ const SubTotal = ({ className, quotationDetails }) => {
     createQuotationFormDispatch({
       type: "UPDATE_FIELD",
       field: "discountAmount",
-      value: discount,
+      value: Number(discount).toFixed(2),
     });
     setdiscountAmount(((subtotal * discount) / 100).toFixed(2));
   }, [discount, subtotal]);
@@ -1373,9 +1395,9 @@ const SubTotal = ({ className, quotationDetails }) => {
     createQuotationFormDispatch({
       type: "UPDATE_FIELD",
       field: "totalAmount",
-      value: grandTotal,
+      value: isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal,
     });
-  }, [grandTotal]);
+  }, [grandTotal, isAdjustment]);
 
   useEffect(() => {
     createQuotationFormDispatch({
@@ -1401,7 +1423,7 @@ const SubTotal = ({ className, quotationDetails }) => {
         {/* Subtotal */}
         <div className="text-[#4A4A4A] flex justify-between items-center mb-4 2xl:text-lg xl:text-base md:text-sm">
           <span className="font-medium ">Sub Total</span>
-          <span className="">{subtotal}</span>
+          <span className="">{Number(subtotal).toFixed(2)}</span>
         </div>
 
         {/* Discount */}
@@ -1429,19 +1451,34 @@ const SubTotal = ({ className, quotationDetails }) => {
         <div className="flex items-center justify-between text-[#4A4A4A] gap-3 mb-4">
           {/* Radio buttons */}
           <div className="flex items-center gap-4">
-            <label className="inline-flex items-center gap-1 cursor-pointer">
-              <input
-                type="radio"
-                name="taxType"
-                defaultChecked={true}
-                className="accent-[#2543B1]"
+            <label
+              htmlFor="toggle tds"
+              className=" md:text-sm text-xs font-medium flex items-center gap-2 cursor-pointer select-none text-[#4A4A4A]"
+            >
+              <div
+                className={` border-4 w-3.5 2xl:w-5 h-3.5 2xl:h-5 rounded-full transition ${
+                  isTdsEnable ? "border-[#2543B1]" : "border-[#777777]"
+                }`}
               />
-              <span className="text-sm font-medium">TDS</span>
+              TDS
             </label>
+            <input
+              id="toggle tds"
+              type="checkbox"
+              value={isTdsEnable}
+              onChange={() => {
+                setisTdsEnable(!isTdsEnable);
+              }}
+              className=" cursor-pointer hidden"
+            />
           </div>
 
           {/* Tax Dropdown */}
-          <TaxDropdown value={tds.value} setvalue={settds} />
+          <TaxDropdown
+            value={tds.value}
+            setvalue={settds}
+            isDisabled={!isTdsEnable}
+          />
 
           {/* Negative Tax Value */}
           <div className="text-gray-500 text-sm w-12 text-right">
@@ -1478,17 +1515,22 @@ const SubTotal = ({ className, quotationDetails }) => {
               />
             </div>
           </div>
-          <span>{grandTotal}</span>
+          <span>
+            {isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal}
+          </span>
         </div>
         <p className=" text-end font-medium 2xl:text-xl xl:text-lg lg:text-base text-xs text-[#606060] ">
-          {toWords.convert(Number(grandTotal))} Only
+          {toWords.convert(
+            Number(isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal)
+          )}
+          Only
         </p>
       </div>
     </>
   );
 };
 
-const TaxDropdown = ({ value, setvalue }) => {
+const TaxDropdown = ({ value, setvalue, isDisabled }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState(-1);
   const dropdownRef = useRef(null);
@@ -1513,14 +1555,21 @@ const TaxDropdown = ({ value, setvalue }) => {
   }, []);
 
   return (
-    <div ref={dropdownRef} className="relative mx-auto w-full max-w-[200px]">
+    <div
+      ref={dropdownRef}
+      className={`relative mx-auto w-full max-w-[200px]  ${
+        isDisabled ? "pointer-events-none" : ""
+      }`}
+    >
       <motion.div
         className="relative"
         initial={false}
         animate={isOpen ? "open" : "closed"}
       >
         <motion.button
-          className={`w-full px-2 py-2 cursor-pointer bg-white border rounded-md lg:text-sm text-xs text-gray-700 flex items-center justify-between border-gray-400`}
+          className={`w-full px-2 py-2  ${
+            isDisabled ? "bg-gray-500/30" : "bg-white"
+          } cursor-pointer border rounded-md lg:text-sm text-xs text-gray-700 flex items-center justify-between border-gray-400`}
           whileHover={{
             borderColor: "#9CA3AF",
             boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",

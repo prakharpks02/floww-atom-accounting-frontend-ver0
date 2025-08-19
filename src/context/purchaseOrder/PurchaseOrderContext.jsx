@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useReducer,
   useState,
 } from "react";
@@ -9,7 +10,7 @@ import { CompanyContext } from "../company/CompanyContext";
 import { showToast } from "../../utils/showToast";
 import axios from "axios";
 import { validateFields } from "../../utils/checkFormValidation";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   FilterDataOnAmount,
   FilterDataOnDate,
@@ -43,7 +44,7 @@ export const initialPurchaseOrderState = {
   ],
   listToc: [
     {
-      terms_of_service: "",
+      terms_of_service: "N/A",
     },
   ],
   listStatus: [
@@ -54,12 +55,13 @@ export const initialPurchaseOrderState = {
     },
   ],
   vendorId: "",
-  notes: "",
+  notes: "N/A",
   contactNo: "",
   email: "",
   poUrl: [{ invoice_url: "N/A" }],
   poDate: "",
   gstNumber: "",
+  vendorPanNumber:"",
   tdsAmount: "",
   tdsReason: "",
   adjustmentAmount: "",
@@ -75,7 +77,7 @@ export const initialPurchaseOrderState = {
   vendorName: "",
   paymentTerms: "",
   shipmentPreference: "",
-  reference: "",
+  reference: "N/A",
   subject: "",
 };
 
@@ -119,13 +121,15 @@ export const PurchaseOrderReducer = (state, action) => {
 export const PurchaseOrderContextProvider = ({ children }) => {
   const [purchaseOrderList, setpurchaseOrderList] = useState(null);
   const [purchaseOrderDetails, setpurchaseOrderDetails] = useState(null);
-  const { companyDetails } = useContext(CompanyContext);
   //create purchase order reducer
   const [createPurchaseOrderForm, createPurchaseOrderFormDispatch] = useReducer(
     PurchaseOrderReducer,
     initialPurchaseOrderState
   );
+
+  const { companyDetails } = useContext(CompanyContext);
   const { userDetails } = useContext(UserContext);
+  const { pathname } = useLocation();
 
   const navigate = useNavigate();
 
@@ -236,9 +240,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
     async (e, setisLoading = () => {}) => {
       e.preventDefault();
 
-      if (
-        createPurchaseOrderForm.poUrl[0]?.invoice_url.toLowerCase() != "n/a"
-      ) {
+      if (!createPurchaseOrderForm.poUrl[0]?.fileBlob) {
         const validationErrors = validateFields(createPurchaseOrderForm);
 
         if (Object.keys(validationErrors).length > 0) {
@@ -272,16 +274,20 @@ export const PurchaseOrderContextProvider = ({ children }) => {
       try {
         setisLoading(true);
 
-        // upload documens
-        for (let i = 0; i < createPurchaseOrderForm.poUrl.length; i++) {
-          const file = createPurchaseOrderForm.poUrl[i];
-          const response = await uploadFile(
-            file.fileName,
-            file.fileBlob,
-            token
-          );
-          console.log(response);
-          createPurchaseOrderForm.poUrl[i] = { invoice_url: response.doc_url };
+        // upload documents when document present
+        if (createPurchaseOrderForm.poUrl[0]?.fileBlob) {
+          for (let i = 0; i < createPurchaseOrderForm.poUrl.length; i++) {
+            const file = createPurchaseOrderForm.poUrl[i];
+            const response = await uploadFile(
+              file.fileName,
+              file.fileBlob,
+              token
+            );
+            console.log(response);
+            createPurchaseOrderForm.poUrl[i] = {
+              invoice_url: response.doc_url,
+            };
+          }
         }
 
         console.log("file uploaded");
@@ -514,7 +520,12 @@ export const PurchaseOrderContextProvider = ({ children }) => {
     },
     [purchaseOrderList, userDetails]
   );
-  console.log(createPurchaseOrderForm);
+
+  useEffect(() => {
+    setpurchaseOrderDetails(null);
+    !pathname.toLowerCase().includes("/createorder") &&
+      createPurchaseOrderFormDispatch({ type: "RESET" });
+  }, [pathname]);
 
   return (
     <PurchaseOrderContext.Provider
@@ -529,6 +540,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
         updatePurchaseOrder,
         searchPurchaseOrder,
         handelMultipleFilter,
+        setpurchaseOrderDetails,
       }}
     >
       {children}

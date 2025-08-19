@@ -65,7 +65,7 @@ export const CreatePurchaseOrder = () => {
           </div>
 
           {/* Tabs */}
-          {purchaseorderid == "new" && (
+          {/* {purchaseorderid == "new" && (
             <div className="mb-4 flex rounded-lg bg-[#0033661A] overflow-hidden xl:py-2 xl:px-3 p-1 w-full">
               <button
                 tabIndex={0}
@@ -92,7 +92,7 @@ export const CreatePurchaseOrder = () => {
                 Upload existing purchase order
               </button>
             </div>
-          )}
+          )} */}
 
           {/* main content */}
           {activeTab === "create" && (
@@ -372,7 +372,7 @@ const PurchaseOrderForm = ({ purchaseOrderDetails }) => {
 
   return (
     <>
-      <div className=" grid lg:grid-cols-2 grid-cols-1 space-x-2 space-y-2">
+      <div className="mb-4 grid lg:grid-cols-2 grid-cols-1 space-x-2 space-y-2">
         <PurchaseOrderLeftPart purchaseOrderDetails={purchaseOrderDetails} />
         <PurchaseOrderRightPart handelDownloadInvoice={downloadPDF} />
       </div>
@@ -489,7 +489,7 @@ const CustomerNotes = ({ className, purchaseOrderDetails }) => {
     createPurchaseOrderFormDispatch({
       type: "UPDATE_FIELD",
       field: "notes",
-      value: notes,
+      value: notes || "N/A",
     });
   }, [notes]);
 
@@ -522,13 +522,13 @@ const TermsAndConditions = ({ className, purchaseOrderDetails }) => {
     createPurchaseOrderFormDispatch({
       type: "UPDATE_FIELD",
       field: "listToc",
-      value: [{ terms_of_service: toc }],
+      value: [{ terms_of_service: toc || "N/A" }],
     });
   }, [toc]);
 
   return (
     <>
-      <div className="mb-6">
+      <div className="">
         <InputField
           value={toc}
           setvalue={settoc}
@@ -643,12 +643,12 @@ const ItemDetails = ({ className, purchaseOrderDetails }) => {
 
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
-
           return (
             <div key={index} className=" space-y-3 mb-8">
               <div className=" grid grid-cols-5 gap-3">
                 <div className=" overflow-x-hidden col-span-3">
                   <InputField
+                    required={true}
                     autoComplete="off"
                     value={item.item_description}
                     setvalue={(val) => {
@@ -661,6 +661,7 @@ const ItemDetails = ({ className, purchaseOrderDetails }) => {
                 </div>
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    required={true}
                     autoComplete="off"
                     padding={2}
                     value={item.unit_price}
@@ -676,6 +677,7 @@ const ItemDetails = ({ className, purchaseOrderDetails }) => {
                 </div>
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    required={true}
                     autoComplete="off"
                     padding={2}
                     value={item.quantity}
@@ -689,6 +691,7 @@ const ItemDetails = ({ className, purchaseOrderDetails }) => {
               <div className=" grid grid-cols-3 gap-3">
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    required={true}
                     autoComplete="off"
                     max={100}
                     min={0}
@@ -701,6 +704,7 @@ const ItemDetails = ({ className, purchaseOrderDetails }) => {
                 </div>
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    required={true}
                     autoComplete="off"
                     max={100}
                     min={0}
@@ -713,6 +717,7 @@ const ItemDetails = ({ className, purchaseOrderDetails }) => {
                 </div>
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    required={true}
                     autoComplete="off"
                     padding={2}
                     readOnly={true}
@@ -1041,7 +1046,7 @@ const DeliveryAddressInputField = ({ className, purchaseOrderDetails }) => {
   return (
     <div className={`w-full  ${className}`}>
       <p className="font-normal mb-3 text-[#4A4A4A] 2xl:text-lg xl:text-base lg:text-sm md:text-xs ">
-        Delivery address
+        Delivery address <span className=" text-red-600 ">*</span>
       </p>
 
       {/* Radio buttons */}
@@ -1129,7 +1134,7 @@ const ReferenceInputField = ({ className, purchaseOrderDetails }) => {
     createPurchaseOrderFormDispatch({
       type: "UPDATE_FIELD",
       field: "reference",
-      value: referenceNo,
+      value: referenceNo || "N/A",
     });
   }, [referenceNo]);
   return (
@@ -1161,6 +1166,7 @@ const SubjectInputField = ({ className, purchaseOrderDetails }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={subject}
           setvalue={setsubject}
           label={"Subject"}
@@ -1190,6 +1196,7 @@ const DateInputField = ({ className, purchaseOrderDetails }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={date}
           setvalue={setdate}
           placeholder={new Date(Date.now()).toLocaleDateString()}
@@ -1219,6 +1226,7 @@ const ShipmentPreferenceInputField = ({ className, purchaseOrderDetails }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={preferece}
           setvalue={setpreferece}
           isTextArea={true}
@@ -1246,6 +1254,7 @@ const PaymentTermsInputField = ({ className, purchaseOrderDetails }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={term}
           setvalue={setterm}
           label={"Payment Terms"}
@@ -1276,6 +1285,7 @@ const DeliveryDateInputField = ({ className, purchaseOrderDetails }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={date}
           setvalue={setdate}
           label={"Delivery Date"}
@@ -1294,6 +1304,7 @@ const VendorNameInputField = ({ className, purchaseOrderDetails }) => {
     vendor_name: purchaseOrderDetails?.vendor_name || "",
     email: purchaseOrderDetails?.email || "",
     gst_number: purchaseOrderDetails?.gst_number || "",
+    vendor_pan_number : purchaseOrderDetails?.vendor_pan_number || "",
     contact_no: purchaseOrderDetails?.contact_no || "",
   });
   const { createPurchaseOrderFormDispatch } = useContext(PurchaseOrderContext);
@@ -1324,6 +1335,11 @@ const VendorNameInputField = ({ className, purchaseOrderDetails }) => {
     });
     createPurchaseOrderFormDispatch({
       type: "UPDATE_FIELD",
+      field: "vendorPanNumber",
+      value: vendor?.pan_number || "",
+    });
+    createPurchaseOrderFormDispatch({
+      type: "UPDATE_FIELD",
       field: "contactNo",
       value: vendor?.contact_no || "",
     });
@@ -1337,6 +1353,7 @@ const VendorNameInputField = ({ className, purchaseOrderDetails }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={vendor.vendor_name}
           setvalue={setvendor}
           isLoading={isLoading}
@@ -1374,6 +1391,7 @@ const CustomerNameInputField = ({ className, value, setvalue }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={customer.customer_name}
           setvalue={setcustomer}
           isLoading={isLoading}
@@ -1397,10 +1415,8 @@ const CustomerNameInputField = ({ className, value, setvalue }) => {
 const UploadPurchaseOrder = ({ purchaseOrderDetails }) => {
   const [files, setfiles] = useState([]);
   const [isLoading, setisLoading] = useState(false);
-  const {
-    createPurchaseOrderFormDispatch,
-    createPurchaseOrder,
-  } = useContext(PurchaseOrderContext);
+  const { createPurchaseOrderFormDispatch, createPurchaseOrder } =
+    useContext(PurchaseOrderContext);
 
   useEffect(() => {
     createPurchaseOrderFormDispatch({
@@ -1546,23 +1562,25 @@ const SubTotal = ({ className, purchaseOrderDetails }) => {
   const { createPurchaseOrderFormDispatch, createPurchaseOrderForm } =
     useContext(PurchaseOrderContext);
   const [subtotal, setsubtotal] = useState(
-    createPurchaseOrderForm?.subTotalAmount || 0
+    Number(createPurchaseOrderForm?.subTotalAmount || 0)
   );
   const [discount, setdiscount] = useState(
-    purchaseOrderDetails?.discount_amount || 0
+    Number(purchaseOrderDetails?.discount_amount || 0)
   );
   const [isAdjustment, setisAdjustment] = useState(
     purchaseOrderDetails?.adjustment_amount?.toString().toLowerCase() === "true"
       ? true
       : false
   );
+  const [isTdsEnable, setisTdsEnable] = useState(true);
   const [tds, settds] = useState({
-    value: purchaseOrderDetails?.tds_amount || "",
-    name: purchaseOrderDetails?.tds_reason || "",
+    value: purchaseOrderDetails?.tds_amount || "0%",
+    name: purchaseOrderDetails?.tds_reason || "N/A",
   });
   const [grandTotal, setgrandTotal] = useState(
-    purchaseOrderDetails?.total_amount || 0.0
+    Number(purchaseOrderDetails?.total_amount || 0.0)
   );
+
   const [discountAmount, setdiscountAmount] = useState(0);
   const [taxableAmount, settaxableAmount] = useState(0);
 
@@ -1658,7 +1676,7 @@ const SubTotal = ({ className, purchaseOrderDetails }) => {
         {/* Subtotal */}
         <div className="text-[#4A4A4A] flex justify-between items-center mb-4 2xl:text-lg xl:text-base md:text-sm">
           <span className="font-medium ">Sub Total</span>
-          <span className="">{subtotal}</span>
+          <span className="">{subtotal.toFixed(2)}</span>
         </div>
 
         {/* Discount */}
@@ -1686,19 +1704,35 @@ const SubTotal = ({ className, purchaseOrderDetails }) => {
         <div className="flex items-center justify-between text-[#4A4A4A] gap-3 mb-4">
           {/* Radio buttons */}
           <div className="flex items-center gap-4">
-            <label className="inline-flex items-center gap-1 cursor-pointer">
-              <input
-                type="radio"
-                name="taxType"
-                defaultChecked={true}
-                className="accent-[#2543B1]"
+            <label
+              htmlFor="toggle tds"
+              className=" md:text-sm text-xs font-medium flex items-center gap-2 cursor-pointer select-none text-[#4A4A4A]"
+            >
+              <div
+                className={` border-4 w-3.5 2xl:w-5 h-3.5 2xl:h-5 rounded-full transition ${
+                  isTdsEnable ? "border-[#2543B1]" : "border-[#777777]"
+                }`}
               />
-              <span className="text-sm font-medium">TDS</span>
+              TDS
             </label>
+            <input
+              readOnly={true}
+              id="toggle tds"
+              type="checkbox"
+              value={isTdsEnable}
+              onChange={(e) => {
+                setisTdsEnable(!isTdsEnable);
+              }}
+              className=" cursor-pointer hidden"
+            />
           </div>
 
           {/* Tax Dropdown */}
-          <TaxDropdown value={tds.value} setvalue={settds} />
+          <TaxDropdown
+            value={tds.value}
+            setvalue={settds}
+            isDisabled={!isTdsEnable}
+          />
 
           {/* Negative Tax Value */}
           <div className="text-gray-500 text-sm w-12 text-right">
@@ -1735,17 +1769,22 @@ const SubTotal = ({ className, purchaseOrderDetails }) => {
               />
             </div>
           </div>
-          <span>{grandTotal}</span>
+          <span>
+            {isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal}
+          </span>
         </div>
         <p className=" text-end font-medium 2xl:text-xl xl:text-lg lg:text-base text-xs text-[#606060] ">
-          {toWords.convert(Number(grandTotal))} Only
+          {toWords.convert(
+            Number(isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal)
+          )}{" "}
+          Only
         </p>
       </div>
     </>
   );
 };
 
-const TaxDropdown = ({ value, setvalue }) => {
+const TaxDropdown = ({ value, setvalue, isDisabled }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState(-1);
   const dropdownRef = useRef(null);
@@ -1770,14 +1809,21 @@ const TaxDropdown = ({ value, setvalue }) => {
   }, []);
 
   return (
-    <div ref={dropdownRef} className="relative mx-auto w-full max-w-[200px]">
+    <div
+      ref={dropdownRef}
+      className={`relative mx-auto w-full max-w-[200px] ${
+        isDisabled ? "pointer-events-none" : ""
+      }`}
+    >
       <motion.div
         className="relative"
         initial={false}
         animate={isOpen ? "open" : "closed"}
       >
         <motion.button
-          className={`w-full px-2 py-2 cursor-pointer bg-white border rounded-md lg:text-sm text-xs text-gray-700 flex items-center justify-between border-gray-400`}
+          className={`w-full px-2 py-2 ${
+            isDisabled ? "bg-gray-500/30" : "bg-white"
+          } cursor-pointer  border rounded-md lg:text-sm text-xs text-gray-700 flex items-center justify-between border-gray-400`}
           whileHover={{
             borderColor: "#9CA3AF",
             boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",

@@ -34,7 +34,7 @@ export const initialQuotationState = {
       item_description: "",
       discount: "",
       quantity: "",
-      hsn_code: "N/A",
+      hsn_code: "",
       unit_price: "",
       base_amount: "",
       gst_amount: "",
@@ -119,6 +119,7 @@ export const QuotationContextProvider = ({ children }) => {
   const [quotationList, setquotationList] = useState(null);
   const [quotationDetails, setquotationDetails] = useState(null);
   const { companyDetails } = useContext(CompanyContext);
+  const [selectedQuotationItems, setselectedQuotationItems] = useState(null);
   //create quotation reducer
   const [createQuotationForm, createQuotationFormDispatch] = useReducer(
     QuotationReducer,
@@ -234,9 +235,7 @@ export const QuotationContextProvider = ({ children }) => {
       e.preventDefault();
 
       //check only for form submision
-      if (
-        createQuotationForm.quotationUrl[0]?.invoice_url.toLowerCase() != "n/a"
-      ) {
+      if (!createQuotationForm.quotationUrl[0]?.fileBlob) {
         const validationErrors = validateFields(createQuotationForm);
 
         if (Object.keys(validationErrors).length > 0) {
@@ -271,11 +270,13 @@ export const QuotationContextProvider = ({ children }) => {
         setisLoading(true);
 
         // upload documens
-        for (let i = 0; i < createQuotationForm.quotationUrl.length; i++) {
-          const file = createQuotationForm.quotationUrl[i];
-          const res = await uploadFile(file.fileName, file.fileBlob, token);
-          console.log(res);
-          createQuotationForm.quotationUrl[i] = { invoice_url: res.doc_url };
+        if (createQuotationForm.quotationUrl[0]?.fileBlob) {
+          for (let i = 0; i < createQuotationForm.quotationUrl.length; i++) {
+            const file = createQuotationForm.quotationUrl[i];
+            const res = await uploadFile(file.fileName, file.fileBlob, token);
+            console.log(res);
+            createQuotationForm.quotationUrl[i] = { invoice_url: res.doc_url };
+          }
         }
 
         console.log("file uploaded");
@@ -507,7 +508,7 @@ export const QuotationContextProvider = ({ children }) => {
     [quotationList, userDetails]
   );
 
-  console.log(createQuotationForm);
+  // console.log(createQuotationForm);
 
   return (
     <QuotationContext.Provider
@@ -522,6 +523,8 @@ export const QuotationContextProvider = ({ children }) => {
         updateQuotation,
         searchQuotation,
         handelMultipleFilter,
+        selectedQuotationItems,
+        setselectedQuotationItems,
       }}
     >
       {children}

@@ -199,7 +199,7 @@ const ShowQuotationInTable = ({ AllQuotation }) => {
               </tr>
             </thead>
             <tbody>
-              {AllQuotation?.map((Quotation, idx) => {
+              {[...(AllQuotation || [])].reverse()?.map((Quotation, idx) => {
                 // console.log(Quotation)
                 return Quotation?.list_items?.map((item, index) => {
                   return Quotation?.quotation_url?.map((doc, i) => {
@@ -213,7 +213,10 @@ const ShowQuotationInTable = ({ AllQuotation }) => {
                             );
 
                           doc.invoice_url?.toLowerCase() != "n/a" &&
-                            downloadFile(doc.invoice_url, `Quatation-${Quotation.quotation_id}`);
+                            downloadFile(
+                              doc.invoice_url,
+                              `Quatation-${Quotation.quotation_id}`
+                            );
                         }}
                         className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
                       >

@@ -23,6 +23,8 @@ import axios from "axios";
 import { validateFields } from "../../utils/checkFormValidation";
 import { UserContext } from "../userContext/UserContext";
 import { uploadFile } from "../../utils/uploadFiles";
+import { getFileNameFromURL } from "../../utils/getFileNameFromURL";
+import { formatISODateToDDMMYYYY } from "../../utils/formateDate";
 
 export const SalesContext = createContext();
 
@@ -44,9 +46,10 @@ export const initialSalesState = {
       gross_amount: "",
     },
   ],
+  selectedQuotationItems: [],
   listToc: [
     {
-      terms_of_service: "",
+      terms_of_service: "N/A",
     },
   ],
   listStatus: [
@@ -57,11 +60,16 @@ export const initialSalesState = {
     },
   ],
   customerId: "",
-  notes: "",
+  notes: "N/A",
   contactNo: "",
   email: "",
   address: "",
-  invoiceUrl: [{ invoice_url: "" }],
+  invoiceUrl: [
+    {
+      related_doc_name: "N/A",
+      related_doc_url: "N/A",
+    },
+  ],
   paymentNameList: [
     {
       payment_name: "N/A",
@@ -93,7 +101,7 @@ export const initialSalesState = {
   panNumber: "",
   subtotalAmount: "",
   discountAmount: "",
-  tdsAmount: "",
+  tdsAmount: "0",
   adjustmentAmount: "",
   totalAmount: "",
   status: "",
@@ -142,6 +150,7 @@ export const SalesReducer = (state, action) => {
 export const SalesContextProvider = ({ children }) => {
   const [AllSalesList, setAllSalesList] = useState(null);
   const [saleDetails, setsaleDetails] = useState(null);
+  const [salesTimeLine, setsalesTimeLine] = useState(null);
   //create sales reducer
   const [createSaleForm, createSaleFormDispatch] = useReducer(
     SalesReducer,
@@ -301,17 +310,23 @@ export const SalesContextProvider = ({ children }) => {
     async (e, setisLoading = () => {}) => {
       e.preventDefault();
 
-      const validationErrors = validateFields(createSaleForm);
+      const validationErrors = validateFields({
+        ...createSaleForm,
+        listItems: [
+          ...createSaleForm.listItems,
+          ...createSaleForm.selectedQuotationItems,
+        ],
+      });
 
       if (Object.keys(validationErrors).length > 0) {
         console.log(validationErrors);
         showToast("All fields are required", 1);
-        return;
+        throw new Error("All fields are required", 1);
       }
 
       if (!companyDetails) {
         showToast("No company details found", 1);
-        return;
+        throw new Error("No company details found", 1);
       }
 
       // const userId = userDetails?.userId;
@@ -323,7 +338,7 @@ export const SalesContextProvider = ({ children }) => {
       const token = localStorage.getItem("token");
       if (!token) {
         showToast("Token not found", 1);
-        return;
+        throw new Error("Token not found", 1);
       }
 
       try {
@@ -331,9 +346,17 @@ export const SalesContextProvider = ({ children }) => {
 
         for (let i = 0; i < createSaleForm.invoiceUrl.length; i++) {
           const file = createSaleForm.invoiceUrl[i];
-          const res = await uploadFile(file.fileName, file.fileBlob, token);
-          console.log(res);
-          createSaleForm.invoiceUrl[i] = { invoice_url: res.doc_url };
+          if (file.fileBlob) {
+            const res = await uploadFile(
+              file.fileName || `related-invoice-${i + 1}`,
+              file.fileBlob,
+              token
+            );
+            createSaleForm.invoiceUrl[i] = {
+              related_doc_name: file.fileName || `related-invoice-${i + 1}`,
+              related_doc_url: res.doc_url,
+            };
+          }
         }
 
         console.log("file uploaded");
@@ -345,6 +368,10 @@ export const SalesContextProvider = ({ children }) => {
             companyId: companyDetails.company_id,
             // userId: userId,
             ...createSaleForm,
+            listItems: [
+              ...createSaleForm.listItems,
+              ...createSaleForm.selectedQuotationItems,
+            ],
           },
           {
             headers: {
@@ -355,18 +382,23 @@ export const SalesContextProvider = ({ children }) => {
 
         console.log(res);
         if (res.data?.status && res.data.status.toLowerCase() !== "success") {
-          showToast("Somthing went wrong. Please try again", 1);
           setisLoading(false);
-          return;
+          throw new Error("Somthing went wrong. Please try again", 1);
         }
 
         // reset to initial value
         createSaleFormDispatch({ type: "RESET" });
         showToast("Sale created");
-        navigate("/sales/salesList");
+        return res.data.data.sales_id;
       } catch (error) {
         console.log(error);
         showToast(
+          error.response?.data?.message ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+        throw new Error(
           error.response?.data?.message ||
             error.message ||
             "Somthing went wrong. Please try again",
@@ -423,27 +455,38 @@ export const SalesContextProvider = ({ children }) => {
         setisLoading(false);
       }
     },
-    [userDetails]
+    []
   );
 
   //update existing sales
   const updateSales = useCallback(
     async (saleid, setisLoading = () => {}) => {
-      const validationErrors = validateFields(createSaleForm);
+      const validationErrors = validateFields({
+        ...createSaleForm,
+        listItems: [
+          ...createSaleForm.listItems,
+          ...createSaleForm.selectedQuotationItems,
+        ],
+        selectedQuotationItems: [
+          {
+            item_name: "N/A",
+          },
+        ],
+      });
 
       if (Object.keys(validationErrors).length > 0) {
         console.log(validationErrors);
         showToast("All fields are required", 1);
-        return;
+        throw new Error("All fields are required", 1);
       }
 
       if (!companyDetails) {
         showToast("Company details not found", 1);
-        return;
+        throw new Error("Company details not found", 1);
       }
       if (!saleid) {
         showToast("Sales ID not found", 1);
-        return;
+        throw new Error("Sales ID not found", 1);
       }
       // const userId = userDetails?.userId;
       // if (!userId) {
@@ -453,19 +496,25 @@ export const SalesContextProvider = ({ children }) => {
       const token = localStorage.getItem("token");
       if (!token) {
         showToast("Token not found", 1);
-        return;
+        throw new Error("Token not found", 1);
       }
       try {
         setisLoading(true);
 
         // upload documens
         for (let i = 0; i < createSaleForm.invoiceUrl.length; i++) {
-          if (createSaleForm.invoiceUrl[i].invoice_url.toLowerCase() != "n/a")
-            continue;
           const file = createSaleForm.invoiceUrl[i];
-          const res = await uploadFile(file.fileName, file.fileBlob, token);
-          console.log(res);
-          createSaleForm.invoiceUrl[i] = { invoice_url: res.doc_url };
+          if (file.related_doc_url.toLowerCase() == "n/a") {
+            const res = await uploadFile(
+              file.fileName || `related-invoice-${i + 1}`,
+              file.fileBlob,
+              token
+            );
+            createSaleForm.invoiceUrl[i] = {
+              related_doc_name: file.fileName || `related-invoice-${i + 1}`,
+              related_doc_url: res.doc_url,
+            };
+          }
         }
 
         console.log("file uploaded");
@@ -479,6 +528,10 @@ export const SalesContextProvider = ({ children }) => {
             companyId: companyDetails.company_id,
             // userId: userId,
             salesId: saleid,
+            listItems: [
+              ...createSaleForm.listItems,
+              ...createSaleForm.selectedQuotationItems,
+            ],
           },
           {
             headers: {
@@ -488,18 +541,23 @@ export const SalesContextProvider = ({ children }) => {
         );
         console.log(res);
         if (res.data?.status && res.data.status.toLowerCase() !== "success") {
-          showToast("Somthing went wrong. Please try again", 1);
           setisLoading(false);
-          return;
+          throw new Error("Somthing went wrong. Please try again", 1);
         }
 
         // reset to initial value
         createSaleFormDispatch({ type: "RESET" });
         showToast("Sales updated");
-        navigate(`/sales/saleDetails/${saleid}`);
+        // navigate(`/sales/saleDetails/${saleid}`);
       } catch (error) {
         console.log(error);
         showToast(
+          error.response?.data?.message ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+        throw new Error(
           error.response?.data?.message ||
             error.message ||
             "Somthing went wrong. Please try again",
@@ -512,13 +570,143 @@ export const SalesContextProvider = ({ children }) => {
     [createSaleForm, userDetails]
   );
 
+  //update sales timline
+  const updateSalesTimeLine = useCallback(
+    async (data, setisLoading = () => {}) => {
+      if (!data) {
+        showToast("Please provide the data", 1);
+        throw new Error("Please provide the data", 1);
+      }
+
+      const { salesId, amount, remark, file } = data;
+      if (!salesId || !amount || !remark || !file) {
+        showToast("All fields are required", 1);
+        throw new Error("All fields are required", 1);
+      }
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Token not found", 1);
+        throw new Error("Token not found", 1);
+      }
+
+      try {
+        setisLoading(true);
+        let transactionUrl = "N/A";
+        // upload documens
+        if (file) {
+          const reponse = await uploadFile(file.name, file, token);
+          console.log(reponse);
+          transactionUrl = reponse.doc_url;
+          console.log("file uploaded");
+        }
+
+        const res = await axios.post(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/accounting/update-sales-timeline-details/`,
+          {
+            salesId: salesId,
+            transaction: {
+              transaction_id: "TRN001",
+              amount: amount,
+              timestamp: formatISODateToDDMMYYYY(Date.now() / 1000),
+              transaction_url: transactionUrl,
+              remark: remark,
+            },
+          },
+          {
+            headers: {
+              Authorization: token,
+            },
+          }
+        );
+        console.log(res);
+        if (res.data?.status && res.data.status.toLowerCase() !== "success") {
+          setisLoading(false);
+          throw new Error("Somthing went wrong. Please try again", 1);
+        }
+
+        // reset to initial value
+        createSaleFormDispatch({ type: "RESET" });
+        showToast("Timeline updated");
+        // navigate(`/sales/saleDetails/${saleid}`);
+      } catch (error) {
+        console.log(error);
+        showToast(
+          error.response?.data?.message ||
+            error.response?.data?.detail ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+        throw new Error(
+          error.response?.data?.message ||
+            error.response?.data?.detail ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+      } finally {
+        setisLoading(false);
+      }
+    },
+    [saleDetails]
+  );
+
+  //get sales timeline details
+  const getSalesTimeLine = useCallback(
+    async (saleid, setisLoading = () => {}) => {
+      if (!saleid) {
+        showToast("Please provide sales id", 1);
+        return;
+      }
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Token not found", 1);
+        return;
+      }
+      try {
+        setisLoading(true);
+        const res = await axios.get(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/accounting/sales/timeline?salesId=${saleid}`,
+          {
+            headers: {
+              Authorization: token,
+            },
+          }
+        );
+        console.log(res);
+        if (res.data?.status && res.data.status.toLowerCase() !== "success") {
+          setisLoading(false);
+          throw new Error("Somthing went wrong. Please try again", 1);
+        }
+
+        setsalesTimeLine(res.data);
+      } catch (error) {
+        console.log(error);
+        showToast(
+          error.response?.data?.message ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+      } finally {
+        setisLoading(false);
+      }
+    },
+    []
+  );
+
   // reset the create sale form to intial value when not in addSales page
   useEffect(() => {
     !pathname.toLowerCase().includes("/addsales") &&
       createSaleFormDispatch({ type: "RESET" });
   }, [pathname]);
 
-  // console.log(createSaleForm);
+  console.log(createSaleForm);
 
   return (
     <SalesContext.Provider
@@ -534,6 +722,10 @@ export const SalesContextProvider = ({ children }) => {
         updateSales,
         getSaleDetails,
         saleDetails,
+        setsaleDetails,
+        updateSalesTimeLine,
+        getSalesTimeLine,
+        salesTimeLine,
       }}
     >
       {children}

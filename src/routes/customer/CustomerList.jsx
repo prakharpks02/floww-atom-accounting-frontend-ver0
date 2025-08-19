@@ -201,7 +201,7 @@ const ShowCustomersInTable = ({ AllCustomers }) => {
               </tr>
             </thead>
             <tbody>
-              {AllCustomers.map((Customer, idx) => (
+              {[...(AllCustomers || [])].reverse().map((Customer, idx) => (
                 <tr
                   key={idx}
                   onClick={(e) => {

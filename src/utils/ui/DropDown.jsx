@@ -1,6 +1,7 @@
 import { Loader2, Plus } from "lucide-react";
 
 export const DefaultDropdown = ({
+  isLoading = false,
   maxHeight = 200,
   data = [],
   className,
@@ -26,23 +27,31 @@ export const DefaultDropdown = ({
         ${className}`}
         style={{ maxHeight: `${maxHeight}px` }}
       >
-        <ul className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal placeholder:text-[#00000080] text-[#000000a1]">
-          {data.map((item, index) => {
-            return (
-              <li
-                tabIndex={0}
-                key={index}
-                onClick={(e) => {
-                  setvalue(item.value);
-                  setisDropdownOpen(false);
-                }}
-                className="px-4 py-3 hover:bg-gray-100 cursor-pointer"
-              >
-                {item.name}{" "}
-              </li>
-            );
-          })}
-        </ul>
+        {isLoading && (
+          <div className=" flex-1 flex justify-center items-center py-8 px-4 min-h-[200px]">
+            <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
+          </div>
+        )}
+
+        {!isLoading && (
+          <ul className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal placeholder:text-[#00000080] text-[#000000a1]">
+            {data?.map((item, index) => {
+              return (
+                <li
+                  tabIndex={0}
+                  key={index}
+                  onClick={(e) => {
+                    setvalue(item.value);
+                    setisDropdownOpen(false);
+                  }}
+                  className="px-4 py-3 hover:bg-gray-100 cursor-pointer"
+                >
+                  {item.name}{" "}
+                </li>
+              );
+            })}
+          </ul>
+        )}
         {hasCustom && (
           <div className=" p-2 ">
             <textarea

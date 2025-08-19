@@ -27,6 +27,7 @@ const Vendors = [
 ];
 
 export const InputField = ({
+  additionalNote = "",
   isLoading = false,
   hasLabel = true,
   padding = 4,
@@ -96,8 +97,13 @@ export const InputField = ({
             ${!label ? "opacity-0" : ""}
             ${inputType === "password" ? "text-[#FB3748]" : "text-[#000000]"}`}
         >
-          {label ? label : "label"}
+          {label ? label : "label"}&nbsp;
+          {required ? <span className=" text-red-600 ">*</span> : ""}
         </label>
+      )}
+
+      {additionalNote && (
+        <p className=" text-xs text-red-600 mb-1">{additionalNote}</p>
       )}
 
       <div
@@ -127,19 +133,11 @@ export const InputField = ({
             readOnly={hasDropDown || readOnly}
             onPaste={(e) => {
               if (
-                inputType === "number" ||
-                (inputType === "rupee" && e.target.value < 0)
+                inputType === "num" ||
+                (inputType === "rupee" && Number(e.target.value) < 0)
               ) {
                 showToast("Negative numbers not allowed.", 1);
                 return;
-              }
-
-              if (inputType === "rupee") {
-                const pasted = e.clipboardData.getData("Text");
-                if (/\D/.test(pasted)) {
-                  e.preventDefault(); // Cancel paste if it contains non-digits
-                  showToast("Only numbers are allowed.", 1);
-                }
               }
 
               if (maxLength && e.target.value.length > maxLength) {
@@ -147,7 +145,11 @@ export const InputField = ({
                 return;
               }
 
-              if (inputType === "tel") {
+              if (
+                inputType === "rupee" ||
+                inputType === "num" ||
+                inputType === "tel"
+              ) {
                 const pasted = e.clipboardData.getData("Text");
                 if (/\D/.test(pasted)) {
                   e.preventDefault(); // Cancel paste if it contains non-digits
@@ -161,7 +163,13 @@ export const InputField = ({
                 return;
               }
 
-              if (inputType === "rupee") {
+              if (
+                ((inputType === "rupee" ||
+                  inputType === "num" ||
+                  inputType === "tel") &&
+                  isNaN(Number(e.target.value))) ||
+                Number(e.target.value || 0) < 0
+              ) {
                 const newValue = e.target.value;
                 const lastChar = newValue.slice(-1); // get the last character typed
                 // console.log(lastChar);
@@ -170,25 +178,11 @@ export const InputField = ({
                   showToast("Only numbers are allowed.", 1);
                   return; // don't update state with invalid input
                 }
-              }
 
-              // console.log(e.target.value)
-              if (inputType === "number" && e.target.value < 0) {
                 showToast("Negative numbers not allowed.", 1);
                 return;
               }
-
-              if (inputType === "tel") {
-                const newValue = e.target.value;
-                const lastChar = newValue.slice(-1); // get the last character typed
-                // console.log(lastChar);
-                // If last character is not a digit, show alert
-                if (lastChar && /\D/.test(lastChar)) {
-                  showToast("Only numbers are allowed.", 1);
-                  return; // don't update state with invalid input
-                }
-              }
-
+             
               handelFormData && handelFormData(e);
 
               setvalue && setvalue(e.target.value);
@@ -234,7 +228,7 @@ export const InputField = ({
             tabIndex={0}
             placeholder={placeholder}
             name={label}
-            id={`input-${(label || "label")}`.replace(/\s+/g, "")}
+            id={`input-${label || "label"}`.replace(/\s+/g, "")}
             className={`w-full placeholder:text-[#00000080] text-[#343434] outline-[#00000029] 2xl:text-lg xl:text-base lg:text-sm text-xs rounded-lg p-3 border-[1.5px] border-[#0000001A]`}
             style={{ minHeight: `${minHeight}px` }}
           />
@@ -258,6 +252,7 @@ export const InputField = ({
 
       {hasDropDown && dropDownType === "default" && (
         <DefaultDropdown
+          isLoading={isLoading}
           value={value}
           maxHeight={dropDownMaxHeight}
           hasCustom={hasCustom}
