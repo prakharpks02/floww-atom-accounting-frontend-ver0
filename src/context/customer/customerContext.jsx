@@ -11,7 +11,7 @@ import { showToast } from "../../utils/showToast";
 import { CompanyContext } from "../company/CompanyContext";
 import axios from "axios";
 import { validateFields } from "../../utils/checkFormValidation";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { uploadFile } from "../../utils/uploadFiles";
 
 export const CustomerContext = createContext();
@@ -28,7 +28,9 @@ export const initialCustomerState = {
   customerFirstName: "",
   customerLastName: "",
   customerSalutation: "",
-  contactPerson: [{ contact_person: "", contact_no: "", email: "" , work_phone:"N/A" }],
+  contactPerson: [
+    { contact_person: "", contact_no: "", email: "", work_phone: "N/A" },
+  ],
   bankDetails: [
     {
       bank_name: "N/A",
@@ -81,6 +83,7 @@ export const CustomerContextProvider = ({ children }) => {
     customerReducer,
     initialCustomerState
   );
+  const { pathname } = useLocation();
   const { companyDetails } = useContext(CompanyContext);
   const navigate = useNavigate();
 
@@ -444,6 +447,13 @@ export const CustomerContextProvider = ({ children }) => {
     },
     [AllCustomersList]
   );
+
+  // reset the to intial value 
+  useEffect(() => {
+    setcustomerDetails(null);
+    !pathname.toLowerCase().includes("/addcustomer") &&
+      createCustomerFormDispatch({ type: "RESET" });
+  }, [pathname]);
 
   console.log(createCustomerForm);
 

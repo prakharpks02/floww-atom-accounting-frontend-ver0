@@ -24,6 +24,8 @@ export default function TopBar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  console.log(userDetails)
+
   return (
     !(
       pathname.toLowerCase().includes("login") ||
@@ -48,15 +50,15 @@ export default function TopBar() {
             className="flex items-center gap-3 cursor-pointer select-none"
             onClick={toggleDropdown}
           >
-            {/* <img
+            <img
               loading="lazy"
               src={userDetails.image}
               alt="Profile image"
               className="w-10 h-10 text-xs rounded-full object-cover"
-            /> */}
-            <div className=" text-2xl font-semibold flex items-center justify-center w-10 h-10 rounded-full bg-[#0a4f67] text-white">
+            />
+            {/* <div className=" text-2xl font-semibold flex items-center justify-center w-10 h-10 rounded-full bg-[#0a4f67] text-white">
               {(userDetails.name || "").split(" ")[0]?.trim()[0].toUpperCase()}
-            </div>
+            </div> */}
             <div className="text-left poppins font-normal flex flex-col justify-between">
               <p className="text-xs font-medium text-[#4A4A4A]">
                 {userDetails.name}

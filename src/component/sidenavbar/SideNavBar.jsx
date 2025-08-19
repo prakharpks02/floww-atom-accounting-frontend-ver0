@@ -386,7 +386,7 @@ const SwitchCompanyButton = ({ isPanelClosed }) => {
   const [isLoading, setisLoading] = useState(true);
   const { userDetails } = useContext(UserContext);
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   console.log(companyList);
 
   useEffect(() => {
@@ -419,7 +419,11 @@ const SwitchCompanyButton = ({ isPanelClosed }) => {
       {/* Main Button */}
       <div
         className={`flex items-center gap-2 rounded-xl ${
-          !isPanelClosed ? " px-2 justify-evenly" : " justify-center"
+          !isPanelClosed
+            ? companyList && companyList.length > 0
+              ? "px-2 justify-evenly"
+              : "px-4 justify-evenly"
+            : " justify-center"
         } py-3 bg-[#0000000D] cursor-pointer select-none`}
         onClick={() => setIsOpen((prev) => !prev)}
       >
@@ -434,17 +438,21 @@ const SwitchCompanyButton = ({ isPanelClosed }) => {
         />
         {!isPanelClosed && (
           <div className="text-left">
-            <p className="2xl:text-xl xl:text-lg lg:text-base text-sm font-semibold text-[#4A4A4A]">
+            <p className=" xl:text-base  text-sm font-semibold text-[#4A4A4A]">
               {companyDetails?.company_name || "Company"}
             </p>
           </div>
         )}
-        <PenLine 
-        onClick={(e)=>{
-          e.stopPropagation()
-          navigate(`/onBoarding/${companyDetails?.company_id}`)
-        }}
-        className=" w-5 text-gray-700"/>
+        {!isPanelClosed && (
+          <PenLine
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/onBoarding/${companyDetails?.company_id}`);
+            }}
+            className=" w-5 text-gray-700"
+          />
+        )}
+
         {!isPanelClosed && companyList && companyList.length > 0 && (
           <div className=" bg-gray-200 rounded-full p-1 hover:bg-gray-300 transition">
             <ChevronDown className=" text-gray-800" size={20} />

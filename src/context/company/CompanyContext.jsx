@@ -183,7 +183,7 @@ export const CompanyContextProvider = ({ children }) => {
         localStorage.setItem("companyid", res.data.data.company_id);
         await getCompanyDetails();
         navigate("/");
-        // window.location.reload();
+        window.location.reload();
       } catch (error) {
         console.log(error);
         showToast(

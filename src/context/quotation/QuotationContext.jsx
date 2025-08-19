@@ -3,13 +3,14 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useReducer,
   useState,
 } from "react";
 import { CompanyContext } from "../company/CompanyContext";
 import { showToast } from "../../utils/showToast";
 import { validateFields } from "../../utils/checkFormValidation";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   FilterDataOnAmount,
   FilterDataOnDate,
@@ -126,7 +127,7 @@ export const QuotationContextProvider = ({ children }) => {
     initialQuotationState
   );
   const { userDetails } = useContext(UserContext);
-
+  const { pathname } = useLocation();
   const navigate = useNavigate();
 
   //get quotation list
@@ -507,6 +508,12 @@ export const QuotationContextProvider = ({ children }) => {
     },
     [quotationList, userDetails]
   );
+
+  useEffect(() => {
+    setquotationDetails(null);
+    !pathname.toLowerCase().includes("/addexpense") &&
+      createQuotationFormDispatch({ type: "RESET" });
+  }, [pathname]);
 
   // console.log(createQuotationForm);
 

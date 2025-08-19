@@ -60,8 +60,8 @@ export const SignupForm = ({
                       return {
                         ...prev,
                         imageUrl: {
-                          fileBlob: "N/A",
-                          fileName: "N/A",
+                          fileBlob: null,
+                          fileName: undefined,
                           url: "/user.png",
                         },
                       };

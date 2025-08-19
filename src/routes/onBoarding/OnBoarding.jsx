@@ -24,14 +24,12 @@ export const OnBoardingPage = () => {
   //   );
   // }
 
-  const parts = companyDetails.company_address.split(",");
+  const parts = (companyDetails?.company_address || "").split(",");
   const [zip, state, street] = [
-    parts.pop().trim(),
-    parts.pop().trim(),
-    parts.join(", ").trim().replace(/,+$/, ""),
+    parts.pop()?.trim(),
+    parts.pop()?.trim(),
+    parts.join(", ")?.trim().replace(/,+$/, ""),
   ];
-
-  // console.log(companyDetails.company_address, zip, state, street);
 
   return (
     <>
@@ -78,7 +76,7 @@ export const OnBoardingPage = () => {
               disabled={isLoading}
               onClick={(e) => {
                 e.preventDefault();
-                companyId == "new"
+                !companyId || companyId == "new"
                   ? createCompany(setisLoading)
                   : updateCompany(companyId, setisLoading);
               }}
@@ -86,8 +84,8 @@ export const OnBoardingPage = () => {
             >
               {isLoading ? (
                 <Loader2 className=" w-5 h-5 text-white animate-spin mx-auto" />
-              ) : companyId == "new" ? (
-                "Add Company"
+              ) : !companyId || companyId == "new" ? (
+                "Add company"
               ) : (
                 "Update company"
               )}
