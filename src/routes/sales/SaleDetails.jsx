@@ -154,7 +154,7 @@ const SaleInfoLeftPart = ({ className, saleDetails }) => {
   );
 };
 
-const SaleInfoRightPart = ({ className, saleDetails }) => {
+const SaleInfoRightPart = ({ className }) => {
   const [isModalOpen, setisModalOpen] = useState(false);
   const [isLoading, setisLoading] = useState(true);
   const { getSalesTimeLine, salesTimeLine } = useContext(SalesContext);
@@ -295,9 +295,6 @@ const SaleInfoRightPart = ({ className, saleDetails }) => {
                             {getFilePreview(item?.transaction_url, ext)}
                           </div>
                           <span className="text-[#606060] font-medium  xl:text-sm text-xs">
-                            {/* {fileName.includes(".")
-                              ? fileName.substring(0, fileName.lastIndexOf("."))
-                              : fileName} */}
                             {getFileNameFromURL(item.transaction_url)}
                           </span>
                         </div>
@@ -320,13 +317,10 @@ const UpdateTimeLineModal = ({
   getSalesTimeLine,
 }) => {
   const [formData, setformData] = useState({
-    transaction_id: "N/A",
     amount: "",
     remark: "",
     file: null,
   });
-  const { userDetails } = useContext(UserContext);
-  const { companyDetails } = useContext(CompanyContext);
   const { updateSalesTimeLine } = useContext(SalesContext);
   const [isLoading, setisLoading] = useState(false);
 
@@ -341,11 +335,7 @@ const UpdateTimeLineModal = ({
   };
 
   const updateTimeLine = useCallback(async () => {
-    // const userId = userDetails?.userId;
-    // if (!userId) {
-    //   showToast("user ID not found", 1);
-    //   return;
-    // }
+   
     const token = localStorage.getItem("token");
     if (!token) {
       showToast("Token not found", 1);
@@ -357,10 +347,6 @@ const UpdateTimeLineModal = ({
     }
 
     if (Number(formData.amount) > Number(timeLineDetails?.remaining_balance)) {
-      // console.log(
-      //   Number(saleDetails.total_amount) - amountPaid,
-      //   Number(formData.amount)
-      // );
       showToast(
         `Amount must less than remaining amount - ${timeLineDetails?.remaining_balance}`,
         1
@@ -389,7 +375,7 @@ const UpdateTimeLineModal = ({
     } finally {
       setisLoading(false);
     }
-  }, [formData, userDetails, timeLineDetails, companyDetails]);
+  }, [formData, timeLineDetails]);
 
   if (!isOpen) return null;
 
@@ -567,12 +553,7 @@ const UploadDocuments = ({ setSelectedFile }) => {
 };
 
 const AmountPieChart = ({ className }) => {
-  // const totalAmount = amountPaid + amountLeft ;
-  // const amountPaid = 600000;
   const { salesTimeLine } = useContext(SalesContext);
-
-  // console.log(totalAmount, amountPaid, amountLeft);
-
   const data = [
     { name: "Amount Left", value: salesTimeLine?.remaining_balance || 0 },
     { name: "Amount Paid", value: salesTimeLine?.total_paid || 0 },
