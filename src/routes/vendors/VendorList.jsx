@@ -160,7 +160,7 @@ const ShowVendorsInTable = ({ AllVendors }) => {
               </tr>
             </thead>
             <tbody>
-              {AllVendors.map((Vendor, idx) => (
+              {[...(AllVendors || [])].reverse().map((Vendor, idx) => (
                 <tr
                   key={idx}
                   onClick={(e) => {

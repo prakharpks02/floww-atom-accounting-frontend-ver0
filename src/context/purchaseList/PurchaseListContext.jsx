@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useReducer,
   useState,
 } from "react";
@@ -9,7 +10,7 @@ import { CompanyContext } from "../company/CompanyContext";
 import { showToast } from "../../utils/showToast";
 import axios from "axios";
 import { validateFields } from "../../utils/checkFormValidation";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   FilterDataOnAmount,
   FilterDataOnDate,
@@ -29,19 +30,7 @@ export const PurchaseListContext = createContext();
 export const initialPurchaseListState = {
   poId: "N/A",
   poNumber: "",
-  listItems: [
-    {
-      item_name: "",
-      item_description: "",
-      quantity: "",
-      discount: "",
-      hsn_code: "",
-      unit_price: "",
-      base_amount: "",
-      gst_amount: "",
-      gross_amount: "",
-    },
-  ],
+  listItems: [],
   listToc: [
     {
       terms_of_service: "N/A",
@@ -65,12 +54,12 @@ export const initialPurchaseListState = {
   ],
   attachments: [
     {
-      related_doc_name: "",
-      related_doc_url: "",
+      related_doc_name: "N/A",
+      related_doc_url: "N/A",
     },
   ],
   vendorId: "",
-  notes: "",
+  notes: "N/A",
   contactNo: "",
   email: "",
   invoiceNo: "",
@@ -132,13 +121,15 @@ export const PurchaseListReducer = (state, action) => {
 export const PurchaseListContextProvider = ({ children }) => {
   const [purchaseList, setpurchaseList] = useState(null);
   const [purchaseDetails, setpurchaseDetails] = useState(null);
-  const { companyDetails } = useContext(CompanyContext);
   //create purchase reducer
   const [createPurchaseListForm, createPurchaseListFormDispatch] = useReducer(
     PurchaseListReducer,
     initialPurchaseListState
   );
+
+  const { companyDetails } = useContext(CompanyContext);
   const { userDetails } = useContext(UserContext);
+  const { pathname } = useLocation();
 
   const navigate = useNavigate();
 
@@ -289,15 +280,19 @@ export const PurchaseListContextProvider = ({ children }) => {
         // upload documens
         for (let i = 0; i < createPurchaseListForm.attachments.length; i++) {
           const file = createPurchaseListForm.attachments[i];
-          const res = await uploadFile(file.fileName, file.fileBlob, token);
-          console.log(res);
-          createPurchaseListForm.attachments[i] = {
-            related_doc_name: res.file_name,
-            related_doc_url: res.doc_url,
-          };
+          if (file.fileBlob) {
+            const res = await uploadFile(
+              file.fileName || `related-doc-${i + 1}`,
+              file.fileBlob,
+              token
+            );
+            console.log(res);
+            createPurchaseListForm.attachments[i] = {
+              related_doc_name: res.file_name,
+              related_doc_url: res.doc_url,
+            };
+          }
         }
-        console.log("file uploaded");
-
         console.log("file uploaded");
 
         const res = await axios.post(
@@ -383,22 +378,19 @@ export const PurchaseListContextProvider = ({ children }) => {
         setisLoading(true);
 
         // upload documens
+        console.log(createPurchaseListForm.attachments)
         for (let i = 0; i < createPurchaseListForm.attachments.length; i++) {
-          if (
-            createPurchaseListForm.attachments[
-              i
-            ].related_doc_url.toLowerCase() != "n/a"
-          )
-            continue;
           const file = createPurchaseListForm.attachments[i];
-          const res = await uploadFile(file.fileName, file.fileBlob, token);
-          console.log(res);
-          createPurchaseListForm.attachments[i] = {
-            related_doc_name: res.file_name,
-            related_doc_url: res.doc_url,
-          };
+          if (file.related_doc_url.toLowerCase() === "n/a") {
+            const res = await uploadFile(file.fileName, file.fileBlob, token);
+            console.log(res);
+            createPurchaseListForm.attachments[i] = {
+              related_doc_name: res.file_name,
+              related_doc_url: res.doc_url,
+            };
+          }
+          console.log("file uploaded");
         }
-        console.log("file uploaded");
 
         const res = await axios.post(
           `${
@@ -530,7 +522,13 @@ export const PurchaseListContextProvider = ({ children }) => {
     [purchaseList, userDetails]
   );
 
-  console.log(purchaseList);
+  useEffect(() => {
+    setpurchaseDetails(null);
+    !pathname.toLowerCase().includes("/addPurchase") &&
+      createPurchaseListFormDispatch({ type: "RESET" });
+  }, [pathname]);
+
+  console.log(createPurchaseListForm);
 
   return (
     <PurchaseListContext.Provider

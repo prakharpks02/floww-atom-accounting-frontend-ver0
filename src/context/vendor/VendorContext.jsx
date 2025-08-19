@@ -25,7 +25,7 @@ export const initialState = {
       contact_person: "",
       contact_no: "",
       email: "",
-      work_phone: "",
+      work_phone: "N/A",
     },
   ],
   gstNumber: "",
@@ -38,7 +38,7 @@ export const initialState = {
   vendorLastName: "",
   vendorSalutation: "",
   displayName: "N/A",
-  remarks: "",
+  remarks: "N/A",
   relatedDocuments: [
     {
       related_doc_name: "",
@@ -56,9 +56,9 @@ export const initialState = {
     },
   ],
   openingBalance: "",
-  paymentTerms: "",
+  paymentTerms: "N/A",
   tds: "",
-  workPhone: "",
+  workPhone: "N/A",
 };
 
 export const vendorReducer = (state, action) => {
@@ -133,6 +133,7 @@ export const VendorContextProvider = ({ children }) => {
 
       if (Object.keys(validationErrors).length > 0) {
         setErrors(validationErrors);
+        console.log(validationErrors);
         showToast("All fields are required", 1);
         return;
       }
@@ -155,9 +156,9 @@ export const VendorContextProvider = ({ children }) => {
       }
 
       setErrors({});
-      console.log("Sending payload:", {
-        ...createVendorForm,
-      });
+      // console.log("Sending payload:", {
+      //   ...createVendorForm,
+      // });
 
       try {
         setisLoading(true);
@@ -165,12 +166,14 @@ export const VendorContextProvider = ({ children }) => {
         // upload documens
         for (let i = 0; i < createVendorForm.relatedDocuments.length; i++) {
           const file = createVendorForm.relatedDocuments[i];
-          const res = await uploadFile(file.fileName, file.fileBlob, token);
-          console.log(res);
-          createVendorForm.relatedDocuments[i] = {
-            related_doc_name: res.file_name,
-            related_doc_url: res.doc_url,
-          };
+          if (file.fileBlob) {
+            const res = await uploadFile(file.fileName, file.fileBlob, token);
+            console.log(res);
+            createVendorForm.relatedDocuments[i] = {
+              related_doc_name: res.file_name,
+              related_doc_url: res.doc_url,
+            };
+          }
         }
         console.log("file uploaded");
 
@@ -229,6 +232,7 @@ export const VendorContextProvider = ({ children }) => {
       console.log(validationErrors);
       if (Object.keys(validationErrors).length > 0) {
         setErrors(validationErrors);
+        console.log(validationErrors)
         showToast("All fields are required", 1);
         return;
       }
@@ -254,23 +258,16 @@ export const VendorContextProvider = ({ children }) => {
 
       try {
         setisLoading(true);
-
         // upload documens
         for (let i = 0; i < createVendorForm.relatedDocuments.length; i++) {
-          if (
-            createVendorForm.relatedDocuments[
-              i
-            ].related_doc_url.toLowerCase() != "n/a"
-          )
-            continue;
-            
           const file = createVendorForm.relatedDocuments[i];
-          const res = await uploadFile(file.fileName, file.fileBlob, token);
-          console.log(res);
-          createVendorForm.relatedDocuments[i] = {
-            related_doc_name: res.file_name,
-            related_doc_url: res.doc_url,
-          };
+          if (file.related_doc_url.toLowerCase() === "n/a") {
+            const res = await uploadFile(file.fileName, file.fileBlob, token);
+            createVendorForm.relatedDocuments[i] = {
+              related_doc_name: res.file_name,
+              related_doc_url: res.doc_url,
+            };
+          }
         }
         console.log("file uploaded");
 

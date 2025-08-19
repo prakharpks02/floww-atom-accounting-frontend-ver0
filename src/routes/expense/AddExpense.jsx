@@ -56,11 +56,12 @@ export const AddExpense = () => {
               </h2>
             </div>
 
-            <div className=" grid md:grid-cols-2 grid-cols-1 xl:gap-4 md:gap-2">
+            <div className=" grid md:grid-cols-2 grid-cols-1 space-y-4 gap-x-3">
               <ExpenseTitle expenseDetails={expenseDetails} />
               <Category expenseDetails={expenseDetails} />
-              <Date expenseDetails={expenseDetails} />
+              <ExpenseDate expenseDetails={expenseDetails} />
               <Amount expenseDetails={expenseDetails} />
+              <ExpenseDesciption expenseDetails={expenseDetails} className={"col-span-2"} />
             </div>
             {/* Attachments Section */}
             <UploadAttachment expenseDetails={expenseDetails} />
@@ -115,7 +116,7 @@ const ExpenseTitle = ({ className, expenseDetails }) => {
         required={true}
         value={title}
         setvalue={settitle}
-        label={"Expense Title*"}
+        label={"Expense Title"}
         placeholder={"Enter Title of your Expense"}
       />
     </div>
@@ -138,7 +139,7 @@ const Category = ({ className, expenseDetails }) => {
         required={true}
         value={category}
         setvalue={setcategory}
-        label={"Category*"}
+        label={"Category"}
         placeholder={"Choose category of expense"}
         hasDropDown={true}
         dropDownData={expenseCategories || []}
@@ -147,7 +148,7 @@ const Category = ({ className, expenseDetails }) => {
   );
 };
 
-const Date = ({ className, expenseDetails }) => {
+const ExpenseDate = ({ className, expenseDetails }) => {
   const [date, setdate] = useState(
     expenseDetails?.date?.split("-").reverse().join("-") || ""
   );
@@ -167,7 +168,7 @@ const Date = ({ className, expenseDetails }) => {
         inputType={"date"}
         icon={<CalendarDays className=" w-5 h-5 text-[#777777] " />}
         setvalue={setdate}
-        label={"Date*"}
+        label={"Expense date"}
         placeholder={"dd-mm-yyyy"}
       />
     </div>
@@ -187,7 +188,7 @@ const Amount = ({ className, expenseDetails }) => {
   return (
     <div className={`${className}`}>
       <p className="font-normal text-[#000000] mb-1 2xl:text-lg xl:text-base lg:text-sm text-xs">
-        Amount
+        Amount <span className=" text-red-600 ">*</span>
       </p>
       <div className=" flex items-end ">
         <div className="text-[#333333c6] w-fit font-normal 2xl:text-lg md:text-base px-3 py-2 border-[1.5px] border-[#0000001A] rounded-lg mr-3">
@@ -203,6 +204,31 @@ const Amount = ({ className, expenseDetails }) => {
           placeholder={"Enter amount"}
         />
       </div>
+    </div>
+  );
+};
+
+const ExpenseDesciption = ({ className, expenseDetails }) => {
+  const [desc, setdesc] = useState(expenseDetails?.desciption || "");
+  const { createExpenseFormdispatch } = useContext(ExpenseContext);
+  useEffect(() => {
+    createExpenseFormdispatch({
+      type: "UPDATE_FIELD",
+      field: "deception",
+      value: desc,
+    });
+  }, [desc]);
+
+  return (
+    <div className={`${className}`}>
+      <InputField
+        required={true}
+        value={desc}
+        isTextArea={true}
+        setvalue={setdesc}
+        label={"Expense Description"}
+        placeholder={"Desciption of your Expense"}
+      />
     </div>
   );
 };

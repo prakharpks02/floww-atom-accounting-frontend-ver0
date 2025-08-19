@@ -10,6 +10,7 @@ import {
   CalendarDays,
   ChevronDown,
   Download,
+  Eye,
   Filter,
   FilterIcon,
   Loader2,
@@ -33,6 +34,9 @@ import {
   getLast10FinancialYears,
   StatusFieldsDropDown,
 } from "../../utils/dropdownFields";
+import { generatePDF } from "../../utils/downloadSalesInPdf";
+import { ItemToolTip } from "../../component/ItemToolTip";
+import { ToastContainer } from "react-toastify";
 
 const filterDropdown = {
   Status: [
@@ -98,6 +102,7 @@ export const AllSalesList = () => {
 
   return (
     <>
+    <ToastContainer/>
       <div className="p-6 px-3 md:px-4 xl:px-6 2xl:px-8 h-[calc(100dvh-80px)] min-h-[400px] flex flex-col">
         <h1 className=" text-lg md:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl font-semibold text-[#4A4A4A] mb-1">
           Sales List
@@ -223,6 +228,7 @@ const SearchSalesComponent = ({ setData }) => {
 
 const ShowSalesInTable = ({ AllSales }) => {
   const navigate = useNavigate();
+  const [isDownloading, setisDownloading] = useState(false);
 
   return (
     <>
@@ -231,6 +237,12 @@ const ShowSalesInTable = ({ AllSales }) => {
           <table className="min-w-full text-sm text-left ">
             <thead className=" text-sm lg:text-base xl:text-lg 2xl:text-xl text-[#4A4A4A] border-b-[#0000001A] border-b-[1px]  ">
               <tr className="">
+                <th
+                  scope="col"
+                  className="px-3 py-4 whitespace-nowrap font-medium "
+                >
+                  Download
+                </th>
                 <th
                   scope="col"
                   className="px-3 py-4 whitespace-nowrap font-medium "
@@ -250,12 +262,6 @@ const ShowSalesInTable = ({ AllSales }) => {
                   Email
                 </th>
 
-                <th
-                  scope="col"
-                  className="px-3 py-4 whitespace-nowrap font-medium "
-                >
-                  Items
-                </th>
                 <th
                   scope="col"
                   className="px-3 py-4 whitespace-nowrap font-medium "
@@ -283,15 +289,42 @@ const ShowSalesInTable = ({ AllSales }) => {
               </tr>
             </thead>
             <tbody>
-              {AllSales.map((sale, idx) =>
-                sale.list_items.map((item, index) => (
+              {[...(AllSales || [])].reverse().map((sale, idx) => {
+                // const totalItems = sale.list_items.reduce((sum, item) => {
+                //   return sum + Number(item.quantity);
+                // }, 0);
+
+                return (
                   <tr
-                    key={`${idx}-${index}`}
+                    key={`${idx}-${1}`}
                     onClick={(e) => {
                       navigate(`/sales/saleDetails/${sale.sales_id}`);
                     }}
                     className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
                   >
+                    <td
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        setisDownloading(`${idx}-${1}`);
+                        await generatePDF(sale);
+                        setisDownloading(-1);
+                      }}
+                      className=" text-center px-3 py-4 text-[#ffffff] font-medium"
+                    >
+                      <button
+                        disabled={isDownloading === `${idx}-${1}`}
+                        aria-label="download sales details"
+                        className=" disabled:cursor-not-allowed text-[#2543B1] cursor-pointer"
+                      >
+                        {isDownloading === `${idx}-${1}` ? (
+                          <>
+                            <Loader2 className=" w-5 animate-spin mx-auto" />
+                          </>
+                        ) : (
+                          <Download className=" w-8" />
+                        )}
+                      </button>
+                    </td>
                     <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
                       {sale.sales_id}
                     </td>
@@ -301,16 +334,19 @@ const ShowSalesInTable = ({ AllSales }) => {
                     <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
                       {sale.email}
                     </td>
-                    <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
-                      {item.item_name}
+                    <td className=" flex items-center justify-center gap-2 whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium text-center">
+                      {sale.list_items.length}
+                      <div className=" relative group">
+                        <Eye className=" w-5 " />
+                        <ItemToolTip
+                          items={sale.list_items}
+                          className={" hidden group-hover:block top-0 left-[110%]"}
+                        />
+                      </div>
                     </td>
-                    <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium text-center">
-                      {item.quantity}
-                    </td>
-
                     <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
                       ₹
-                      {Number(item.gross_amount).toLocaleString("en-IN", {
+                      {Number(sale.total_amount).toLocaleString("en-IN", {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}
@@ -330,8 +366,8 @@ const ShowSalesInTable = ({ AllSales }) => {
                       {sale.status}
                     </td>
                   </tr>
-                ))
-              )}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -737,3 +773,6 @@ const FilterSalesdata = ({ setData, isOpen, ref, setisOpen, currData }) => {
     </>
   );
 };
+
+
+

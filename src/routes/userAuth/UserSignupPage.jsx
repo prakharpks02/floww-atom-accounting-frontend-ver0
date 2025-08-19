@@ -12,8 +12,8 @@ export const UserSignupPage = () => {
     email: "",
     mobileNumber: "",
     imageUrl: {
-      fileBlob: "N/A",
-      fileName: "N/A",
+      fileBlob: null,
+      fileName: undefined,
       url: "/user.png",
     },
   });
@@ -32,7 +32,7 @@ export const UserSignupPage = () => {
         showToast("All fields are required", 1);
         return;
       }
-      
+
       try {
         console.log(userData);
         const res = await checkMobileNumber(

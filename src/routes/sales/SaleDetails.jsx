@@ -20,7 +20,7 @@ import {
   Loader2,
   IndianRupee,
 } from "lucide-react";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { FileIcon, defaultStyles } from "react-file-icon";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
@@ -35,12 +35,17 @@ import { formatISODateToDDMMYYYY } from "../../utils/formateDate";
 import axios from "axios";
 import { UserContext } from "../../context/userContext/UserContext";
 import { CompanyContext } from "../../context/company/CompanyContext";
+import { uploadFile } from "../../utils/uploadFiles";
+import { generatePDF } from "../../utils/downloadSalesInPdf";
+import { getFileNameFromURL } from "../../utils/getFileNameFromURL";
 
 export const SaleInfo = () => {
   const navigate = useNavigate();
   const { saleid } = useParams();
   const [isLoading, setisLoading] = useState(true);
   const { getSaleDetails, saleDetails } = useContext(SalesContext);
+  const containerRef = useRef(null);
+  const [isDownloading, setisDownloading] = useState(false);
 
   useEffect(() => {
     getSaleDetails(saleid, setisLoading);
@@ -68,28 +73,59 @@ export const SaleInfo = () => {
             <h1 className="2xl:text-4xl xl:text-3xl lg:text-2xl md:text-xl text-lg font-semibold text-[#333333]">
               Sales Information
             </h1>
-            <button
-              onClick={() => {
-                navigate(`/sales/addSales/${saleDetails?.sales_id}`);
-              }}
-              className="px-4 py-3 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
-            >
-              <Edit className="w-5 h-5" /> Edit Sales
-            </button>
+            <div className=" flex items-center gap-3">
+              <button
+                disabled={isDownloading}
+                onClick={async () => {
+                  try {
+                    setisDownloading(true);
+                    await generatePDF(saleDetails);
+                  } catch (error) {
+                    console.log(error);
+                  } finally {
+                    setisDownloading(false);
+                  }
+                }}
+                className="px-4 py-3 disabled:cursor-wait disabled:opacity-60 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
+              >
+                {isDownloading ? (
+                  <>
+                    <Loader2 className=" inline-block w-5 animate-spin" />
+                    Downloading
+                  </>
+                ) : (
+                  <>
+                    {" "}
+                    <Download className="w-5 h-5" /> Download{" "}
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => {
+                  navigate(`/sales/addSales/${saleDetails?.sales_id}`);
+                }}
+                className="px-4 py-3 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
+              >
+                <Edit className="w-5 h-5" /> Edit Sales
+              </button>
+            </div>
           </div>
 
           <div className="mb-8  flex justify-between items-center  xl:text-base md:text-sm  text-xs">
             <p className=" text-[#A4A4A4] font-medium ">
               Detailed information for sale - {saleDetails?.sales_id}
             </p>
-            <p className="text-[#A4A4A4] lg:max-w-none max-w-[50%] font-medium ">
+            {/* <p className="text-[#A4A4A4] lg:max-w-none max-w-[50%] font-medium ">
               Note: Edit can only be done once the invoice has been uploaded
-            </p>
+            </p> */}
           </div>
         </div>
 
         {/* sales info  */}
-        <div className=" grid lg:grid-cols-10 grid-cols-1 gap-3">
+        <div
+          ref={containerRef}
+          className=" grid lg:grid-cols-10 grid-cols-1 gap-3"
+        >
           <SaleInfoLeftPart
             className={"lg:col-span-6 col-span-1"}
             saleDetails={saleDetails}
@@ -118,16 +154,12 @@ const SaleInfoLeftPart = ({ className, saleDetails }) => {
   );
 };
 
-const SaleInfoRightPart = ({
-  className,
-  saleDetails,
-  setisLoading,
-  getSaleDetails,
-}) => {
+const SaleInfoRightPart = ({ className, saleDetails }) => {
   const [isModalOpen, setisModalOpen] = useState(false);
-  const [amountPaid, setamountPaid] = useState(
-    Number(saleDetails.total_amount)
-  );
+  const [isLoading, setisLoading] = useState(true);
+  const { getSalesTimeLine, salesTimeLine } = useContext(SalesContext);
+  const { saleid } = useParams();
+
   const iconMap = {
     Approved: <CheckCircle size={18} />,
     Sent: <Send size={18} />,
@@ -144,12 +176,12 @@ const SaleInfoRightPart = ({
     return ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext);
   }, []);
 
-  const getFilePreview = (file, ext) => {
+  const getFilePreview = (url, ext) => {
     if (isImage(ext)) {
       return (
         <img
-          src={file?.related_doc_url || "document image"}
-          alt={`preview ${file?.related_doc_name}`}
+          src={url || "document image"}
+          alt={`preview ${url}`}
           className="object-contain w-full text-[10px]"
         />
       );
@@ -168,22 +200,25 @@ const SaleInfoRightPart = ({
   };
 
   useEffect(() => {
-    const totalAmount = saleDetails.payment_transactions_list?.reduce(
-      (sum, txn) => {
-        return sum + parseFloat(txn.amount || "0");
-      },
-      0
+    getSalesTimeLine(saleid, setisLoading);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className={` py-8 px-3 flex justify-center ${className}`}>
+        <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
+      </div>
     );
-    setamountPaid(totalAmount);
-  }, [saleDetails]);
+  }
+
+  console.log(salesTimeLine);
 
   return (
     <>
       <UpdateTimeLineModal
-        amountPaid={amountPaid}
-        setisSaleDetailLoading={setisLoading}
-        getSaleDetails={getSaleDetails}
-        saleDetails={saleDetails}
+        setisTimeLineLoading={setisLoading}
+        getSalesTimeLine={getSalesTimeLine}
+        timeLineDetails={salesTimeLine}
         isOpen={isModalOpen}
         setisOpen={setisModalOpen}
       />
@@ -191,11 +226,7 @@ const SaleInfoRightPart = ({
         className={`h-fit w-full grid lg:grid-cols-1 grid-cols-2 gap-4 ${className}`}
       >
         {/* amount pie chart  */}
-        <AmountPieChart
-          className={" h-fit"}
-          totalAmount={Number(saleDetails.total_amount)}
-          amountPaid={amountPaid}
-        />
+        <AmountPieChart className={" h-fit"} />
         <div
           className={`rounded-lg w-full h-fit 2xl:p-8 xl:p-6 md:p-4 p-2 border-[1.5px] border-[#E8E8E8] `}
         >
@@ -203,15 +234,17 @@ const SaleInfoRightPart = ({
             Timeline
           </h2>
           <div className=" mb-6 flex flex-wrap justify-between items-center">
-            <button
-              onClick={() => {
-                setisModalOpen(true);
-              }}
-              className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs 
+            {Number(salesTimeLine.remaining_balance) > 0 && (
+              <button
+                onClick={() => {
+                  setisModalOpen(true);
+                }}
+                className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs 
           bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
-            >
-              Update Timeline <History className="w-5 h-5 rotate-y-180" />
-            </button>
+              >
+                Update Timeline <History className="w-5 h-5 rotate-y-180" />
+              </button>
+            )}
             {/* <button
               onClick={() => {
                 setisModalOpen(true);
@@ -223,7 +256,7 @@ const SaleInfoRightPart = ({
             </button> */}
           </div>
           <div className="space-y-4">
-            {saleDetails?.payment_transactions_list
+            {[...(salesTimeLine?.timeline ?? [])]
               ?.reverse()
               ?.map((item, idx) => {
                 const ext = getFileExtension(item?.transaction_url);
@@ -247,12 +280,25 @@ const SaleInfoRightPart = ({
                     {/* File box if present */}
                     {item.transaction_url &&
                       item.transaction_url.toLowerCase() != "n/a" && (
-                        <div className="ml-11 bg-white border-[#0000001A] border-1  shadow-sm rounded-lg flex items-center gap-3 px-2 py-2 w-fit text-sm">
-                          <div className=" text-white w-15 px-2 py-2 rounded text-xs font-semibold">
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(item?.transaction_url, "_blank");
+                          }}
+                          className="ml-11 cursor-pointer bg-white border-[#0000001A] border-1  shadow-sm rounded-lg flex items-center gap-2 px-2 py-2 w-fit text-sm"
+                        >
+                          <div
+                            className={`text-white ${
+                              isImage(ext) ? "w-30" : "w-10"
+                            } py-2 rounded text-xs font-semibold`}
+                          >
                             {getFilePreview(item?.transaction_url, ext)}
                           </div>
-                          <span className="text-[#606060] font-medium xl:text-base md:text-sm text-xs">
-                            {item.transaction_url}
+                          <span className="text-[#606060] font-medium  xl:text-sm text-xs">
+                            {/* {fileName.includes(".")
+                              ? fileName.substring(0, fileName.lastIndexOf("."))
+                              : fileName} */}
+                            {getFileNameFromURL(item.transaction_url)}
                           </span>
                         </div>
                       )}
@@ -267,23 +313,23 @@ const SaleInfoRightPart = ({
 };
 
 const UpdateTimeLineModal = ({
-  amountPaid,
   isOpen,
   setisOpen,
-  saleDetails,
-  setisSaleDetailLoading,
-  getSaleDetails,
+  timeLineDetails,
+  setisTimeLineLoading,
+  getSalesTimeLine,
 }) => {
   const [formData, setformData] = useState({
     transaction_id: "N/A",
-    timestamp: Date.now(),
     amount: "",
     remark: "",
-    transaction_url: "",
+    file: null,
   });
   const { userDetails } = useContext(UserContext);
   const { companyDetails } = useContext(CompanyContext);
+  const { updateSalesTimeLine } = useContext(SalesContext);
   const [isLoading, setisLoading] = useState(false);
+
   const { saleid } = useParams();
 
   const handleSubmit = async () => {
@@ -305,80 +351,34 @@ const UpdateTimeLineModal = ({
       showToast("Token not found", 1);
       return;
     }
-    if (!formData.amount || !formData.transaction_url || !formData.remark) {
+    if (!formData.amount || !formData.file || !formData.remark) {
       showToast("All fields are required", 1);
       return;
     }
 
-    if (
-      Number(formData.amount) >
-      Number(saleDetails.total_amount) - amountPaid
-    ) {
+    if (Number(formData.amount) > Number(timeLineDetails?.remaining_balance)) {
       // console.log(
       //   Number(saleDetails.total_amount) - amountPaid,
       //   Number(formData.amount)
       // );
-      showToast("Amount must less than leftover amount", 1);
+      showToast(
+        `Amount must less than remaining amount - ${timeLineDetails?.remaining_balance}`,
+        1
+      );
       return;
     }
 
     try {
-      setisLoading(true);
-      const res = await axios.post(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/accounting/update-sales-details/`,
+      await updateSalesTimeLine(
         {
-          salesTs: saleDetails.sales_ts,
-          invoiceId: saleDetails.invoice_id,
-          invoiceNumber: saleDetails.invoice_number,
-          listItems: saleDetails.list_items,
-          listToc: saleDetails.list_toc,
-          listStatus: saleDetails.list_status,
-          customerId: saleDetails.created_on,
-          notes: saleDetails.notes,
-          contactNo: saleDetails.contact_no,
-          email: saleDetails.email,
-          address: saleDetails.address,
-          invoiceUrl: saleDetails.invoice_url,
-          paymentNameList: saleDetails.payment_name_list,
-          invoiceDate: saleDetails.invoice_date,
-          invoiceDueBy: saleDetails.invoice_due_by,
-          quotationId: saleDetails.quotation_id,
-          purchaseOrderId: saleDetails.po_id,
-          paymentTransactionsList: [
-            ...saleDetails.payment_transactions_list,
-            formData,
-          ],
-          gstinNumber: saleDetails.gstin_number,
-          panNumber: saleDetails.pan_number,
-          subtotalAmount: saleDetails.subtotal_amount,
-          discountAmount: saleDetails.discount_amount,
-          tdsAmount: saleDetails.tds_amount,
-          adjustmentAmount: saleDetails.adjustment_amount,
-          totalAmount: saleDetails.total_amount,
-          status: saleDetails.status,
-          terms: saleDetails.terms,
-          customerName: saleDetails.customer_name,
-          tdsReason: saleDetails.tds_reason,
-          companyId: companyDetails.company_id,
-          // userId: userId,
-          salesId: saleDetails.sales_id,
+          salesId: saleid,
+          amount: formData.amount,
+          remark: formData.remark,
+          file: formData.file,
         },
-        {
-          headers: {
-            Authorization: token,
-          },
-        }
+        setisLoading
       );
-      if (res.data?.status && res.data.status.toLowerCase() !== "success") {
-        showToast("Somthing went wrong. Please try again", 1);
-        setisLoading(false);
-        return;
-      }
-
-      console.log(res);
-      await getSaleDetails(saleid, setisSaleDetailLoading);
+      await getSalesTimeLine(saleid, setisTimeLineLoading);
       handelClose();
     } catch (error) {
       console.log(error);
@@ -389,7 +389,7 @@ const UpdateTimeLineModal = ({
     } finally {
       setisLoading(false);
     }
-  }, [formData, userDetails, saleDetails, companyDetails]);
+  }, [formData, userDetails, timeLineDetails, companyDetails]);
 
   if (!isOpen) return null;
 
@@ -397,7 +397,6 @@ const UpdateTimeLineModal = ({
 
   return (
     <>
-      <ToastContainer />
       <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm overflow-y-auto p-5">
         <div className="w-full max-w-md mx-auto my-5 bg-white rounded-xl shadow-lg p-6 space-y-5 animate-slideDown">
           {/* header  */}
@@ -490,10 +489,11 @@ const UpdateTimeLineModal = ({
 const UploadDocuments = ({ setSelectedFile }) => {
   const [files, setfiles] = useState(null);
   useEffect(() => {
+    if (!files) return;
     setSelectedFile((prev) => {
       return {
         ...prev,
-        transaction_url: files && files.length > 0 ? files[0].name : "",
+        file: files[0],
       };
     });
   }, [files]);
@@ -566,16 +566,16 @@ const UploadDocuments = ({ setSelectedFile }) => {
   );
 };
 
-const AmountPieChart = ({ className, totalAmount, amountPaid }) => {
+const AmountPieChart = ({ className }) => {
   // const totalAmount = amountPaid + amountLeft ;
   // const amountPaid = 600000;
-  const amountLeft = Number((totalAmount - amountPaid).toFixed(2));
+  const { salesTimeLine } = useContext(SalesContext);
 
   // console.log(totalAmount, amountPaid, amountLeft);
 
   const data = [
-    { name: "Amount Left", value: amountLeft },
-    { name: "Amount Paid", value: amountPaid },
+    { name: "Amount Left", value: salesTimeLine?.remaining_balance || 0 },
+    { name: "Amount Paid", value: salesTimeLine?.total_paid || 0 },
   ];
 
   const COLORS = ["#FB3748", "#2543B1"];
@@ -616,7 +616,7 @@ const AmountPieChart = ({ className, totalAmount, amountPaid }) => {
 
         <div className="absolute inset-0 flex flex-col items-center justify-center 2xl:text-3xl xl:text-2xl lg:text-xl md:text-lg text-base font-semibold text-[#4A4A4A]">
           <span className=" ">Total Amount</span>
-          <span className=" ">₹ {totalAmount}</span>
+          <span className=" ">₹ {salesTimeLine?.total_amount}</span>
         </div>
       </div>
 
@@ -629,7 +629,7 @@ const AmountPieChart = ({ className, totalAmount, amountPaid }) => {
           <div>
             <span>Amount Paid</span>
             <br />
-            <span>₹ {amountPaid}</span>
+            <span>₹ {salesTimeLine?.total_paid}</span>
           </div>
         </div>
         <div className="flex items-center font-medium text-[#606060] ">
@@ -642,7 +642,7 @@ const AmountPieChart = ({ className, totalAmount, amountPaid }) => {
             <br />
             <span>
               ₹{" "}
-              {amountLeft.toLocaleString("en-IN", {
+              {salesTimeLine?.remaining_balance.toLocaleString("en-IN", {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 2,
               })}
@@ -691,7 +691,15 @@ const SaleDetails = ({ saleDetails }) => {
           <p className="font-medium text-[#777777] 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs ">
             Payment Status
           </p>
-          <span className="text-[#1FC16B] font-medium 2xl:text-2xl xl:text-xl lg:text-lg md:text-base text-sm">
+          <span
+            className={`${
+              saleDetails?.status?.toLowerCase() === "paid"
+                ? "text-[#1FC16B]"
+                : saleDetails?.status?.toLowerCase().includes("partially")
+                ? "text-yellow-400"
+                : "text-[#FB3748]"
+            } font-medium 2xl:text-2xl xl:text-xl lg:text-lg md:text-base text-sm`}
+          >
             {saleDetails?.status}
           </span>
         </div>
@@ -759,25 +767,26 @@ const Description = ({ saleDetails }) => {
 const RelatedDocuments = ({ saleDetails }) => {
   const [files, setFile] = useState(
     saleDetails?.invoice_url?.length > 0 &&
-      saleDetails?.invoice_url[0]?.invoice_url != "N/A"
-      ? (saleDetails?.invoice_url || []).map((item) => {
-          return {
-            related_doc_name: item?.invoice_url,
-            related_doc_url: item?.invoice_url,
-          };
-        })
+      saleDetails?.invoice_url[0]?.related_doc_url != "N/A"
+      ? saleDetails?.invoice_url
       : null
   );
+  const [isDownloading, setisDownloading] = useState(false);
 
-  const downloadAllFiles = (e) => {
+  const downloadAllFiles = async (e) => {
     e.preventDefault();
 
     if (!files || files.length === 0) return;
-
     try {
-      downloadAsZip(files);
+      setisDownloading(true);
+      await downloadAsZip(
+        files,
+        `sale-${saleDetails.sales_id}-related-documents.zip`
+      );
     } catch (error) {
       showToast(error.message, 1);
+    } finally {
+      setisDownloading(false);
     }
   };
 
@@ -787,14 +796,22 @@ const RelatedDocuments = ({ saleDetails }) => {
         <h2 className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-base text-sm font-semibold text-[#4A4A4A]">
           Sales Invoice
         </h2>
-        {/* <button
+        <button
           onClick={downloadAllFiles}
           tabIndex={0}
           className="flex items-center gap-2 cursor-pointer bg-[#0033661A] text-indigo-600 px-4 py-2 rounded-lg text-base font-medium hover:bg-[#0016661a] transition"
         >
-          <Download className="w-4 h-4" />
-          Download all
-        </button> */}
+          {isDownloading ? (
+            <>
+              <Loader2 className=" mx-auto w-5 animate-spin " /> zipping...
+            </>
+          ) : (
+            <>
+              <Download className="w-4 h-4" />
+              Download all
+            </>
+          )}
+        </button>
       </div>
 
       <div className="flex flex-wrap items-center justify-start gap-2 mb-4 max-h-[250px] overflow-auto">
@@ -877,10 +894,12 @@ const ShowFiles = ({ files }) => {
     }
   };
 
+  console.log(files)
+
   return (
-    <div className="max-h-[200px] w-full overflow-auto flex flex-wrap justify-center gap-3 pt-5">
+    <div className="max-h-[200px] w-full overflow-y-auto flex flex-wrap justify-center gap-3 pt-5">
       {files.map((file, index) => {
-        const ext = getFileExtension(file?.related_doc_name);
+        const ext = getFileExtension(file?.related_doc_url);
         return (
           <div
             key={index}

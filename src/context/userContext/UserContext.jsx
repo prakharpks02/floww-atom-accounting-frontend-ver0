@@ -8,6 +8,7 @@ import { auth } from "../../utils/firebaseConfig";
 import { BrowserRouter, Routes, useNavigate, Route } from "react-router-dom";
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { UserSignupPage } from "../../routes/userAuth/UserSignupPage";
+import { uploadFile } from "../../utils/uploadFiles";
 
 export const UserContext = createContext();
 
@@ -24,6 +25,34 @@ export const UserContextProvider = ({ children }) => {
 
   const navigate = useNavigate();
 
+  const uploadProfileImage = useCallback(async (fileName, fileBlob) => {
+    if (!fileName || !fileBlob) {
+      showToast("All fields are required", 1);
+      return;
+    }
+    const formData = new FormData();
+    formData.append("fileName", fileName.split(".").slice(0, -1).join("."));
+    formData.append("fileBlob", fileBlob);
+
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/integration/upload-doc/`,
+        formData
+      );
+
+      console.log("Upload success:", response);
+      return response.data;
+    } catch (error) {
+      console.log(error);
+      throw new Error(
+        error.response.data.error ||
+          error.response.data.message ||
+          error.message ||
+          "Something went wrong. Please try again"
+      );
+    }
+  }, []);
+
   const createUser = useCallback(async (userData, setisLoading = () => {}) => {
     // console.log(companyId)
     if (!userData) {
@@ -33,6 +62,18 @@ export const UserContextProvider = ({ children }) => {
 
     try {
       setisLoading(true);
+
+      if (userData.imageUrl.fileBlob) {
+        const res = await uploadProfileImage(
+          userData.imageUrl.fileName || `profile-image`,
+          userData.imageUrl.fileBlob
+        );
+        console.log(res);
+        userData.imageUrl = res.doc_url;
+        console.log("profile image uploaded");
+      } else {
+        userData.imageUrl = "N/A";
+      }
 
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/auth/user/signup/`,
@@ -61,7 +102,7 @@ export const UserContextProvider = ({ children }) => {
         mobileNo: `+91${userData.mobileNumber}`,
         image: undefined,
       });
-      navigate("/");
+      // navigate("/");
       showToast("User created successfully");
     } catch (error) {
       console.log(error);
@@ -140,8 +181,8 @@ export const UserContextProvider = ({ children }) => {
     } catch (error) {
       console.log(error);
       showToast(
-        error.response.data.error ||
-          error.response.data.message ||
+        error.response?.data?.error ||
+          error.response?.data?.message ||
           error.message ||
           "Something went wrong. Please try again",
         1

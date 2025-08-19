@@ -230,8 +230,46 @@ const DocumentLibrery = ({ className, tempAllDocumentList }) => {
 };
 
 const SummarySection = ({ className }) => {
-  const { totalDocument, uploadedDocumentThisMonth, totalSize, totalCategory } =
-    useContext(DocumentContext);
+  const { allDocumentList } = useContext(DocumentContext);
+
+  const [totalDocument, settotalDocument] = useState(0);
+  const [uploadedDocumentThisMonth, setuploadedDocumentThisMonth] = useState(0);
+  const [totalSize, settotalSize] = useState(0);
+  const [totalCategory, settotalCategory] = useState(0);
+
+  useEffect(() => {
+    settotalDocument(
+      allDocumentList?.reduce(
+        (sum, item) => sum + (item.document_url?.length || 0),
+        0
+      ) || 0
+    );
+    setuploadedDocumentThisMonth(
+      allDocumentList?.reduce((sum, item) => {
+        const d = new Date(parseInt(item.uploaded_on) * 1000);
+        console.log(d, parseInt(item.uploaded_on));
+        return d.getMonth() === new Date().getMonth() &&
+          d.getFullYear() === new Date().getFullYear()
+          ? sum + (item.document_url?.length || 0)
+          : sum;
+      }, 0) || 0
+    );
+    settotalSize(
+      allDocumentList?.reduce(
+        (sum, item) =>
+          sum +
+          (item.document_url?.reduce(
+            (s, doc) => s + (Number(doc.doc_size) || 0),
+            0
+          ) || 0),
+        0
+      ) || 0
+    );
+    settotalCategory(
+      new Set(allDocumentList?.map((item) => item.document_category)).size || 0
+    );
+  }, [allDocumentList]);
+
   return (
     <div
       className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 ${className}`}
@@ -282,7 +320,7 @@ const DocumentCard = ({ document = {}, doc = {} }) => {
               {document.document_name}
             </h3>
             <p className="text-sm 2xl:text-base  text-[#777777]">
-              {doc.doc_size}
+              {doc.doc_size} MB
             </p>
           </div>
         </div>

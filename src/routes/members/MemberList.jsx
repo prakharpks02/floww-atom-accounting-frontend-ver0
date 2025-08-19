@@ -539,8 +539,7 @@ const StatusCell = ({ member, getAllMemberList, setisLoading }) => {
 
   return (
     <>
-      <ToastContainer />
-      <div className=" w-fit" ref={dropdownRef}>
+      <div className=" " ref={dropdownRef}>
         {!isEditing ? (
           <div className="flex items-center gap-2">
             <p

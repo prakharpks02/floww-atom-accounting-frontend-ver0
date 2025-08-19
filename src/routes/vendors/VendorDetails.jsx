@@ -78,7 +78,7 @@ const AllDetails = ({ className }) => {
   const { vendorid } = useParams();
   const [isLoading, setisLoading] = useState(true);
   useEffect(() => {
-    getVendorDetails(vendorid , setisLoading);
+    getVendorDetails(vendorid, setisLoading);
   }, []);
 
   // console.log(vendorDetails);
@@ -91,10 +91,10 @@ const AllDetails = ({ className }) => {
     );
   }
 
-  if(!vendorDetails){
-     return (
+  if (!vendorDetails) {
+    return (
       <div className=" py-8 px-3 flex justify-center">
-        <X/> No data found
+        <X /> No data found
       </div>
     );
   }
@@ -318,16 +318,19 @@ const VendorAddressDetails = ({ vendorDetails }) => {
 };
 
 const RelatedDocuments = ({ className, vendorDetails }) => {
-  const [files, setFile] = useState(vendorDetails.related_documents);
+  const [files, setFile] = useState(
+    vendorDetails.related_documents?.length > 0 &&
+      vendorDetails.related_documents[0]?.related_doc_url != "N/A"
+      ? (vendorDetails.related_documents || []).map((item) => {
+          return {
+            related_doc_name: item.related_doc_name,
+            related_doc_url: item.related_doc_url,
+            invoice_url: item.related_doc_url,
+          };
+        })
+      : null
+  );
   const [isZipping, setisZipping] = useState(false);
-
-  const handleFileChange = (e) => {
-    const selectedFiles = Array.from(e.target.files);
-    console.log(typeof selectedFiles);
-    if (selectedFiles) {
-      setFile(selectedFiles);
-    }
-  };
 
   const downloadAllFiles = async (e) => {
     e.preventDefault();
@@ -336,7 +339,7 @@ const RelatedDocuments = ({ className, vendorDetails }) => {
 
     try {
       setisZipping(true);
-      await downloadAsZip(files);
+      await downloadAsZip(files, "vendor-related-documents.zip");
     } catch (error) {
       showToast(error.message, 1);
     } finally {
@@ -352,7 +355,7 @@ const RelatedDocuments = ({ className, vendorDetails }) => {
         <h2 className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-base text-sm font-semibold text-[#4A4A4A]">
           Related Documents
         </h2>
-        {/* <button
+        <button
           onClick={downloadAllFiles}
           tabIndex={0}
           disabled={isZipping}
@@ -368,7 +371,7 @@ const RelatedDocuments = ({ className, vendorDetails }) => {
               <Download className="w-4 h-4" /> Download all
             </>
           )}
-        </button> */}
+        </button>
       </div>
 
       <div className="flex flex-wrap items-center justify-start gap-2 mb-4 max-h-[250px] overflow-auto">

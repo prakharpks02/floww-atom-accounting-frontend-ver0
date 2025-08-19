@@ -166,7 +166,7 @@ const ShowAllLedgers = ({ AllLedger }) => {
                   scope="col"
                   className="px-4 py-4 whitespace-nowrap font-medium "
                 >
-                  Description
+                  Quotation ID / Purchase Order No
                 </th>
                 <th
                   scope="col"
@@ -193,7 +193,7 @@ const ShowAllLedgers = ({ AllLedger }) => {
                     className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
                   >
                     <td className=" whitespace-nowrap px-4 py-4 text-[#4A4A4A] font-medium">
-                      {formatISODateToDDMMYYYY(ledger.ts)}
+                      {formatISODateToDDMMYYYY(ledger.ts/1000)}
                     </td>
                     <td className=" whitespace-nowrap px-4 py-4 text-[#4A4A4A] font-medium">
                       {ledger.id}

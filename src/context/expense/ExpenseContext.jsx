@@ -33,6 +33,7 @@ const initialExpenseState = {
   paid: "Unpaid",
   expenseStatus: "pending",
   date: "",
+  deception: "",
   attachments: [
     {
       related_doc_name: "",
@@ -234,12 +235,14 @@ export const ExpenseContextprovider = ({ children }) => {
         // upload documens
         for (let i = 0; i < createExpenseForm.attachments.length; i++) {
           const file = createExpenseForm.attachments[i];
-          const res = await uploadFile(file.fileName, file.fileBlob, token);
-          console.log(res);
-          createExpenseForm.attachments[i] = {
-            related_doc_name: res.file_name,
-            related_doc_url: res.doc_url,
-          };
+          if (file.fileBlob) {
+            const res = await uploadFile(file.fileName, file.fileBlob, token);
+            console.log(res);
+            createExpenseForm.attachments[i] = {
+              related_doc_name: res.file_name,
+              related_doc_url: res.doc_url,
+            };
+          }
         }
         console.log("file uploaded");
 
@@ -329,18 +332,15 @@ export const ExpenseContextprovider = ({ children }) => {
 
         // upload documens
         for (let i = 0; i < createExpenseForm.attachments.length; i++) {
-          if (
-            createExpenseForm.attachments[i].related_doc_url.toLowerCase() !=
-            "n/a"
-          )
-            continue;
           const file = createExpenseForm.attachments[i];
-          const res = await uploadFile(file.fileName, file.fileBlob, token);
-          console.log(res);
-          createExpenseForm.attachments[i] = {
-            related_doc_name: res.file_name,
-            related_doc_url: res.doc_url,
-          };
+          if (file.related_doc_url.toLowerCase() === "n/a") {
+            const res = await uploadFile(file.fileName, file.fileBlob, token);
+            console.log(res);
+            createExpenseForm.attachments[i] = {
+              related_doc_name: res.file_name,
+              related_doc_url: res.doc_url,
+            };
+          }
         }
         console.log("file uploaded");
 

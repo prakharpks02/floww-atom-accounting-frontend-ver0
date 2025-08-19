@@ -48,7 +48,7 @@ export const ShowUploadedFiles = ({ files, setfiles = () => {} }) => {
   return (
     <div className="max-h-[200px] w-full overflow-auto flex flex-wrap gap-3 pt-5">
       {files.map((file, index) => {
-        const ext = getFileExtension(file?.name || file?.related_doc_name);
+        const ext = getFileExtension(file?.name || file?.related_doc_url);
         return (
           <div
             key={index}

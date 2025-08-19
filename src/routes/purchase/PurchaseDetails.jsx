@@ -638,7 +638,15 @@ const PurchaseDetailsSection = ({ purchaseDetails }) => {
           <p className="font-medium text-[#777777] xl:text-base md:text-sm text-xs ">
             Status
           </p>
-          <span className="text-[#4A4A4A] font-medium xl:text-lg md:text-base text-sm">
+          <span
+            className={`${
+              purchaseDetails?.status?.toLowerCase() === "paid"
+                ? "text-[#1FC16B]"
+                : purchaseDetails?.status?.toLowerCase().includes("partially")
+                ? "text-yellow-400"
+                : "text-[#FB3748]"
+            }  font-medium xl:text-lg md:text-base text-sm`}
+          >
             {purchaseDetails?.status}
           </span>
         </div>
@@ -701,21 +709,26 @@ const VendorDetails = ({ purchaseDetails }) => {
 };
 
 const RelatedDocuments = ({ purchaseDetails }) => {
+  const [isDownloading, setisDownloading] = useState(false);
   const [files, setFile] = useState(
-    purchaseDetails?.attachments && purchaseDetails?.attachments[0]
+    purchaseDetails?.attachments?.length > 0 &&
+      purchaseDetails?.attachments[0]?.related_doc_url != "N/A"
       ? purchaseDetails?.attachments
-      : []
+      : null
   );
 
-  const downloadAllFiles = (e) => {
+  const downloadAllFiles = async (e) => {
     e.preventDefault();
 
     if (!files || files.length === 0) return;
 
     try {
-      downloadAsZip(files);
+      setisDownloading(true);
+      await downloadAsZip(files, "purchase-related-documents.zip");
     } catch (error) {
       showToast(error.message, 1);
+    } finally {
+      setisDownloading(false);
     }
   };
 
@@ -725,18 +738,26 @@ const RelatedDocuments = ({ purchaseDetails }) => {
         <h2 className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-base text-sm font-semibold text-[#4A4A4A]">
           Related Documents
         </h2>
-        {/* <button
+        <button
           onClick={downloadAllFiles}
           tabIndex={0}
-          className="flex items-center gap-2 cursor-pointer bg-[#0033661A] text-indigo-800 px-4 py-2 rounded-lg text-base font-medium hover:bg-[#0016661a] transition"
+          className="flex items-center gap-2 cursor-pointer bg-[#0033661A] text-indigo-600 px-4 py-2 rounded-lg text-base font-medium hover:bg-[#0016661a] transition"
         >
-          <Download className="w-4 h-4" />
-          Download all
-        </button> */}
+          {isDownloading ? (
+            <>
+              <Loader2 className=" mx-auto w-5 animate-spin " /> zipping...
+            </>
+          ) : (
+            <>
+              <Download className="w-4 h-4" />
+              Download all
+            </>
+          )}
+        </button>
       </div>
 
       <div className="flex flex-wrap items-center justify-start gap-2 mb-4 max-h-[250px] overflow-auto">
-        {files ? (
+        {files && files.length > 0  ? (
           <ShowFiles files={files} />
         ) : (
           <div className=" w-full flex flex-col items-center gap-4">
@@ -835,15 +856,14 @@ const AmountPieChart = ({ className, totalAmount, amountPaid }) => {
   );
 };
 
-const Description = () => {
+const Description = ({ purchaseDetails }) => {
   return (
     <div className="w-full lg:p-6 p-4 rounded-xl border-[1.5px] border-[#E8E8E8]">
       <h2 className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-base text-sm font-semibold text-[#4A4A4A] mb-4">
         Description
       </h2>
-      <p className="text-xs text-[#8E8E8E] mt-2">
-        Purchase of office chairs, desks, and filing cabinets for the new
-        department.
+      <p className="text-xs text-[#6d6d6d] mt-2">
+        {purchaseDetails?.notes}
       </p>
     </div>
   );
@@ -884,7 +904,7 @@ const ShowFiles = ({ files }) => {
   return (
     <div className="max-h-[200px] w-full overflow-auto flex flex-wrap justify-center gap-3 pt-5">
       {files.map((file, index) => {
-        const ext = getFileExtension(file?.related_doc_name);
+        const ext = getFileExtension(file?.related_doc_url);
         return (
           <div
             key={index}

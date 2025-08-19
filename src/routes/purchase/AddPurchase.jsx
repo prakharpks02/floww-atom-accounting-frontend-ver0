@@ -1,4 +1,12 @@
-import { useContext, useEffect, useReducer, useRef, useState } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import {
   Plus,
   Upload,
@@ -26,6 +34,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ToWords } from "to-words";
 import { PurchaseListContext } from "../../context/purchaseList/PurchaseListContext";
 import { VendorContext } from "../../context/vendor/VendorContext";
+import { PurchaseOrderContext } from "../../context/purchaseOrder/PurchaseOrderContext";
 
 export const AddPurchase = () => {
   const navigate = useNavigate();
@@ -69,11 +78,14 @@ export const AddPurchase = () => {
 
             {/* Purchases info */}
             <div className="grid grid-cols-1 md:grid-cols-2 space-x-4 space-y-5">
-              <VendorNameInputField
+              <PurchaseOrderNumber
+                purchaseDetails={purchaseDetails}
                 className={"col-span-2"}
+              />
+              <VendorNameInputField
+                className={"col-span-1"}
                 purchaseDetails={purchaseDetails}
               />
-              <PurchaseOrderNumber purchaseDetails={purchaseDetails} />
               <InvoiceNumber purchaseDetails={purchaseDetails} />
               <SelectStatusInputField purchaseDetails={purchaseDetails} />
               <PurchaseDateInputField purchaseDetails={purchaseDetails} />
@@ -127,9 +139,96 @@ export const AddPurchase = () => {
   );
 };
 
-const PurchaseOrderNumber = ({ purchaseDetails }) => {
+const PurchaseOrderNumber = ({ purchaseDetails, className }) => {
   const [orderNo, setorderNo] = useState(purchaseDetails?.po_number || "");
   const { createPurchaseListFormDispatch } = useContext(PurchaseListContext);
+  const { getPurchaseOrderList, purchaseOrderList } =
+    useContext(PurchaseOrderContext);
+  const [isLoading, setisLoading] = useState(false);
+  const [isDropdownOpen, setisDropdownOpen] = useState(false);
+  const [query, setquery] = useState("");
+
+  const dropDownRef = useRef();
+  const containerRef = useRef();
+
+  const handelSelectPOnumber = useCallback(
+    (item) => {
+      if (!item) return;
+      console.log(item.list_items);
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.list_items,
+        field: "listItems",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.po_number,
+        field: "poNumber",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.vendor_id,
+        field: "vendorId",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.contact_no,
+        field: "contactNo",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.email,
+        field: "email",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.vendor_name,
+        field: "vendorName",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.gst_number,
+        field: "gstNumber",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.vendor_pan_number,
+        field: "panNumber",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.sub_total_amount,
+        field: "subtotalAmount",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.discount_amount,
+        field: "discountAmount",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.tds_amount,
+        field: "tdsAmount",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.tds_reason,
+        field: "tdsReason",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.adjustment_amount,
+        field: "adjustmentAmount",
+      });
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        value: item.total_amount,
+        field: "totalAmount",
+      });
+    },
+    [createPurchaseListFormDispatch]
+  );
+
   useEffect(() => {
     createPurchaseListFormDispatch({
       type: "UPDATE_FIELD",
@@ -138,34 +237,229 @@ const PurchaseOrderNumber = ({ purchaseDetails }) => {
     });
   }, [orderNo]);
 
+  const filteredData = useMemo(() => {
+    if (!purchaseOrderList) return;
+    if (!query)
+      return purchaseOrderList.filter((item) => {
+        return item.vendor_name;
+      });
+    return (purchaseOrderList || []).filter((item) => {
+      return item.po_number.toLowerCase().includes(query);
+    });
+  }, [query, purchaseOrderList]);
+
+  useEffect(() => {
+    getPurchaseOrderList(setisLoading);
+  }, []);
+
+  useEffect(() => {
+    const handelClickOutside = (e) => {
+      if (
+        containerRef.current &&
+        dropDownRef.current &&
+        !containerRef.current.contains(e.target) &&
+        !dropDownRef.current.contains(e.target)
+      ) {
+        setisDropdownOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handelClickOutside);
+
+    return () => {
+      window.removeEventListener("pointerdown", handelClickOutside);
+    };
+  }, [containerRef.current, dropDownRef.current]);
+
+  useEffect(() => {
+    if (!purchaseDetails) return;
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.po_number,
+      field: "poNumber",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.vendor_id,
+      field: "vendorId",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.contact_no,
+      field: "contactNo",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.email,
+      field: "email",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.vendor_name,
+      field: "vendorName",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.gst_number,
+      field: "gstNumber",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.pan_number,
+      field: "panNumber",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.subtotal_amount,
+      field: "subtotalAmount",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.discount_amount,
+      field: "discountAmount",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.tds_amount,
+      field: "tdsAmount",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.tds_reason,
+      field: "tdsReason",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.adjustment_amount,
+      field: "adjustmentAmount",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseDetails.total_amount,
+      field: "totalAmount",
+    });
+  }, [purchaseDetails]);
+
+  console.log(filteredData);
   return (
-    <div>
-      <InputField
-        value={orderNo}
-        setvalue={setorderNo}
-        label={"Purchase Order no"}
-        placeholder={"Enter purchase Order no"}
-      />
+    <div
+      className={` relative ${className} ${
+        purchaseDetails ? "pointer-events-none" : ""
+      }`}
+    >
+      <label className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal mb-1">
+        Purchase Order no <span className=" text-red-600 ">*</span>
+      </label>
+
+      <>
+        {/* input area  */}
+        <div
+          ref={containerRef}
+          className="rounded-xl border-[#0000001A] border-[1.5px] px-4
+                py-3 flex items-center"
+        >
+          <input
+            autoComplete
+            required
+            readOnly
+            onClick={() => {
+              setisDropdownOpen(!isDropdownOpen);
+            }}
+            tabIndex={0}
+            placeholder={"Select Purchase order ID"}
+            value={orderNo}
+            className={`w-full relative items-center outline-none 2xl:text-lg xl:text-base 
+                lg:text-sm text-xs font-normal placeholder:text-[#00000080]
+                text-[#343434] cursor-default `}
+          />
+          <button
+            aria-label="toggle drop down"
+            className=" outline-none cursor-pointer"
+            onClick={() => {
+              setisDropdownOpen(!isDropdownOpen);
+            }}
+          >
+            <ChevronDown
+              className={`w-5 h-5 text-[#000000B2] transition-transform ${
+                isDropdownOpen ? "-rotate-180" : ""
+              } `}
+            />
+          </button>
+        </div>
+
+        {/* dropdown purchase order list  */}
+        <div
+          ref={dropDownRef}
+          className={`absolute top-[105%] left-0 w-full ${
+            isDropdownOpen
+              ? `overflow-auto border-[1.5px]`
+              : "h-0 overflow-x-hidden border-0 "
+          } bg-white z-5 rounded-xl border-[#0000001A]`}
+          style={{ maxHeight: `250px` }}
+        >
+          {isLoading && (
+            <div className=" flex-1 flex justify-center items-center py-8 px-4 min-h-[200px]">
+              <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
+            </div>
+          )}
+
+          {/* search bar  */}
+          <input
+            value={query}
+            onChange={(e) => {
+              setquery(e.target.value);
+            }}
+            type="text"
+            placeholder="Search Purchase order ID"
+            className=" rounded-t-xl rounded-b-md w-full text-sm text-gray-700 px-4 py-3 outline-none bg-gray-200/50 border-1 border-gray-300 "
+          />
+
+          {!isLoading && (
+            <ul className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal placeholder:text-[#00000080] text-[#000000a1]">
+              {[...(filteredData || [])].reverse().map((item, index) => {
+                if (item.list_items[0].item_name) {
+                  return (
+                    <li
+                      tabIndex={0}
+                      key={index}
+                      onClick={(e) => {
+                        console.log(item.list_items);
+                        setorderNo(item.po_number);
+                        handelSelectPOnumber(item);
+
+                        setisDropdownOpen(false);
+                      }}
+                      className="px-4 py-3 hover:bg-gray-100 cursor-pointer"
+                    >
+                      {item.po_number}{" "}
+                    </li>
+                  );
+                }
+              })}
+            </ul>
+          )}
+        </div>
+      </>
     </div>
   );
 };
 
 const InvoiceNumber = ({ purchaseDetails }) => {
-  const [orderNo, setorderNo] = useState(purchaseDetails?.invoice_no || "");
+  const [invoiceNo, setinvoiceNo] = useState(purchaseDetails?.invoice_no || "");
   const { createPurchaseListFormDispatch } = useContext(PurchaseListContext);
   useEffect(() => {
     createPurchaseListFormDispatch({
       type: "UPDATE_FIELD",
       field: "invoiceNo",
-      value: orderNo,
+      value: invoiceNo || "N/A",
     });
-  }, [orderNo]);
+  }, [invoiceNo]);
   return (
     <div>
       <InputField
-        value={orderNo}
-        setvalue={setorderNo}
-        label={"Invoice no"}
+        value={invoiceNo}
+        setvalue={setinvoiceNo}
+        label={"Invoice no (optional)"}
         placeholder={"Enter invoice no"}
       />
     </div>
@@ -230,10 +524,12 @@ const ItemDetails = ({ purchaseDetails }) => {
     hsn_code: "",
   };
 
+  const { createPurchaseListForm, createPurchaseListFormDispatch } =
+    useContext(PurchaseListContext);
   const [items, setItems] = useState(
-    purchaseDetails?.list_items || [blankItem]
+    purchaseDetails?.list_items ||
+      createPurchaseListForm.listItems || [blankItem]
   );
-  const { createPurchaseListFormDispatch } = useContext(PurchaseListContext);
 
   // changes fields for particular item row
   const handleChange = (index, field, value) => {
@@ -298,8 +594,12 @@ const ItemDetails = ({ purchaseDetails }) => {
 
   // reset state value when no purchase data
   useEffect(() => {
-    if (!purchaseDetails) setItems([blankItem]);
+    if (!purchaseDetails) return;
   }, [purchaseDetails]);
+
+  useEffect(() => {
+    setItems(createPurchaseListForm?.listItems || []);
+  }, [createPurchaseListForm]);
 
   //first set all item details to create purchase form
   useEffect(() => {
@@ -312,6 +612,8 @@ const ItemDetails = ({ purchaseDetails }) => {
     }
   }, []);
 
+  console.log(items, createPurchaseListForm?.listItems);
+
   return (
     <>
       {items.map((item, index) => {
@@ -321,6 +623,7 @@ const ItemDetails = ({ purchaseDetails }) => {
             <div className=" grid grid-cols-12 space-x-2 space-y-4 mb-2">
               <div className=" overflow-x-auto col-span-6">
                 <InputField
+                  required={true}
                   autoComplete="off"
                   value={item.item_description}
                   setvalue={(val) => {
@@ -333,6 +636,7 @@ const ItemDetails = ({ purchaseDetails }) => {
               </div>
               <div className=" overflow-x-auto col-span-3">
                 <InputField
+                  required={true}
                   autoComplete="off"
                   padding={4}
                   value={item.hsn_code}
@@ -346,6 +650,7 @@ const ItemDetails = ({ purchaseDetails }) => {
               </div>
               <div className=" overflow-x-auto col-span-3">
                 <InputField
+                  required={true}
                   autoComplete="off"
                   padding={2}
                   value={item.unit_price}
@@ -361,6 +666,7 @@ const ItemDetails = ({ purchaseDetails }) => {
               </div>
               <div className=" overflow-x-auto col-span-3">
                 <InputField
+                  required={true}
                   autoComplete="off"
                   value={item.quantity}
                   setvalue={(val) => handleChange(index, "quantity", val)}
@@ -371,6 +677,7 @@ const ItemDetails = ({ purchaseDetails }) => {
               </div>
               <div className=" overflow-x-auto col-span-3">
                 <InputField
+                  required={true}
                   autoComplete="off"
                   max={100}
                   min={0}
@@ -383,6 +690,7 @@ const ItemDetails = ({ purchaseDetails }) => {
               </div>
               <div className=" overflow-x-auto col-span-3">
                 <InputField
+                  required={true}
                   autoComplete="off"
                   max={100}
                   min={0}
@@ -395,6 +703,7 @@ const ItemDetails = ({ purchaseDetails }) => {
               </div>
               <div className=" overflow-x-auto col-span-3">
                 <InputField
+                  required={true}
                   autoComplete="off"
                   padding={2}
                   readOnly={true}
@@ -410,7 +719,7 @@ const ItemDetails = ({ purchaseDetails }) => {
 
             {/* Action Buttons */}
             <div className="flex gap-4 mb-6 w-full">
-              {isLast && (
+              {/* {isLast && (
                 <button
                   tabIndex={0}
                   onClick={addRow}
@@ -421,7 +730,7 @@ const ItemDetails = ({ purchaseDetails }) => {
                   </div>
                   Add new row
                 </button>
-              )}
+              )} */}
               {items.length > 1 && (
                 <button
                   tabIndex={0}
@@ -460,7 +769,7 @@ const AdditionalNotes = ({ className, purchaseDetails }) => {
     createPurchaseListFormDispatch({
       type: "UPDATE_FIELD",
       field: "notes",
-      value: notes,
+      value: notes || "N/A",
     });
   }, [notes]);
   return (
@@ -469,7 +778,7 @@ const AdditionalNotes = ({ className, purchaseDetails }) => {
         htmlFor="add-purchase-additional-notes"
         className="2xl:text-lg xl:text-base lg:text-sm md:text-xs font-normal mb-1"
       >
-        Notes*
+        Notes
       </label>
       <textarea
         value={notes}
@@ -488,73 +797,28 @@ const AdditionalNotes = ({ className, purchaseDetails }) => {
 };
 
 const VendorNameInputField = ({ className, purchaseDetails }) => {
-  const [vendor, setvendor] = useState({
-    vendor_id: purchaseDetails?.vendor_id || "",
-    vendor_name: purchaseDetails?.vendor_name || "",
-    email: purchaseDetails?.email || "",
-    contact_no: purchaseDetails?.contact_no || "",
-    gst_number: purchaseDetails?.gst_number || "",
-    pan_number: purchaseDetails?.pan_number || "",
-  });
+  const { createPurchaseListForm } = useContext(PurchaseListContext);
+  const [vendorName, setvendorName] = useState("");
   const { createPurchaseListFormDispatch } = useContext(PurchaseListContext);
   const [isLoading, setisLoading] = useState(true);
   const navigate = useNavigate();
   const { AllVendorList, getAllVendors } = useContext(VendorContext);
 
   useEffect(() => {
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "vendorId",
-      value: vendor?.vendor_id,
-    });
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "vendorName",
-      value: vendor?.vendor_name,
-    });
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "email",
-      value: vendor?.email,
-    });
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "contactNo",
-      value: vendor?.contact_no,
-    });
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "gstNumber",
-      value: vendor?.gst_number,
-    });
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "panNumber",
-      value: vendor?.pan_number,
-    });
-  }, [vendor]);
+    setvendorName(createPurchaseListForm?.vendorName || "");
+  }, [createPurchaseListForm]);
 
-  // get all customer list
-  useEffect(() => {
-    getAllVendors(setisLoading);
-  }, []);
   return (
     <>
       <div className={`flex flex-col overflow-y-visible relative ${className}`}>
         <InputField
-          value={vendor.vendor_name}
-          setvalue={setvendor}
+          required={true}
+          value={vendorName}
+          setvalue={setvendorName}
           readOnly={true}
           isLoading={isLoading}
           label={"Vendor Name"}
           placeholder={"Select or Create a vendor"}
-          hasDropDown={true}
-          dropDownData={AllVendorList || []}
-          dropDownType="usersData"
-          addnew={"vendor"}
-          onClickAddNew={() => {
-            navigate("/vendor/addVendors/new");
-          }}
         />
       </div>
     </>
@@ -562,10 +826,10 @@ const VendorNameInputField = ({ className, purchaseDetails }) => {
 };
 
 const VendorEmailInputField = () => {
-  const [vendorEmail, setvendorEmail] = useState("");
   const { createPurchaseListForm } = useContext(PurchaseListContext);
+  const [vendorEmail, setvendorEmail] = useState("");
   useEffect(() => {
-    setvendorEmail(createPurchaseListForm?.email);
+    setvendorEmail(createPurchaseListForm?.email || "");
   }, [createPurchaseListForm]);
 
   return (
@@ -575,7 +839,7 @@ const VendorEmailInputField = () => {
           readOnly={true}
           value={vendorEmail}
           setvalue={setvendorEmail}
-          label={"Vendor email address*"}
+          label={"Vendor email address"}
           required={true}
           placeholder={"Enter email"}
           inputType={"email"}
@@ -586,10 +850,10 @@ const VendorEmailInputField = () => {
 };
 
 const VendorMobileInputField = () => {
-  const [vendoreMobile, setvendoreMobile] = useState("");
   const { createPurchaseListForm } = useContext(PurchaseListContext);
+  const [vendoreMobile, setvendoreMobile] = useState("");
   useEffect(() => {
-    setvendoreMobile(createPurchaseListForm?.contactNo);
+    setvendoreMobile(createPurchaseListForm?.contactNo || "");
   }, [createPurchaseListForm]);
   return (
     <>
@@ -599,7 +863,7 @@ const VendorMobileInputField = () => {
           maxLength={10}
           value={vendoreMobile}
           setvalue={setvendoreMobile}
-          label={"Vendor phone number*"}
+          label={"Vendor phone number"}
           placeholder={"Enter mobile no."}
           inputType={"tel"}
           required={true}
@@ -626,7 +890,7 @@ const SelectStatusInputField = ({ purchaseDetails }) => {
           value={status}
           setvalue={setstatus}
           required={true}
-          label={"Status*"}
+          label={"Status"}
           placeholder={"Select status"}
           hasDropDown={true}
           dropDownData={StatusFieldsDropDown}
@@ -655,7 +919,7 @@ const PurchaseDateInputField = ({ purchaseDetails }) => {
           value={date}
           setvalue={setdate}
           required={true}
-          label={"Purchase Date*"}
+          label={"Purchase Date"}
           placeholder={"dd-mm-yyyy"}
           inputType="date"
           icon={<CalendarDays className="w-4 h-4 text-gray-600" />}
@@ -666,16 +930,17 @@ const PurchaseDateInputField = ({ purchaseDetails }) => {
 };
 
 const GSTNumberInputField = () => {
-  const [gstNumber, setgstNumber] = useState("");
   const { createPurchaseListForm } = useContext(PurchaseListContext);
+  const [gstNumber, setgstNumber] = useState("");
   useEffect(() => {
-    setgstNumber(createPurchaseListForm?.gstNumber);
+    setgstNumber(createPurchaseListForm?.gstNumber || "");
   }, [createPurchaseListForm]);
   return (
     <>
       <div className="flex flex-col overflow-y-visible relative">
         <InputField
           readOnly={true}
+          required={true}
           value={gstNumber}
           setvalue={setgstNumber}
           label={"GSTIN Number"}
@@ -686,16 +951,18 @@ const GSTNumberInputField = () => {
   );
 };
 
-const PANNumberInputField = () => {
-  const [pan, setpan] = useState("");
+const PANNumberInputField = ({ purchaseDetails }) => {
+  const [pan, setpan] = useState(purchaseDetails?.pan_number || "");
   const { createPurchaseListForm } = useContext(PurchaseListContext);
   useEffect(() => {
-    setpan(createPurchaseListForm?.panNumber);
+    setpan(createPurchaseListForm?.panNumber || "");
   }, [createPurchaseListForm]);
+
   return (
     <>
       <div className="flex flex-col overflow-y-visible relative">
         <InputField
+          required={true}
           readOnly={true}
           value={pan}
           setvalue={setpan}
@@ -709,12 +976,26 @@ const PANNumberInputField = () => {
 
 const UploadInvoice = ({ purchaseDetails }) => {
   const [files, setfiles] = useState(
-    purchaseDetails?.attachments && purchaseDetails?.attachments[0]
+    purchaseDetails?.attachments?.length > 0 &&
+      purchaseDetails?.attachments[0]?.related_doc_url != "N/A"
       ? purchaseDetails?.attachments
       : []
   );
   const { createPurchaseListFormDispatch } = useContext(PurchaseListContext);
   useEffect(() => {
+    if (!files || files.length == 0) {
+      createPurchaseListFormDispatch({
+        type: "UPDATE_FIELD",
+        field: "attachments",
+        value: [
+          {
+            related_doc_name: "N/A",
+            related_doc_url: "N/A",
+          },
+        ],
+      });
+      return;
+    }
     createPurchaseListFormDispatch({
       type: "UPDATE_FIELD",
       field: "attachments",
@@ -728,6 +1009,8 @@ const UploadInvoice = ({ purchaseDetails }) => {
       }),
     });
   }, [files]);
+
+  console.log(files)
 
   return (
     <div className=" mb-6 outline-[#00000029] rounded-lg px-3 py-6 border-2 border-[#00000033] border-dashed">
@@ -787,7 +1070,9 @@ const UploadInvoice = ({ purchaseDetails }) => {
 
           // Do something with the valid files (e.g. store them in state)
           console.log("Valid files:", validFiles);
-          setfiles((prev) => [...prev, ...validFiles]);
+          setfiles((prev) => {
+            return [...prev, ...validFiles];
+          });
 
           // Clear the input to allow re-uploading the same files
           e.target.value = "";
@@ -805,7 +1090,7 @@ const SubTotal = ({ className, purchaseDetails }) => {
     createPurchaseListForm?.subtotalAmount || 0
   );
   const [discount, setdiscount] = useState(
-    purchaseDetails?.discount_amount || 0
+    Number(purchaseDetails?.discount_amount || "0")
   );
   const [isAdjustment, setisAdjustment] = useState(
     purchaseDetails?.adjustmentAmount?.toString().toLowerCase() === "true"
@@ -813,9 +1098,10 @@ const SubTotal = ({ className, purchaseDetails }) => {
       : false
   );
   const [tds, settds] = useState({
-    value: purchaseDetails?.tds_amount || "",
+    value: purchaseDetails?.tds_amount || "0%",
     name: purchaseDetails?.tds_reason || "N/A",
   });
+  const [isTdsEnable, setisTdsEnable] = useState(true);
   const [grandTotal, setgrandTotal] = useState(
     purchaseDetails?.total_amount || 0.0
   );
@@ -834,74 +1120,22 @@ const SubTotal = ({ className, purchaseDetails }) => {
   });
 
   useEffect(() => {
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "adjustmentAmount",
-      value: isAdjustment,
-    });
-  }, [isAdjustment]);
-
-  // calculate total when discount changes
-  useEffect(() => {
-    if (!tds.value) return;
-    const tax = Number(tds.value.split("%")[0]);
-    //update states
-    setgrandTotal(
-      ((subtotal * (100 - discount) * (100 + tax)) / 10000).toFixed(2)
-    );
-  }, [discount, tds, discount]);
-
-  useEffect(() => {
     //calculate subtotal
-    setsubtotal(
-      createPurchaseListForm?.listItems.reduce((acc, item) => {
-        return acc + parseFloat(item.gross_amount || 0);
-      }, 0) || 0
-    );
+    setsubtotal(createPurchaseListForm.subtotalAmount);
+    setdiscount(createPurchaseListForm.discountAmount);
+    setisAdjustment(createPurchaseListForm.adjustmentAmount);
+    settds({
+      value: createPurchaseListForm?.tdsAmount || "0%",
+      name: createPurchaseListForm?.tdsReason || "N/A",
+    });
+    setgrandTotal(createPurchaseListForm.totalAmount);
   }, [createPurchaseListForm]);
 
   useEffect(() => {
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "discountAmount",
-      value: discount,
-    });
     setdiscountAmount(((subtotal * discount) / 100).toFixed(2));
   }, [discount, subtotal]);
 
   useEffect(() => {
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "subtotalAmount",
-      value: subtotal,
-    });
-    if (!tds) return;
-    const tax = Number(tds.value.split("%")[0]);
-    //update states
-    setgrandTotal(
-      ((subtotal * (100 - discount) * (100 + tax)) / 10000).toFixed(2)
-    );
-  }, [subtotal, discount, tds]);
-
-  useEffect(() => {
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "totalAmount",
-      value: grandTotal,
-    });
-  }, [grandTotal]);
-
-  useEffect(() => {
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "tdsAmount",
-      value: tds.value,
-    });
-    createPurchaseListFormDispatch({
-      type: "UPDATE_FIELD",
-      field: "tdsReason",
-      value: tds.name || "N/A",
-    });
     const tax = Number(tds.value.split("%")[0]);
     settaxableAmount(((subtotal * (100 - discount) * tax) / 10000).toFixed(2));
   }, [tds, subtotal, discount]);
@@ -915,7 +1149,7 @@ const SubTotal = ({ className, purchaseDetails }) => {
         {/* Subtotal */}
         <div className="text-[#4A4A4A] flex justify-between items-center mb-4 2xl:text-lg xl:text-base md:text-sm">
           <span className="font-medium ">Sub Total</span>
-          <span className="">{subtotal}</span>
+          <span className="">{Number(subtotal).toFixed(2)}</span>
         </div>
 
         {/* Discount */}
@@ -927,6 +1161,7 @@ const SubTotal = ({ className, purchaseDetails }) => {
             <input
               id="discount"
               type="number"
+              readOnly
               placeholder={0}
               value={discount}
               onChange={(e) => {
@@ -942,20 +1177,31 @@ const SubTotal = ({ className, purchaseDetails }) => {
         {/* Tax Type + Dropdown */}
         <div className="flex items-center justify-between text-[#4A4A4A] gap-3 mb-4">
           {/* Radio buttons */}
-          <div className="flex items-center gap-4">
-            <label className="inline-flex items-center gap-1 cursor-pointer">
-              <input
-                type="radio"
-                name="taxType"
-                defaultChecked={true}
-                className="accent-[#2543B1]"
+          <div className="flex items-center gap-4 pointer-events-none">
+            <label
+              htmlFor="toggle tds"
+              className=" md:text-sm text-xs font-medium flex items-center gap-2 cursor-pointer select-none text-[#4A4A4A]"
+            >
+              <div
+                className={` border-4 w-3.5 2xl:w-5 h-3.5 2xl:h-5 rounded-full transition ${
+                  isTdsEnable ? "border-[#2543B1]" : "border-[#777777]"
+                }`}
               />
-              <span className="text-sm font-medium">TDS</span>
+              TDS
             </label>
+            <input
+              id="toggle tds"
+              type="checkbox"
+              value={isTdsEnable}
+              onChange={() => {
+                setisTdsEnable(!isTdsEnable);
+              }}
+              className=" cursor-pointer hidden"
+            />
           </div>
 
           {/* Tax Dropdown */}
-          <TaxDropdown value={tds.value} setvalue={settds} />
+          <TaxDropdown value={tds.value} setvalue={settds} isDisabled={true} />
 
           {/* Negative Tax Value */}
           <div className="text-gray-500 text-sm w-12 text-right">
@@ -969,7 +1215,7 @@ const SubTotal = ({ className, purchaseDetails }) => {
         <div className="flex justify-between  items-center 2xl:text-2xl xl:text-xl lg:text-lg md:text-base font-medium text-[#333333]">
           <div className=" flex items-center gap-4">
             <span>Total</span>
-            <div className=" flex items-center gap-2 cursor-pointer">
+            <div className=" flex items-center gap-2 pointer-events-none">
               <label
                 htmlFor="toggle adjustment"
                 className=" text-sm font-medium flex items-center gap-2 cursor-pointer select-none text-[#4A4A4A]"
@@ -992,17 +1238,22 @@ const SubTotal = ({ className, purchaseDetails }) => {
               />
             </div>
           </div>
-          <span>{grandTotal}</span>
+          <span>
+            {isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal}
+          </span>
         </div>
         <p className=" text-end font-medium 2xl:text-xl xl:text-lg lg:text-base text-xs text-[#606060] ">
-          {toWords.convert(Number(grandTotal))} Only
+          {toWords.convert(
+            Number(isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal)
+          )}{" "}
+          Only
         </p>
       </div>
     </>
   );
 };
 
-const TaxDropdown = ({ value, setvalue }) => {
+const TaxDropdown = ({ value, setvalue, isDisabled }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState(-1);
   const dropdownRef = useRef(null);
@@ -1027,14 +1278,21 @@ const TaxDropdown = ({ value, setvalue }) => {
   }, []);
 
   return (
-    <div ref={dropdownRef} className="relative mx-auto w-full max-w-[200px]">
+    <div
+      ref={dropdownRef}
+      className={`relative mx-auto w-full max-w-[200px] ${
+        isDisabled ? "pointer-events-none" : ""
+      }`}
+    >
       <motion.div
         className="relative"
         initial={false}
         animate={isOpen ? "open" : "closed"}
       >
         <motion.button
-          className={`w-full px-2 py-2 cursor-pointer bg-white border rounded-md lg:text-sm text-xs text-gray-700 flex items-center justify-between border-gray-400`}
+          className={`w-full px-2 py-2 ${
+            isDisabled ? "bg-gray-500/30" : "bg-white"
+          } cursor-pointer  border rounded-md lg:text-sm text-xs text-gray-700 flex items-center justify-between border-gray-400`}
           whileHover={{
             borderColor: "#9CA3AF",
             boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",

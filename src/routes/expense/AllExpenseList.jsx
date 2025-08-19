@@ -26,7 +26,6 @@ import { InputField } from "../../utils/ui/InputField";
 import { motion, AnimatePresence } from "framer-motion";
 import { exportToExcel } from "../../utils/downloadExcel";
 
-
 export const AllExpenseList = () => {
   const [tempExpenseList, settempExpenseList] = useState(null);
   const [isLoading, setisLoading] = useState(true);
@@ -136,7 +135,7 @@ const ShowAllExpenses = ({ AllExpense, getAllExpense, setisLoading }) => {
       {AllExpense && (
         <div div className=" overflow-auto flex-1 min-h-[400px]">
           <table className="min-w-full text-left ">
-            <thead className="text-sm lg:text-base xl:text-lg 2xl:text-xl text-[#4A4A4A] border-b-[#0000001A] border-b-[1px]  ">
+            <thead className="md:text-[10px] lg:text-sm xl:text-base 2xl:text-lg text-[#4A4A4A] border-b-[#0000001A] border-b-[1px]  ">
               <tr className="">
                 <th
                   scope="col"
@@ -177,7 +176,7 @@ const ShowAllExpenses = ({ AllExpense, getAllExpense, setisLoading }) => {
               </tr>
             </thead>
             <tbody>
-              {AllExpense.map((expense, idx) => {
+              {[...(AllExpense || [])].reverse().map((expense, idx) => {
                 return (
                   <tr
                     key={`${idx}`}
@@ -186,29 +185,29 @@ const ShowAllExpenses = ({ AllExpense, getAllExpense, setisLoading }) => {
                         `/expense/expenseDetails/${expense?.expense_id}`
                       );
                     }}
-                    className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
+                    className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] md:text-[10px] lg:text-sm xl:text-base 2xl:text-lg"
                   >
                     <td className=" w-fit mr-6 min-w-[150px] flex items-center px-4 py-4  font-medium">
                       <img
                         alt="profile image"
                         loading="lazy"
                         src={expense.created_by_profile_icon_url}
-                        className="text-xs w-8 lg:w-10 h-8 lg:h-10 object-cover rounded-full mr-2"
+                        className="w-8 lg:w-10 h-8 lg:h-10 object-cover rounded-full mr-2 text-xs"
                       />
                       <div className=" h-full ">
-                        <p className=" text-[#4A4A4A] font-normal 2xl:text-xl xl:text-lg lg:text-base text-sm ">
+                        <p className=" text-[#4A4A4A] font-normal  ">
                           {expense.created_by_member_name}
                         </p>
-                        <p className=" text-[#8E8E8E] font-normal xl:text-base lg:text-sm text-xs ">
+                        <p className=" text-[#8E8E8E] font-normal ">
                           {expense.email_created_by}
                         </p>
                       </div>
                     </td>
                     <td className=" whitespace-nowrap px-4 py-4 text-[#4A4A4A] font-medium">
-                      <p className="2xl:text-xl xl:text-lg lg:text-base text-sm">
+                      <p className=" ">
                         {expense.expenseTitle || expense.title}
                       </p>
-                      <p className=" text-[#777777] font-medium xl:text-base lg:text-sm text-xs ">
+                      <p className=" text-[#777777] font-medium  ">
                         {expense.category}
                       </p>
                     </td>
@@ -746,10 +745,15 @@ const StatusCell = ({ expense, getAllExpense, setisLoading }) => {
               </button>
             </>
           ) : (
-            <Edit
-              className="w-4 h-4 cursor-pointer text-gray-500 hover:text-black"
-              onClick={() => setIsEditing(true)}
-            />
+            !(
+              expense.expense_status?.toLowerCase() == "approved" ||
+              expense.expense_status?.toLowerCase() == "rejected"
+            ) && (
+              <Edit
+                className="w-4 h-4 cursor-pointer text-gray-500 hover:text-black"
+                onClick={() => setIsEditing(true)}
+              />
+            )
           )}
         </div>
       ) : (
@@ -878,10 +882,12 @@ const PaidOrUnpaidCell = ({ expense, getAllExpense, setisLoading }) => {
               </button>
             </>
           ) : (
-            <Edit
-              className="w-4 h-4 cursor-pointer text-gray-500 hover:text-black"
-              onClick={() => setIsEditing(true)}
-            />
+            !(expense.paid?.toLowerCase() == "paid") && (
+              <Edit
+                className="w-4 h-4 cursor-pointer text-gray-500 hover:text-black"
+                onClick={() => setIsEditing(true)}
+              />
+            )
           )}
         </div>
       ) : (

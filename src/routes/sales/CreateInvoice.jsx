@@ -1,4 +1,11 @@
-import { useState, useEffect, useRef, useContext, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useContext,
+  useCallback,
+  useMemo,
+} from "react";
 // import { UploadInvoice } from "./UploadInvoice";
 import {
   Calendar,
@@ -27,10 +34,14 @@ import { CompanyContext } from "../../context/company/CompanyContext";
 import { CustomerContext } from "../../context/customer/customerContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { ToWords } from "to-words";
-import { useNavigate } from "react-router-dom";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
-import { saveAs } from "file-saver";
+import { useLocation, useNavigate } from "react-router-dom";
 import { InvoiceContext } from "../../context/invoiceContext/InvoiceContext";
+import { downloadInvoiceAsPDF } from "../../utils/downloadInvoiceDetails";
+import { SalesContext } from "../../context/sales/salesContext";
+import {
+  PurchaseOrderContext,
+  PurchaseOrderContextProvider,
+} from "../../context/purchaseOrder/PurchaseOrderContext";
 
 export const CreateInvoice = () => {
   const [activeTab, setActiveTab] = useState("create");
@@ -50,7 +61,7 @@ export const CreateInvoice = () => {
         </div>
 
         {/* Tabs */}
-        <div className=" hidden mb-4 md:flex rounded-lg bg-[#0033661A] overflow-hidden xl:py-2 xl:px-3 p-1 w-full">
+        {/* <div className=" hidden mb-4 md:flex rounded-lg bg-[#0033661A] overflow-hidden xl:py-2 xl:px-3 p-1 w-full">
           <button
             tabIndex={0}
             className={`w-1/2 cursor-pointer py-2 rounded-lg 2xl:text-xl xl:text-lg lg:text-base md:text-sm font-medium transition-all 
@@ -75,260 +86,64 @@ export const CreateInvoice = () => {
           >
             Upload existing invoice
           </button>
-        </div>
+        </div> */}
 
         {/* main content */}
         {activeTab === "create" && <CreateInvoiceForm activeTab={activeTab} />}
-        {activeTab === "upload" && <UploadInvoice activeTab={activeTab} />}
+        {/* {activeTab === "upload" && <UploadInvoice activeTab={activeTab} />} */}
       </div>
     </>
   );
 };
+
 const CreateInvoiceForm = ({ activeTab }) => {
   const [isLoading, setisLoading] = useState(false);
   const { createInvoice, createInvoiceForm } = useContext(InvoiceContext);
   const { companyDetails } = useContext(CompanyContext);
+  const [previousDetails, setpreviousDetails] = useState(-1);
+  const { getSaleDetails, setsaleDetails } = useContext(SalesContext);
+  const [isSalesDetailsLoading, setisSalesDetailsLoading] = useState(true);
+  const [salesId, setsalesId] = useState(null);
 
-  const wrapAndDrawText = useCallback(
-    (page, text, x, yStart, maxWidth, fontSize, fontObj) => {
-      const lines = [];
-      const words = text?.split(" ") || [];
-      let line = "";
-      for (const word of words) {
-        const testLine = line + word + " ";
-        const testWidth = fontObj.widthOfTextAtSize(testLine, fontSize);
-        if (testWidth > maxWidth) {
-          lines.push(line.trim());
-          line = word + " ";
-        } else {
-          line = testLine;
-        }
-      }
-      if (line) lines.push(line.trim());
+  useEffect(() => {
+    const temp = new URLSearchParams(window.location.search).get("salesId");
+    setsalesId(temp);
+    if (!temp) {
+      setsaleDetails(null);
+      setisSalesDetailsLoading(false);
+    } else getSaleDetails(temp, setisSalesDetailsLoading);
+  }, []);
 
-      lines.forEach((lineText, idx) => {
-        page.drawText(lineText, {
-          x,
-          y: yStart - idx * (fontSize + 2),
-          size: fontSize,
-          font: fontObj,
-          color: rgb(0, 0, 0),
-        });
-      });
-      return lines.length;
-    },
-    []
-  );
-
-  //download invoice
-  const downloadPDF = useCallback(
-    async (setisLoading) => {
-      try {
-        setisLoading(true);
-        const pdfDoc = await PDFDocument.create();
-        const page = pdfDoc.addPage([595, 842]); // A4
-        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-        const drawText = (text, x, y, size = 10, isBold = false) => {
-          page.drawText(text, {
-            x,
-            y,
-            size,
-            font: isBold ? boldFont : font,
-            color: rgb(0, 0, 0),
-          });
-        };
-
-        let y = 800;
-        drawText("Invoice Review", 230, y, 18, true);
-
-        // Labels
-        y -= 30;
-        drawText("From:", 40, y, 11, true);
-        drawText("Bill To:", 320, y, 11, true);
-
-        // Addresses
-        y -= 15;
-        const fromText = `${companyDetails?.company_name ?? ""}, ${
-          companyDetails?.company_address ?? ""
-        }`;
-        const billToText = `${
-          createInvoiceForm?.paymentNameList?.[0]
-            ?.bank_account_receivers_name ?? ""
-        }`;
-
-        const leftLineCount = wrapAndDrawText(
-          page,
-          fromText,
-          40,
-          y,
-          250,
-          10,
-          font
-        );
-        const rightLineCount = wrapAndDrawText(
-          page,
-          billToText,
-          320,
-          y,
-          230,
-          10,
-          font
-        );
-
-        y -= Math.max(leftLineCount, rightLineCount) * 12;
-
-        // Dates and GST
-        y -= 10;
-        drawText(`From: ${createInvoiceForm?.invoiceDate}`, 40, y, 11, true);
-        drawText(
-          `Due Date: ${createInvoiceForm?.invoiceDueBy}`,
-          320,
-          y,
-          11,
-          true
-        );
-
-        y -= 20;
-        drawText(`Phone: +91${createInvoiceForm?.contactNo}`, 40, y, 11, true);
-        drawText(`GST: ${createInvoiceForm?.gstNumber}`, 320, y, 11, true);
-
-        // Table headers
-        y -= 35;
-        const headers = [
-          "Description",
-          "Rate",
-          "Qty",
-          "Disc%",
-          "GST%",
-          "Amount",
-        ];
-        const colX = [40, 220, 270, 310, 360, 420];
-        headers.forEach((text, i) => drawText(text, colX[i], y, 10, true));
-
-        y -= 10;
-        page.drawLine({
-          start: { x: 40, y },
-          end: { x: 550, y },
-          thickness: 0.8,
-          color: rgb(0.8, 0.8, 0.8),
-        });
-
-        // Table items
-        const items = createInvoiceForm?.listItems || [];
-        y -= 20;
-        items.forEach((item) => {
-          drawText(item.item_description, colX[0], y);
-          drawText(item.base_amount, colX[1], y);
-          drawText(String(item.quantity), colX[2], y);
-          drawText(`${item.discount}%`, colX[3], y);
-          drawText(`${item.gst_amount}%`, colX[4], y);
-          drawText(
-            `${Number(item.gross_amount).toLocaleString("en-IN", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}`,
-            colX[5],
-            y
-          );
-          y -= 20;
-        });
-
-        // Line after items
-        page.drawLine({
-          start: { x: 40, y: y + 10 },
-          end: { x: 550, y: y + 10 },
-          thickness: 1,
-          color: rgb(0.7, 0.7, 0.7),
-        });
-
-        // Totals
-        y -= 10;
-        drawText("Subtotal:", 40, y, 11, true);
-        drawText(`Rs.${createInvoiceForm?.subtotalAmount}`, 420, y);
-
-        y -= 20;
-        drawText(`Tax(${createInvoiceForm?.tdsAmount}):`, 40, y, 11, true);
-        drawText(
-          `+Rs.${Number(
-            ((Number(createInvoiceForm?.subtotalAmount) || 0) *
-              (100 - Number(createInvoiceForm?.discountAmount)) *
-              (Number(createInvoiceForm?.tdsAmount?.split("%")[0]) || 0)) /
-              10000
-          ).toFixed(2)}`,
-          420,
-          y
-        );
-
-        y -= 20;
-        drawText(
-          `Discount(${createInvoiceForm?.discountAmount}%):`,
-          40,
-          y,
-          11,
-          true
-        );
-        drawText(
-          `-Rs.${Number(
-            ((createInvoiceForm?.subtotalAmount || 0) *
-              (createInvoiceForm?.discountAmount || 0)) /
-              100
-          ).toFixed(2)}`,
-          420,
-          y
-        );
-
-        y -= 25;
-        drawText("Total:", 40, y, 12, true);
-        drawText(`Rs.${createInvoiceForm?.totalAmount}`, 420, y, 12, true);
-
-        page.drawLine({
-          start: { x: 40, y: y - 10 },
-          end: { x: 550, y: y - 10 },
-          thickness: 1,
-          color: rgb(0.7, 0.7, 0.7),
-        });
-
-        // Notes and T&C
-        y -= 40;
-        drawText(`Customer note: ${createInvoiceForm?.notes ?? ""}`, 40, y);
-        y -= 20;
-        drawText(
-          `Terms & Conditions: ${
-            createInvoiceForm?.listToc?.[0]?.terms_of_service ?? ""
-          }`,
-          40,
-          y
-        );
-
-        const pdfBytes = await pdfDoc.save();
-        const blob = new Blob([pdfBytes], { type: "application/pdf" });
-        saveAs(blob, "invoice.pdf");
-      } catch (error) {
-        console.log(error);
-        showToast(error.message || "Download pdf failed", 1);
-      } finally {
-        setisLoading(false);
-      }
-    },
-    [createInvoiceForm, companyDetails]
-  );
+  if (isSalesDetailsLoading) {
+    return (
+      <div className=" flex-1 flex justify-center items-center py-10 px-4 min-h-[300px]">
+        <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
+      </div>
+    );
+  }
 
   return (
     <>
       <div className=" grid lg:grid-cols-2 grid-cols-1 gap-x-2 gap-y-4 mb-4">
-        <CreateInvoiceLeftPart />
-        <CreateInvoiceRightPart handelDownloadInvoice={downloadPDF} />
+        <CreateInvoiceLeftPart
+          previousDetails={previousDetails}
+          salesId={salesId}
+        />
+        <CreateInvoiceRightPart handelDownloadInvoice={downloadInvoiceAsPDF} />
       </div>
       {/* Action Buttons */}
       <div className="flex sm:flex-row flex-col sm:items-center gap-4">
         <button
           disabled={isLoading}
-          onClick={(e) => {
+          onClick={async (e) => {
             try {
-              createInvoice(e, setisLoading, activeTab);
-              downloadPDF(setisLoading);
+              await createInvoice(e, setisLoading, activeTab);
+              // localStorage.removeItem("createInvoiceForm");
+              await downloadInvoiceAsPDF(
+                companyDetails,
+                createInvoiceForm,
+                setisLoading
+              );
             } catch (error) {
               console.log("error");
             }
@@ -349,7 +164,7 @@ const CreateInvoiceForm = ({ activeTab }) => {
   );
 };
 
-const CreateInvoiceLeftPart = () => {
+const CreateInvoiceLeftPart = ({ salesId }) => {
   return (
     <>
       <div className=" 2xl:p-8 xl:p-6 md:p-4 py-4 px-2 2xl:rounded-2xl xl:rounded-xl rounded-lg border-[1.5px] border-[#E8E8E8] ">
@@ -358,19 +173,24 @@ const CreateInvoiceLeftPart = () => {
         </h1>
 
         {/* Invoice info */}
-        <div className=" grid md:grid-cols-2 grid-cols-1 gap-3 space-y-4 mb-4 w-full">
-          <InvoiceNumberInputField className={" col-span-1"} />
-          <InvoiceDateInputField className={" col-span-1"} />
-          <TermsInputField className={" col-span-1"} />
-          <DueDateInputField className={" col-span-1"} />
-          <CustomerNameInputField className={" md:col-span-2 col-span-1"} />
-          <SubjectInputField className={" md:col-span-2 col-span-1"} />
-          <OrderNumberInputField className={" col-span-1"} />
-          <SalesIDInputField className={" col-span-1"} />
-        </div>
+        <PurchaseOrderContextProvider>
+          <div className=" grid md:grid-cols-2 grid-cols-1 gap-3 space-y-4 mb-4 w-full">
+            <SalesIDInputField
+              className={" col-span-2"}
+              hasSalesId={salesId ? true : false}
+            />
+            <InvoiceNumberInputField className={" col-span-1"} />
+            <InvoiceDateInputField className={" col-span-1"} />
+            <TermsInputField className={" col-span-1"} />
+            <DueDateInputField className={" col-span-1"} />
+            <CustomerNameInputField className={" md:col-span-2 col-span-1"} />
+            <SubjectInputField className={" md:col-span-2 col-span-1"} />
+            <OrderNumberInputField className={" col-span-2"} />
+          </div>
 
-        {/* Item Table */}
-        <ItemDetails />
+          {/* Item Table */}
+          <ItemDetails />
+        </PurchaseOrderContextProvider>
 
         {/* Totals Section */}
         <SubTotal className={"mb-6"} />
@@ -393,7 +213,7 @@ const CustomerNotes = ({ className }) => {
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "notes",
-      value: notes,
+      value: notes || "N/A",
     });
   }, [notes]);
 
@@ -424,7 +244,7 @@ const TermsAndConditions = ({ className }) => {
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "listToc",
-      value: [{ terms_of_service: toc }],
+      value: [{ terms_of_service: toc || "N/A" }],
     });
   }, [toc]);
 
@@ -498,10 +318,14 @@ const CreateInvoiceRightPart = ({
             Invoice review
           </h1>
           <button
-          disabled={isDownloading}
+            disabled={isDownloading}
             onClick={async (e) => {
               e.preventDefault();
-              handelDownloadInvoice(setisDownloading);
+              handelDownloadInvoice(
+                companyDetails,
+                createInvoiceForm,
+                setisDownloading
+              );
             }}
             aria-label="download invoice as pdf"
             className="flex disabled:cursor-progress cursor-pointer items-center justify-center gap-2 bg-[#2543B1] text-white px-4 py-3 sm:rounded-xl rounded-lg text-xs md:text-sm lg:text-base xl:text-lg 2xl:text-xl font-medium hover:bg-[#1b34a3] transition"
@@ -538,10 +362,7 @@ const CreateInvoiceRightPart = ({
                   Bill To:
                 </h4>
                 <p className="text-[#777777] font-medium 2xl:text-lg xl:text-base lg:text-sm text-xs  ">
-                  {
-                    createInvoiceForm?.paymentNameList[0]
-                      ?.bank_account_receivers_name
-                  }
+                  {createInvoiceForm?.customerName}
                 </p>
               </div>
             </div>
@@ -762,6 +583,8 @@ const CreateInvoiceRightPart = ({
 };
 
 const ItemDetails = ({ className }) => {
+  const { saleDetails } = useContext(SalesContext);
+  // const { purchaseOrderDetails } = useContext(PurchaseOrderContext);
   const blankItem = {
     item_description: "",
     unit_price: "",
@@ -770,48 +593,52 @@ const ItemDetails = ({ className }) => {
     gst_amount: "",
     discount: "",
     hsn_code: "",
+    item_name: "",
+    base_amount: "",
   };
   const [items, setItems] = useState([blankItem]);
   const { createInvoiceDispatch } = useContext(InvoiceContext);
+  const { pathname } = useLocation();
 
   // changes fields for particular item row
   const handleChange = (index, field, value) => {
     // Dispatch to reducer to update the item field
-    createInvoiceDispatch({
-      type: "UPDATE_ITEM_FIELD",
-      index,
-      field,
-      value,
-    });
+    // createInvoiceDispatch({
+    //   type: "UPDATE_ITEM_FIELD",
+    //   index,
+    //   field,
+    //   value,
+    // });
 
     // Update local items state
     const updatedItems = [...items];
+    console.log(field, value);
     updatedItems[index][field] = value;
     setItems(updatedItems);
 
     // update total amount
     if (
-      items[index].unit_price &&
-      items[index].quantity &&
-      items[index].discount &&
-      items[index].gst_amount
+      updatedItems[index].unit_price &&
+      updatedItems[index].quantity &&
+      updatedItems[index].discount &&
+      updatedItems[index].gst_amount
     ) {
-      const temp = items;
+      const temp = updatedItems;
       temp[index].gross_amount = (
-        (Number(items[index].unit_price) *
-          Number(items[index].quantity) *
-          (100 - Number(items[index].discount)) *
-          (100 + Number(items[index].gst_amount))) /
+        (Number(updatedItems[index].unit_price) *
+          Number(updatedItems[index].quantity) *
+          (100 - Number(updatedItems[index].discount)) *
+          (100 + Number(updatedItems[index].gst_amount))) /
         10000
       ).toFixed(2);
 
-      //update gross amount on create salea form
-      createInvoiceDispatch({
-        type: "UPDATE_ITEM_FIELD",
-        index,
-        field: "gross_amount",
-        value: temp[index].gross_amount,
-      });
+      // //update gross amount on create salea form
+      // createInvoiceDispatch({
+      //   type: "UPDATE_ITEM_FIELD",
+      //   index,
+      //   field: "gross_amount",
+      //   value: temp[index].gross_amount,
+      // });
       setItems(temp);
     }
   };
@@ -819,34 +646,80 @@ const ItemDetails = ({ className }) => {
   // add new row , also add the row to sales reducer
   const addRow = () => {
     setItems([...items, blankItem]);
-    createInvoiceDispatch({
-      type: "ADD_ITEM",
-      item: blankItem,
-    });
+    // createInvoiceDispatch({
+    //   type: "ADD_ITEM",
+    //   item: blankItem,
+    // });
   };
 
   // remove a existing row , also remove the row to sales reducer
   const removeRow = (index) => {
     const updatedItems = items.filter((_, idx) => idx !== index);
     setItems(updatedItems);
-    createInvoiceDispatch({
-      type: "REMOVE_ITEM",
-      index,
-    });
+    // createInvoiceDispatch({
+    //   type: "REMOVE_ITEM",
+    //   index,
+    // });
   };
+
+  useEffect(() => {
+    if (!saleDetails || !saleDetails.list_items) {
+      setItems([blankItem]);
+      return;
+    }
+    console.log("dsficsdnfv");
+    let temp;
+    setItems(saleDetails?.list_items || [blankItem]);
+  }, [saleDetails]);
+
+  useEffect(() => {
+    // items.forEach((item, index) => {
+    //   if (
+    //     item.discount &&
+    //     item.gross_amount &&
+    //     item.gst_amount &&
+    //     item.hsn_code &&
+    //     item.item_description &&
+    //     item.quantity &&
+    //     item.unit_price &&
+    //     item.item_name &&
+    //     item.base_amount
+    //   ) {
+    //     console.log("dviudsfnv");
+    //     createInvoiceDispatch({
+    //       type: "ADD_ITEM",
+    //       item: item,
+    //     });
+    //   }
+    // });
+
+    createInvoiceDispatch({
+      type: "UPDATE_FIELD",
+      value: items,
+      field: "listItems",
+    });
+  }, [items]);
+
+  // reset the create sale form to intial value when not in addSales page
+  useEffect(() => {
+    !pathname.toLowerCase().includes("/sales/createinvoice") &&
+      setItems([blankItem]);
+  }, [pathname]);
+
+  if (!items || !items[0].item_description) return;
 
   return (
     <>
       <div className={`mb-6 ${className}`}>
         <h3 className="text-lg font-semibold text-gray-800 mb-3">Item Table</h3>
         {items.map((item, index) => {
-          const isLast = index === items.length - 1;
-
           return (
             <div key={index} className=" space-y-3 mb-8">
               <div className=" grid md:grid-cols-5 grid-cols-2 gap-3">
-                <div className=" overflow-x-hidden md:col-span-3 col-span-2">
+                <div className=" overflow-x-hidden md:col-span-2 col-span-2">
                   <InputField
+                    required={true}
+                    readOnly={true}
                     autoComplete="off"
                     value={item.item_description}
                     setvalue={(val) => {
@@ -857,23 +730,27 @@ const ItemDetails = ({ className }) => {
                     placeholder={"Enter Item name"}
                   />
                 </div>
-                {/* <div className=" overflow-x-hidden col-span-3">
+                <div className=" overflow-x-hidden col-span-2">
                   <InputField
+                    readOnly={true}
                     autoComplete="off"
-                    value={item.item_description}
+                    required={true}
+                    value={item.hsn_code}
                     setvalue={(val) => {
-                      handleChange(index, "item_name", val);
-                      handleChange(index, "item_description", val);
+                      handleChange(index, "hsn_code", val);
                     }}
-                    label={"Item Details"}
-                    placeholder={"Enter Item name"}
+                    label={"HSN code"}
+                    padding={3}
+                    placeholder={"123456"}
                   />
-                </div> */}
+                </div>
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    readOnly={true}
+                    required={true}
                     autoComplete="off"
                     padding={2}
-                    value={item.unit_price}
+                    value={item.unit_price ? Number(item.unit_price) : ""}
                     setvalue={(val) => {
                       handleChange(index, "unit_price", val);
                       handleChange(index, "base_amount", val);
@@ -884,49 +761,58 @@ const ItemDetails = ({ className }) => {
                     inputType={"rupee"}
                   />
                 </div>
+              </div>
+              <div className=" grid md:grid-cols-4 grid-cols-2 gap-3">
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    readOnly={true}
+                    padding={3}
+                    required={true}
                     autoComplete="off"
-                    padding={2}
-                    value={item.quantity}
+                    value={item.quantity ? Number(item.quantity) : ""}
                     setvalue={(val) => handleChange(index, "quantity", val)}
                     label={"Qnty"}
                     placeholder={"0.00"}
-                    inputType={"number"}
+                    inputType={"num"}
                   />
                 </div>
-              </div>
-              <div className=" grid md:grid-cols-3 grid-cols-2 gap-3">
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    readOnly={true}
+                    padding={3}
+                    required={true}
                     autoComplete="off"
                     max={100}
                     min={0}
-                    value={item.discount}
+                    value={item.discount ? Number(item.discount) : ""}
                     setvalue={(val) => handleChange(index, "discount", val)}
                     label={"Discount %"}
                     placeholder={"0"}
-                    inputType={"number"}
+                    inputType={"num"}
                   />
                 </div>
                 <div className=" overflow-x-hidden col-span-1">
                   <InputField
+                    readOnly={true}
+                    padding={3}
+                    required={true}
                     autoComplete="off"
                     max={100}
                     min={0}
-                    value={item.gst_amount}
+                    value={item.gst_amount ? Number(item.gst_amount) : ""}
                     setvalue={(val) => handleChange(index, "gst_amount", val)}
                     label={"GST %"}
                     placeholder={"0"}
-                    inputType={"number"}
+                    inputType={"num"}
                   />
                 </div>
                 <div className=" overflow-x-hidden md:col-span-1 col-span-2">
                   <InputField
                     readOnly={true}
+                    padding={3}
+                    required={true}
                     autoComplete="off"
-                    padding={2}
-                    value={item.gross_amount}
+                    value={item.gross_amount ? Number(item.gross_amount) : ""}
                     setvalue={(val) => handleChange(index, "gross_amount", val)}
                     label={"Amount"}
                     placeholder={"0.00"}
@@ -938,7 +824,7 @@ const ItemDetails = ({ className }) => {
 
               {/* Action Buttons */}
               <div className="flex gap-4 mb-6 w-full">
-                {isLast && (
+                {/* {isLast && (
                   <button
                     tabIndex={0}
                     onClick={addRow}
@@ -949,7 +835,7 @@ const ItemDetails = ({ className }) => {
                     </div>
                     Add new row
                   </button>
-                )}
+                )} */}
                 {items.length > 1 && (
                   <button
                     tabIndex={0}
@@ -986,6 +872,7 @@ const InvoiceNumberInputField = ({ className }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={invoiceNumber}
           setvalue={setinvoiceNumber}
           label={"Invoice Number"}
@@ -998,31 +885,204 @@ const InvoiceNumberInputField = ({ className }) => {
 
 const OrderNumberInputField = ({ className }) => {
   const [orderNumber, setorderNumber] = useState("");
+  const [isLoading, setisLoading] = useState(false);
+  const [isCustomPOId, setisCustomPOId] = useState(true);
+  const [isDropdownOpen, setisDropdownOpen] = useState(false);
+  const [query, setquery] = useState("");
   const { createInvoiceDispatch } = useContext(InvoiceContext);
+  const { getPurchaseOrderList, purchaseOrderList, setpurchaseOrderDetails } =
+    useContext(PurchaseOrderContext);
+  const containerRef = useRef();
+  const dropDownRef = useRef();
+
+  const filteredData = useMemo(() => {
+    if (!query) return purchaseOrderList;
+    return (purchaseOrderList || []).filter((item) => {
+      console.log(item.po_number);
+      return item.po_number.toLowerCase().includes(query);
+    });
+  }, [query, purchaseOrderList]);
+
   useEffect(() => {
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "orderNumber",
-      value: orderNumber,
+      value: orderNumber ? orderNumber : "N/A",
     });
   }, [orderNumber]);
+
+  useEffect(() => {
+    getPurchaseOrderList(setisLoading);
+  }, []);
+
+  useEffect(() => {
+    const handelClickOutside = (e) => {
+      if (
+        containerRef.current &&
+        dropDownRef.current &&
+        !containerRef.current.contains(e.target) &&
+        !dropDownRef.current.contains(e.target)
+      ) {
+        setisDropdownOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handelClickOutside);
+
+    return () => {
+      window.removeEventListener("pointerdown", handelClickOutside);
+    };
+  }, [containerRef.current, dropDownRef.current]);
+
   return (
     <>
-      <div className={`${className} w-full`}>
-        <InputField
-          value={orderNumber}
-          setvalue={setorderNumber}
-          label={"Order number"}
-          placeholder={"Enter Order number"}
-        />
+      <div
+        className={`flex flex-col overflow-y-visible relative w-full ${className}`}
+      >
+        <label className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal mb-1">
+          Enter Order number(Optional)
+        </label>
+
+        {/* radio buttons for switch saels id type  */}
+
+        {isCustomPOId && (
+          <InputField
+            value={orderNumber}
+            setvalue={setorderNumber}
+            label={"Order number"}
+            hasLabel={false}
+            placeholder={"Enter Order number"}
+          />
+        )}
+
+        {!isCustomPOId && (
+          <>
+            {/* input area  */}
+            <div
+              ref={containerRef}
+              className="rounded-xl border-[#0000001A] border-[1.5px] px-4
+                py-3 flex items-center"
+            >
+              <input
+                autoComplete
+                required
+                readOnly
+                onClick={() => {
+                  setisDropdownOpen(!isDropdownOpen);
+                }}
+                tabIndex={0}
+                placeholder={"Select Sales ID"}
+                value={orderNumber}
+                className={`w-full relative items-center outline-none 2xl:text-lg xl:text-base 
+                lg:text-sm text-xs font-normal placeholder:text-[#00000080]
+                text-[#343434] cursor-default `}
+              />
+              <button
+                aria-label="toggle drop down"
+                className=" outline-none cursor-pointer"
+                onClick={() => {
+                  setisDropdownOpen(!isDropdownOpen);
+                }}
+              >
+                <ChevronDown
+                  className={`w-5 h-5 text-[#000000B2] transition-transform ${
+                    isDropdownOpen ? "-rotate-180" : ""
+                  } `}
+                />
+              </button>
+            </div>
+
+            {/* dropdown sales list  */}
+            {purchaseOrderList && purchaseOrderList.length > 0 && (
+              <div
+                ref={dropDownRef}
+                className={`absolute top-[105%] left-0 w-full ${
+                  isDropdownOpen
+                    ? `  overflow-auto border-[1.5px]`
+                    : "h-0 overflow-x-hidden border-0 "
+                }
+              bg-white z-5 rounded-xl border-[#0000001A]`}
+                style={{ maxHeight: `250px` }}
+              >
+                {isLoading && (
+                  <div className=" flex-1 flex justify-center items-center py-8 px-4 min-h-[200px]">
+                    <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
+                  </div>
+                )}
+
+                {/* search bar  */}
+                <input
+                  value={query}
+                  onChange={(e) => {
+                    setquery(e.target.value);
+                  }}
+                  type="text"
+                  placeholder="Search sales ID"
+                  className=" rounded-t-xl rounded-b-md w-full text-sm text-gray-700 px-4 py-3 outline-none bg-gray-200/50 border-1 border-gray-300 "
+                />
+
+                {!isLoading && (
+                  <ul className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal placeholder:text-[#00000080] text-[#000000a1]">
+                    {filteredData?.map((item, index) => {
+                      if (item.list_items[0].item_name) {
+                        return (
+                          <li
+                            tabIndex={0}
+                            key={index}
+                            onClick={(e) => {
+                              console.log(item.list_items);
+                              setorderNumber(item.po_number);
+                              setpurchaseOrderDetails(item);
+                              setisDropdownOpen(false);
+                            }}
+                            className="px-4 py-3 hover:bg-gray-100 cursor-pointer"
+                          >
+                            {item.po_number}{" "}
+                          </li>
+                        );
+                      }
+                    })}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {/* no data found  */}
+            {(!purchaseOrderList || purchaseOrderList.length == 0) && (
+              <>
+                <p className=" text-base text-gray-600 font-medium">
+                  No data found
+                </p>
+              </>
+            )}
+          </>
+        )}
       </div>
     </>
   );
 };
 
-const SalesIDInputField = ({ className }) => {
+const SalesIDInputField = ({ className, hasSalesId }) => {
+  const [isLoading, setisLoading] = useState(false);
+  const [isCustomSalesId, setisCustomSalesId] = useState(false);
+  const [isDropdownOpen, setisDropdownOpen] = useState(false);
+  const [query, setquery] = useState("");
+  const { createInvoiceDispatch, createInvoiceForm } =
+    useContext(InvoiceContext);
+  const { getAllSales, AllSalesList, setsaleDetails ,saleDetails } =
+    useContext(SalesContext);
   const [salesId, setsalesId] = useState("");
-  const { createInvoiceDispatch } = useContext(InvoiceContext);
+  const dropDownRef = useRef();
+  const containerRef = useRef();
+  const navigate = useNavigate();
+
+  const filteredData = useMemo(() => {
+    if (!query) return AllSalesList;
+    return (AllSalesList || []).filter((item) => {
+      return item.sales_id.toLowerCase().includes(query);
+    });
+  }, [query, AllSalesList]);
+
   useEffect(() => {
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
@@ -1030,15 +1090,170 @@ const SalesIDInputField = ({ className }) => {
       value: salesId,
     });
   }, [salesId]);
+
+  useEffect(() => {
+    getAllSales(setisLoading);
+  }, []);
+
+  useEffect(() => {
+    const handelClickOutside = (e) => {
+      if (
+        containerRef.current &&
+        dropDownRef.current &&
+        !containerRef.current.contains(e.target) &&
+        !dropDownRef.current.contains(e.target)
+      ) {
+        setisDropdownOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handelClickOutside);
+
+    return () => {
+      window.removeEventListener("pointerdown", handelClickOutside);
+    };
+  }, [containerRef.current, dropDownRef.current]);
+
+  useEffect(() => {
+    setsalesId(saleDetails?.sales_id || "");
+  }, [saleDetails]);
+
   return (
     <>
-      <div className={`${className} w-full`}>
-        <InputField
-          value={salesId}
-          setvalue={setsalesId}
-          label={"Sales ID"}
-          placeholder={"Enter Sales ID"}
-        />
+      <div
+        className={`flex flex-col overflow-y-visible relative w-full ${
+          hasSalesId ? "pointer-events-none" : ""
+        } ${className}`}
+      >
+        <label className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal mb-1">
+          Sales ID <span className=" text-red-600 ">*</span>
+        </label>
+
+        {isCustomSalesId && (
+          <InputField
+            value={salesId}
+            setvalue={setsalesId}
+            label={"Sales ID"}
+            hasLabel={false}
+            placeholder={"Enter Sales ID"}
+          />
+        )}
+
+        {!isCustomSalesId && (
+          <>
+            {/* input area  */}
+            <div
+              ref={containerRef}
+              className="rounded-xl border-[#0000001A] border-[1.5px] px-4
+                py-3 flex items-center"
+            >
+              <input
+                autoComplete
+                required
+                readOnly
+                onClick={() => {
+                  setisDropdownOpen(!isDropdownOpen);
+                }}
+                tabIndex={0}
+                placeholder={"Select Sales ID"}
+                value={salesId}
+                className={`w-full relative items-center outline-none 2xl:text-lg xl:text-base 
+                lg:text-sm text-xs font-normal placeholder:text-[#00000080]
+                text-[#343434] cursor-default `}
+              />
+              <button
+                aria-label="toggle drop down"
+                className=" outline-none cursor-pointer"
+                onClick={() => {
+                  setisDropdownOpen(!isDropdownOpen);
+                }}
+              >
+                <ChevronDown
+                  className={`w-5 h-5 text-[#000000B2] transition-transform ${
+                    isDropdownOpen ? "-rotate-180" : ""
+                  } `}
+                />
+              </button>
+            </div>
+            {/* dropdown sales list  */}
+            <div
+              ref={dropDownRef}
+              className={`absolute top-[105%] left-0 w-full ${
+                isDropdownOpen
+                  ? `  overflow-auto border-[1.5px]`
+                  : "h-0 overflow-x-hidden border-0 "
+              }
+              bg-white z-5 rounded-xl border-[#0000001A]`}
+              style={{ maxHeight: `250px` }}
+            >
+              {isLoading && (
+                <div className=" flex-1 flex justify-center items-center py-8 px-4 min-h-[200px]">
+                  <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
+                </div>
+              )}
+
+              {/* add new sales id */}
+              <button
+                tabIndex={0}
+                onClick={() => {
+                  localStorage.setItem(
+                    "createInvoiceForm",
+                    JSON.stringify(createInvoiceForm)
+                  );
+                  navigate(
+                    // `${
+                    //   createInvoiceForm.invoiceNumber
+                    //     ? `/sales/addSales/new?invoiceNo=${createInvoiceForm.invoiceNumber}`
+                    //     : "/sales/addSales/new"
+                    // }`
+                    "/sales/addSales/new?invoiceNo=new"
+                  );
+                }}
+                className=" w-full hover:bg-[#f2f2f2] my-2 transition opacity-80 px-6 py-3 cursor-pointer flex items-center gap-2 rounded-xl text-[#2543B1] text-base font-medium"
+              >
+                <div className=" p-0.5 rounded-full flex items-center bg-[#2543B1]">
+                  <Plus className="w-4 h-4 text-white" />
+                </div>
+                {`Add new sales`}
+              </button>
+
+              {/* search bar  */}
+              <input
+                value={query}
+                onChange={(e) => {
+                  setquery(e.target.value);
+                }}
+                type="text"
+                placeholder="Search sales ID"
+                className=" rounded-t-xl rounded-b-md w-full text-sm text-gray-700 px-4 py-3 outline-none bg-gray-200/50 border-1 border-gray-300 "
+              />
+
+              {!isLoading && (
+                <ul className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal placeholder:text-[#00000080] text-[#000000a1]">
+                  {[...(filteredData || [])].reverse()?.map((item, index) => {
+                    if (item.list_items[0].item_name) {
+                      return (
+                        <li
+                          tabIndex={0}
+                          key={index}
+                          onClick={(e) => {
+                            console.log(item.list_items);
+                            setsalesId(item.sales_id);
+                            setsaleDetails(item);
+                            setisDropdownOpen(false);
+                          }}
+                          className="px-4 py-3 hover:bg-gray-100 cursor-pointer"
+                        >
+                          {item.sales_id}{" "}
+                        </li>
+                      );
+                    }
+                  })}
+                </ul>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </>
   );
@@ -1058,6 +1273,7 @@ const SubjectInputField = ({ className }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={subject}
           setvalue={setsubject}
           label={"Subject"}
@@ -1082,6 +1298,7 @@ const InvoiceDateInputField = ({ className }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={invoiceDate}
           setvalue={setinvoiceDate}
           label={"Invoice Date"}
@@ -1101,7 +1318,7 @@ const TermsInputField = ({ className }) => {
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "terms",
-      value: terms,
+      value: terms || "N/A",
     });
   }, [terms]);
   return (
@@ -1135,6 +1352,7 @@ const DueDateInputField = ({ className }) => {
     <>
       <div className={`${className} w-full`}>
         <InputField
+          required={true}
           value={dueDate}
           setvalue={setdueDate}
           label={"Due Date"}
@@ -1148,7 +1366,13 @@ const DueDateInputField = ({ className }) => {
 };
 
 const CustomerNameInputField = ({ className }) => {
-  const [customer, setcustomer] = useState({});
+  const { saleDetails } = useContext(SalesContext);
+  const [customer, setcustomer] = useState({
+    customer_id: "",
+    gst_number: "",
+    contact_no: "",
+    customer_name: "",
+  });
   const { createInvoiceDispatch } = useContext(InvoiceContext);
   const [isLoading, setisLoading] = useState(true);
   const { AllCustomersList, getAllCustomers } = useContext(CustomerContext);
@@ -1163,42 +1387,60 @@ const CustomerNameInputField = ({ className }) => {
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "customerId",
-      value: customer.customer_id || "",
+      value: customer.customer_id ?? "",
     });
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "gstNumber",
-      value: customer.gst_number || "",
+      value: customer.gst_number ?? "",
     });
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "contactNo",
-      value: customer.contact_no || "",
+      value: customer.contact_no ?? "",
     });
 
     createInvoiceDispatch({
       type: "UPDATE_BANK",
       field: "bank_account_receivers_name",
-      value: customer.customer_name || "",
+      value: customer.customer_name ?? "",
+    });
+
+    createInvoiceDispatch({
+      type: "UPDATE_FIELD",
+      field: "customerName",
+      value: customer.customer_name ?? "",
     });
   }, [customer]);
+
+  useEffect(() => {
+    setcustomer({
+      customer_id: saleDetails?.customer_id || "",
+      gst_number: saleDetails?.gstin_number || "",
+      contact_no: saleDetails?.contact_no || "",
+      customer_name: saleDetails?.customer_name || "",
+    });
+  }, [saleDetails]);
+
 
   return (
     <>
       <div className={`${className} w-full`}>
         <InputField
+          readOnly={true}
+          required={true}
           value={customer.customer_name}
           isLoading={isLoading}
           setvalue={setcustomer}
           label={"Customer name"}
           placeholder={"Select or add Customer"}
-          hasDropDown={true}
-          dropDownType="usersData"
-          dropDownData={AllCustomersList || []}
+          // hasDropDown={true}
+          // dropDownType="usersData"
+          // dropDownData={AllCustomersList || []}
           addnew={"customer"}
-          onClickAddNew={() => {
-            navigate("/customer/addCustomer/new");
-          }}
+          // onClickAddNew={() => {
+          //   navigate("/customer/addCustomer/new");
+          // }}
         />
       </div>
     </>
@@ -1212,12 +1454,24 @@ const UploadInvoice = () => {
   const [isLoading, setisLoading] = useState(false);
 
   useEffect(() => {
+    if (!files || files.length == 0) {
+      createInvoiceDispatch({
+        type: "UPDATE_FIELD",
+        field: "invoiceUrl",
+        value: {
+          invoice_url: "N/A",
+        },
+      });
+      return;
+    }
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "invoiceUrl",
       value: (files || []).map((item) => {
         return {
-          invoice_url: item.name,
+          fileBlob: item || "N/A",
+          fileName: item.name || "N/A",
+          invoice_url: item.related_doc_url || "N/A",
         };
       }),
     });
@@ -1225,8 +1479,7 @@ const UploadInvoice = () => {
 
   useEffect(() => {
     createInvoiceDispatch({
-      type: "UPDATE_FIELD",
-      field: "RESET",
+      type: "RESET",
     });
   }, []);
 
@@ -1319,12 +1572,12 @@ const UploadInvoice = () => {
             if (
               !createInvoiceForm.invoiceUrl ||
               createInvoiceForm.invoiceUrl.length == 0 ||
-              createInvoiceForm.invoiceUrl[0]?.invoice_url == "N/A"
+              !createInvoiceForm.invoiceUrl[0]?.fileBlob
             ) {
               showToast("Please select atleast one file", 1);
               return;
             }
-            createInvoice(e, setisLoading);
+            createInvoice(e, setisLoading, "upload");
           }}
           className="2xl:text-xl xl:text-lg lg:text-base md:text-sm xl:rounded-2xl rounded-xl xl:px-6 px-4 xl:py-4 py-3 cursor-pointer bg-[#2543B1] border-2 border-[#3333331A] text-white hover:bg-[#252eb1]"
         >
@@ -1351,16 +1604,26 @@ const UploadInvoice = () => {
 const SubTotal = ({ className }) => {
   const { createInvoiceForm, createInvoiceDispatch } =
     useContext(InvoiceContext);
+  const { saleDetails } = useContext(SalesContext);
   const [subtotal, setsubtotal] = useState(
-    Number(createInvoiceForm?.subtotalAmount).toFixed(2) || 0
+    Number(createInvoiceForm?.subtotalAmount) || 0
   );
-  const [discount, setdiscount] = useState(0);
-  const [isAdjustment, setisAdjustment] = useState(false);
+  const [isTdsEnable, setisTdsEnable] = useState(true);
+  const [discount, setdiscount] = useState(
+    Number(saleDetails?.discount_amount) || 0
+  );
+  const [isAdjustment, setisAdjustment] = useState(
+    saleDetails?.adjustment_amount?.toString().toLowerCase() === "true"
+      ? true
+      : false
+  );
   const [tds, settds] = useState({
-    value: "",
-    name: "",
+    value: saleDetails?.tds_amount || "0%",
+    name: saleDetails?.tds_reason || "N/A",
   });
-  const [grandTotal, setgrandTotal] = useState(0.0);
+  const [grandTotal, setgrandTotal] = useState(
+    Number(saleDetails?.total_amount) || 0.0
+  );
   const [discountAmount, setdiscountAmount] = useState(0);
   const [taxableAmount, settaxableAmount] = useState(0);
 
@@ -1382,25 +1645,6 @@ const SubTotal = ({ className }) => {
     });
   }, [isAdjustment]);
 
-  // calculate total when discount changes
-  useEffect(() => {
-    if (!tds.value) return;
-    const tax = Number(tds.value.split("%")[0]);
-    //update states
-    setgrandTotal(
-      ((subtotal * (100 - discount) * (100 + tax)) / 10000).toFixed(2)
-    );
-  }, [discount, tds, subtotal]);
-
-  useEffect(() => {
-    //calculate subtotal
-    setsubtotal(
-      createInvoiceForm?.listItems.reduce((acc, item) => {
-        return acc + Number(item.gross_amount || 0);
-      }, 0)
-    );
-  }, [createInvoiceForm]);
-
   useEffect(() => {
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
@@ -1416,21 +1660,15 @@ const SubTotal = ({ className }) => {
       field: "subtotalAmount",
       value: subtotal,
     });
-    if (!tds) return;
-    const tax = Number(tds.value.split("%")[0]);
-    //update states
-    setgrandTotal(
-      ((subtotal * (100 - discount) * (100 + tax)) / 10000).toFixed(2)
-    );
-  }, [subtotal, discount, tds]);
+  }, [subtotal]);
 
   useEffect(() => {
     createInvoiceDispatch({
       type: "UPDATE_FIELD",
       field: "totalAmount",
-      value: grandTotal,
+      value: isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal,
     });
-  }, [grandTotal]);
+  }, [grandTotal, isAdjustment]);
 
   useEffect(() => {
     createInvoiceDispatch({
@@ -1447,6 +1685,31 @@ const SubTotal = ({ className }) => {
     settaxableAmount(((subtotal * (100 - discount) * tax) / 10000).toFixed(2));
   }, [tds, discount, subtotal]);
 
+  useEffect(() => {
+    if (!saleDetails) return;
+    setsubtotal(Number(saleDetails?.subtotal_amount));
+    setdiscount(Number(saleDetails?.discount_amount));
+    setisAdjustment(
+      saleDetails?.adjustment_amount?.toString().toLowerCase() === "true"
+        ? true
+        : false
+    );
+    settds({
+      value: saleDetails?.tds_amount || "0%",
+      name: saleDetails?.tds_reason || "N/A",
+    });
+    setgrandTotal(Number(saleDetails?.total_amount));
+  }, [saleDetails]);
+
+  useEffect(() => {
+    //calculate subtotal
+    setsubtotal(
+      createInvoiceForm?.listItems.reduce((acc, item) => {
+        return acc + Number(item.gross_amount || 0);
+      }, 0)
+    );
+  }, [createInvoiceForm]);
+
   return (
     <>
       <div
@@ -1456,7 +1719,7 @@ const SubTotal = ({ className }) => {
         {/* Subtotal */}
         <div className="text-[#4A4A4A] flex justify-between items-center mb-4 2xl:text-lg xl:text-base text-sm ">
           <span className="font-medium ">Sub Total</span>
-          <span className="">{subtotal}</span>
+          <span className="">{subtotal.toFixed(2)}</span>
         </div>
 
         {/* Discount */}
@@ -1467,12 +1730,10 @@ const SubTotal = ({ className }) => {
           <div className="px-3 py-2 w-fit rounded-lg border-[1px] ml-auto border-[#D2D2D2]">
             <input
               id="discount"
+              readOnly={true}
               type="number"
               placeholder={0}
               value={discount}
-              onChange={(e) => {
-                setdiscount(e.target.value);
-              }}
               className=" outline-none md:max-w-[100px] max-w-[50px] text-sm placeholder:text-[#8E8E8E] text-[#414141] "
             />
           </div>
@@ -1483,20 +1744,29 @@ const SubTotal = ({ className }) => {
         {/* Tax Type + Dropdown */}
         <div className="flex items-center justify-between text-[#4A4A4A] gap-3 mb-4">
           {/* Radio buttons */}
-          <div className="flex items-center gap-4">
-            <label className="inline-flex items-center gap-1 cursor-pointer">
-              <input
-                type="radio"
-                name="taxType"
-                defaultChecked={true}
-                className="accent-[#2543B1]"
+          <div className=" flex items-center gap-2 cursor-pointer pointer-events-none">
+            <label
+              htmlFor="toggle tds"
+              className=" md:text-sm text-xs font-medium flex items-center gap-2 cursor-pointer select-none text-[#4A4A4A]"
+            >
+              <div
+                className={` border-4 w-3.5 2xl:w-5 h-3.5 2xl:h-5 rounded-full transition ${
+                  isTdsEnable ? "border-[#2543B1]" : "border-[#777777]"
+                }`}
               />
-              <span className="text-sm font-medium">TDS</span>
+              TDS
             </label>
+            <input
+              readOnly={true}
+              id="toggle tds"
+              type="checkbox"
+              value={isTdsEnable}
+              className=" cursor-pointer hidden"
+            />
           </div>
 
           {/* Tax Dropdown */}
-          <TaxDropdown value={tds.value} setvalue={settds} />
+          <TaxDropdown value={tds.value} setvalue={settds} isDisabled={true} />
 
           {/* Negative Tax Value */}
           <div className="text-gray-500 text-sm w-12 text-right">
@@ -1510,7 +1780,7 @@ const SubTotal = ({ className }) => {
         <div className="flex justify-between  items-center 2xl:text-2xl xl:text-xl lg:text-lg md:text-base text-sm font-medium text-[#333333]">
           <div className=" flex items-center gap-4">
             <span>Total</span>
-            <div className=" flex items-center gap-2 cursor-pointer">
+            <div className=" flex items-center gap-2 cursor-pointer pointer-events-none">
               <label
                 htmlFor="toggle adjustment"
                 className=" text-sm font-medium flex items-center gap-2 cursor-pointer select-none text-[#4A4A4A]"
@@ -1523,6 +1793,7 @@ const SubTotal = ({ className }) => {
                 Adjustment
               </label>
               <input
+                readOnly={true}
                 id="toggle adjustment"
                 type="checkbox"
                 value={isAdjustment}
@@ -1533,54 +1804,44 @@ const SubTotal = ({ className }) => {
               />
             </div>
           </div>
-          <span>{grandTotal}</span>
+          <span>
+            {isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal}
+          </span>
         </div>
         <p className=" text-end font-medium 2xl:text-xl xl:text-lg lg:text-base text-xs text-[#606060] ">
-          {toWords.convert(Number(grandTotal))} Only
+          {toWords.convert(
+            Number(isAdjustment ? Math.ceil(Number(grandTotal)) : grandTotal)
+          )}{" "}
+          Only
         </p>
       </div>
     </>
   );
 };
 
-const TaxDropdown = ({ value, setvalue }) => {
+const TaxDropdown = ({ value, setvalue, isDisabled }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOption, setSelectedOption] = useState(-1);
-  const dropdownRef = useRef(null);
-
-  const toggleDropdown = () => setIsOpen(!isOpen);
-
-  const handleOptionClick = (ind) => {
-    setSelectedOption(ind);
-    setvalue(TDSDropDown[ind]);
-    setIsOpen(false);
-  };
-
-  // Close on outside click
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   return (
-    <div ref={dropdownRef} className="relative mx-auto w-full max-w-[200px]">
+    <div
+      className={`relative mx-auto w-full max-w-[200px] ${
+        isDisabled ? "pointer-events-none" : ""
+      }`}
+    >
       <motion.div
         className="relative"
         initial={false}
         animate={isOpen ? "open" : "closed"}
       >
         <motion.button
-          className={`w-full px-2 py-2 cursor-pointer bg-white border rounded-md lg:text-sm text-xs text-gray-700 flex items-center justify-between border-gray-400`}
+          className={`w-full px-2 py-2 ${
+            isDisabled ? "bg-gray-500/30" : "bg-white"
+          } cursor-pointer border rounded-md lg:text-sm text-xs text-gray-700 flex items-center justify-between border-gray-400`}
           whileHover={{
             borderColor: "#9CA3AF",
             boxShadow: "0 0 0 1px rgba(0,0,0,0.1)",
           }}
-          onClick={toggleDropdown}
         >
           {selectedOption >= 0
             ? TDSDropDown[selectedOption].value
@@ -1610,7 +1871,6 @@ const TaxDropdown = ({ value, setvalue }) => {
                   className={`px-4 py-2 cursor-pointer text-sm text-gray-700 ${
                     selectedOption === ind ? "bg-[#e8e8e8]" : "bg-white"
                   } hover:bg-[#F3F4F6] cursor-pointer`}
-                  onClick={() => handleOptionClick(ind)}
                 >
                   {option.name}
                 </motion.li>
