@@ -422,28 +422,28 @@ const SwitchCompanyButton = ({ isPanelClosed }) => {
           !isPanelClosed
             ? companyList && companyList.length > 0
               ? "px-2 justify-evenly"
-              : "px-4 justify-evenly"
+              : "px-4 justify-start"
             : " justify-center"
         } py-3 bg-[#0000000D] cursor-pointer select-none`}
         onClick={() => setIsOpen((prev) => !prev)}
       >
-        <img
-          loading="lazy"
-          src={
-            companyDetails?.company_logo ||
-            "https://api.dicebear.com/6.x/initials/svg?seed=G"
-          }
-          alt="logo"
-          className="w-10 h-10 rounded-full text-xs bg-white object-cover"
-        />
-        {!isPanelClosed && (
-          <div className="text-left">
-            <p className=" xl:text-base  text-sm font-semibold text-[#4A4A4A]">
-              {companyDetails?.company_name || "Company"}
-            </p>
-          </div>
-        )}
-        {!isPanelClosed && (
+          <img
+            loading="lazy"
+            src={
+              companyDetails?.company_logo ||
+              "https://api.dicebear.com/6.x/initials/svg?seed=G"
+            }
+            alt="logo"
+            className="w-10 h-10 rounded-full text-xs bg-white object-cover"
+          />
+          {!isPanelClosed && (
+            <div className="text-left">
+              <p className=" xl:text-base  text-sm font-semibold text-[#4A4A4A]">
+                {companyDetails?.company_name || "Company"}
+              </p>
+            </div>
+          )}
+        {!isPanelClosed && userDetails.email?.toLowerCase() != "member" && (
           <PenLine
             onClick={(e) => {
               e.stopPropagation();

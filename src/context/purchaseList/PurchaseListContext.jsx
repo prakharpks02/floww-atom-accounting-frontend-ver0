@@ -674,7 +674,8 @@ export const PurchaseListContextProvider = ({ children }) => {
         searchPurchase,
         updatePurchaseTimeLine,
         getPurchaseTimeLine,
-        purchaseTimeLine
+        purchaseTimeLine,
+        setpurchaseDetails
       }}
     >
       {children}

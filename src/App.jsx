@@ -66,6 +66,7 @@ import { CompanyContextProvider } from "./context/company/CompanyContext.jsx";
 import { UserLoginPage } from "./routes/userAuth/UserLoginPage.jsx";
 import { UserSignupPage } from "./routes/userAuth/UserSignupPage.jsx";
 import { AllInvoiceList } from "./routes/sales/InvoiceList.jsx";
+import { AllRecentTransactionList } from "./routes/dashboard/AllRecentTransaction.jsx";
 
 function App() {
   const containerRef = useRef(null);
@@ -85,6 +86,10 @@ function App() {
           <main>
             <Routes>
               <Route path="/" element={<Dashboard />} />
+              <Route
+                path="/recentTransactionList"
+                element={<AllRecentTransactionList />}
+              />
               <Route path="/anirban" element={<ImgUpload />} />
 
               <Route path="/sales/salesList" element={<AllSalesList />} />
@@ -95,7 +100,10 @@ function App() {
                 element={<EditSalesEntry />}
               />
               <Route path="/sales/createInvoice" element={<CreateInvoice />} />
-              <Route path="/sales/allInvoiceList" element={<AllInvoiceList />} />
+              <Route
+                path="/sales/allInvoiceList"
+                element={<AllInvoiceList />}
+              />
 
               <Route path="/purchase/purchaseList" element={<PurchaseList />} />
               <Route
@@ -115,7 +123,7 @@ function App() {
                 element={<PurchaseDetails />}
               />
               <Route
-                path="/purchase/purchaseOrderDetails/:purchaseid"
+                path="/purchase/purchaseOrderDetails/:poId"
                 element={<PurchaseOrderDetails />}
               />
               <Route
@@ -165,7 +173,10 @@ function App() {
 
               <Route path="/ledger" element={<Ledger />} />
               <Route path="/addMembers" element={<AllMembersList />} />
-              <Route path="/onBoarding/:companyId" element={<OnBoardingPage />} />
+              <Route
+                path="/onBoarding/:companyId"
+                element={<OnBoardingPage />}
+              />
               <Route path="/login" element={<UserLoginPage />} />
               <Route path="/signup" element={<UserSignupPage />} />
             </Routes>

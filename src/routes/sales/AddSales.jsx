@@ -933,7 +933,7 @@ const CustomerNameInputField = ({ saleDetails }) => {
     <>
       <div
         className={`md:col-span-2 flex flex-col overflow-y-visible relative ${
-          salesid ? "pointer-events-none" : ""
+          salesid != "new" ? "pointer-events-none" : ""
         }`}
       >
         <InputField
@@ -1204,7 +1204,7 @@ const QuotationIDInputField = ({ saleDetails }) => {
     <>
       <div
         className={`flex flex-col overflow-y-visible relative col-span-2 ${
-          salesid ? "pointer-events-none" : ""
+          salesid != "new" ? "pointer-events-none" : ""
         }`}
       >
         <label className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal mb-1">

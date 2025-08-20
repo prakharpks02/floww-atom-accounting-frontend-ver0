@@ -70,10 +70,20 @@ export const SaleInfo = () => {
         {/* header  */}
         <div className=" mb-6">
           <div className="flex justify-between items-end mb-1">
-            <h1 className="2xl:text-4xl xl:text-3xl lg:text-2xl md:text-xl text-lg font-semibold text-[#333333]">
-              Sales Information
-            </h1>
-            <div className=" flex items-center gap-3">
+            <div>
+              <h1 className="2xl:text-4xl xl:text-3xl lg:text-2xl md:text-xl text-lg font-semibold text-[#333333]">
+                Sales Information
+              </h1>
+              <div className="flex justify-between items-center  xl:text-base md:text-sm  text-xs">
+                <p className=" text-[#A4A4A4] font-medium ">
+                  Detailed information for sale - {saleDetails?.sales_id}
+                </p>
+                {/* <p className="text-[#A4A4A4] lg:max-w-none max-w-[50%] font-medium ">
+              Note: Edit can only be done once the invoice has been uploaded
+            </p> */}
+              </div>
+            </div>
+            <div className=" flex items-center gap-2">
               <button
                 disabled={isDownloading}
                 onClick={async () => {
@@ -86,20 +96,31 @@ export const SaleInfo = () => {
                     setisDownloading(false);
                   }
                 }}
-                className="px-4 py-3 disabled:cursor-wait disabled:opacity-60 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
+                className="px-3 py-4 h-full disabled:cursor-wait disabled:opacity-60 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs text-[#2543B1]  cursor-pointer"
               >
                 {isDownloading ? (
                   <>
                     <Loader2 className=" inline-block w-5 animate-spin" />
-                    Downloading
                   </>
                 ) : (
                   <>
                     {" "}
-                    <Download className="w-5 h-5" /> Download{" "}
+                    <Download className="w-8 h-8" />
                   </>
                 )}
               </button>
+              <button
+                disabled={isDownloading}
+                onClick={async () => {
+                  navigate(
+                    `/sales/createInvoice?salesId=${saleDetails?.sales_id}`
+                  );
+                }}
+                  className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs bg-[#0033661A] text-[#2543B1] rounded-xl hover:bg-[#00336626] cursor-pointer transition"
+              >
+                Create invoice
+              </button>
+
               <button
                 onClick={() => {
                   navigate(`/sales/addSales/${saleDetails?.sales_id}`);
@@ -109,15 +130,6 @@ export const SaleInfo = () => {
                 <Edit className="w-5 h-5" /> Edit Sales
               </button>
             </div>
-          </div>
-
-          <div className="mb-8  flex justify-between items-center  xl:text-base md:text-sm  text-xs">
-            <p className=" text-[#A4A4A4] font-medium ">
-              Detailed information for sale - {saleDetails?.sales_id}
-            </p>
-            {/* <p className="text-[#A4A4A4] lg:max-w-none max-w-[50%] font-medium ">
-              Note: Edit can only be done once the invoice has been uploaded
-            </p> */}
           </div>
         </div>
 
@@ -335,7 +347,6 @@ const UpdateTimeLineModal = ({
   };
 
   const updateTimeLine = useCallback(async () => {
-   
     const token = localStorage.getItem("token");
     if (!token) {
       showToast("Token not found", 1);
@@ -875,7 +886,7 @@ const ShowFiles = ({ files }) => {
     }
   };
 
-  console.log(files)
+  console.log(files);
 
   return (
     <div className="max-h-[200px] w-full overflow-y-auto flex flex-wrap justify-center gap-3 pt-5">

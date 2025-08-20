@@ -33,6 +33,7 @@ import { CustomerContext } from "../../context/customer/customerContext";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { saveAs } from "file-saver";
 import { showToast } from "../../utils/showToast";
+import { PurchaseListContext } from "../../context/purchaseList/PurchaseListContext";
 
 export const CreatePurchaseOrder = () => {
   const [activeTab, setActiveTab] = useState("create");
@@ -109,12 +110,14 @@ export const CreatePurchaseOrder = () => {
 
 const PurchaseOrderForm = ({ purchaseOrderDetails }) => {
   const [isLoading, setisLoading] = useState(false);
+
   const {
     createPurchaseOrder,
     createPurchaseOrderForm,
     updatePurchaseOrder,
     createPurchaseOrderFormDispatch,
   } = useContext(PurchaseOrderContext);
+
   const { purchaseorderid } = useParams();
   const { companyDetails } = useContext(CompanyContext);
 
@@ -383,10 +386,23 @@ const PurchaseOrderForm = ({ purchaseOrderDetails }) => {
           disabled={isLoading}
           onClick={async (e) => {
             try {
-              if (purchaseorderid?.toLowerCase() === "new")
-                await createPurchaseOrder(e, setisLoading);
-              if (purchaseorderid?.toLowerCase() !== "new")
+              if (purchaseorderid?.toLowerCase() === "new") {
+                const poNo = await createPurchaseOrder(e, setisLoading);
+                const searchParams = new URLSearchParams(
+                  window.location.search
+                );
+                const purchaseId = searchParams.get("purchaseId");
+                console.log(purchaseId)
+                if (purchaseId) {
+                  navigate(
+                    `/purchase/addPurchase/new?poNo=${poNo}`
+                  );
+                } else {
+                  // navigate("/purchase/OrderList");
+                }
+              } else {
                 await updatePurchaseOrder(purchaseorderid, setisLoading);
+              }
 
               await downloadPDF(setisLoading);
               createPurchaseOrderFormDispatch({
@@ -1304,7 +1320,7 @@ const VendorNameInputField = ({ className, purchaseOrderDetails }) => {
     vendor_name: purchaseOrderDetails?.vendor_name || "",
     email: purchaseOrderDetails?.email || "",
     gst_number: purchaseOrderDetails?.gst_number || "",
-    vendor_pan_number : purchaseOrderDetails?.vendor_pan_number || "",
+    vendor_pan_number: purchaseOrderDetails?.vendor_pan_number || "",
     contact_no: purchaseOrderDetails?.contact_no || "",
   });
   const { createPurchaseOrderFormDispatch } = useContext(PurchaseOrderContext);

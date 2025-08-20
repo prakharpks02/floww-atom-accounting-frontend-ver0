@@ -73,13 +73,13 @@ const timelineData = [
 
 export const PurchaseOrderDetails = () => {
   const navigate = useNavigate();
-  const { purchaseid } = useParams();
+  const { poId } = useParams();
   const [isLoading, setisLoading] = useState(true);
   const { getPurchaseOrderDetails, purchaseOrderDetails } =
     useContext(PurchaseOrderContext);
 
   useEffect(() => {
-    getPurchaseOrderDetails(purchaseid, setisLoading);
+    getPurchaseOrderDetails(poId, setisLoading);
   }, []);
 
   return (
@@ -101,7 +101,17 @@ export const PurchaseOrderDetails = () => {
               <div className=" flex gap-3 w-fit">
                 <button
                   onClick={() => {
-                    navigate(`/purchase/createOrder/${purchaseid}`);
+                    navigate(
+                      `/purchase/addPurchase/new?poNo=${poId}`
+                    );
+                  }}
+                  className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs bg-[#0033661A] text-[#2543B1] rounded-xl hover:bg-[#00336626] cursor-pointer transition"
+                >
+                  Create purchase
+                </button>
+                <button
+                  onClick={() => {
+                    navigate(`/purchase/createOrder/${poId}`);
                   }}
                   className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition"
                 >
@@ -388,7 +398,7 @@ const RelatedDocuments = ({ purchaseOrderDetails }) => {
       </div>
 
       <div className="flex flex-wrap items-center justify-start gap-2 mb-4 max-h-[250px] overflow-auto">
-        {files && files.length>0  ? (
+        {files && files.length > 0 ? (
           <ShowUploadedFiles files={files} />
         ) : (
           <div className=" w-full flex flex-col items-center gap-4">
