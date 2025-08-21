@@ -33,7 +33,7 @@ import { CustomerContext } from "../../context/customer/customerContext";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { saveAs } from "file-saver";
 import { showToast } from "../../utils/showToast";
-import { PurchaseListContext } from "../../context/purchaseList/PurchaseListContext";
+import { downloadPOasPDF } from "../../utils/downloadPOasPDF";
 
 export const CreatePurchaseOrder = () => {
   const [activeTab, setActiveTab] = useState("create");
@@ -120,264 +120,21 @@ const PurchaseOrderForm = ({ purchaseOrderDetails }) => {
 
   const { purchaseorderid } = useParams();
   const { companyDetails } = useContext(CompanyContext);
-
-  const wrapAndDrawText = useCallback(
-    (page, text, x, yStart, maxWidth, fontSize, fontObj) => {
-      const lines = [];
-      const words = text?.split(" ") || [];
-      let line = "";
-      for (const word of words) {
-        const testLine = line + word + " ";
-        const testWidth = fontObj.widthOfTextAtSize(testLine, fontSize);
-        if (testWidth > maxWidth) {
-          lines.push(line.trim());
-          line = word + " ";
-        } else {
-          line = testLine;
-        }
-      }
-      if (line) lines.push(line.trim());
-
-      lines.forEach((lineText, idx) => {
-        page.drawText(lineText, {
-          x,
-          y: yStart - idx * (fontSize + 2),
-          size: fontSize,
-          font: fontObj,
-          color: rgb(0, 0, 0),
-        });
-      });
-      return lines.length;
-    },
-    []
-  );
-
-  //download invoice
-  const downloadPDF = useCallback(
-    async (setisLoading) => {
-      try {
-        setisLoading(true);
-        const pdfDoc = await PDFDocument.create();
-        const page = pdfDoc.addPage([595, 842]); // A4
-        const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-        const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-        const drawText = (text, x, y, size = 10, isBold = false) => {
-          page.drawText(text, {
-            x,
-            y,
-            size,
-            font: isBold ? boldFont : font,
-            color: rgb(0, 0, 0),
-          });
-        };
-
-        let y = 800;
-        drawText("Purchase Order", 230, y, 18, true);
-
-        // Labels
-        y -= 30;
-        drawText("From:", 40, y, 11, true);
-        drawText("Bill To:", 320, y, 11, true);
-
-        // Addresses
-        y -= 15;
-        const fromText = `${companyDetails?.company_name ?? ""}, ${
-          companyDetails?.company_address ?? ""
-        }`;
-        const billToText = `${createPurchaseOrderForm?.deliveryAddress ?? ""}`;
-
-        const leftLineCount = wrapAndDrawText(
-          page,
-          fromText,
-          40,
-          y,
-          250,
-          10,
-          font
-        );
-        const rightLineCount = wrapAndDrawText(
-          page,
-          billToText,
-          320,
-          y,
-          230,
-          10,
-          font
-        );
-
-        y -= Math.max(leftLineCount, rightLineCount) * 12;
-
-        // Dates and GST
-        y -= 10;
-        drawText(`From: ${createPurchaseOrderForm?.poDate}`, 40, y, 11, true);
-        drawText(
-          `Delivery Date: ${createPurchaseOrderForm?.deliveryDate}`,
-          320,
-          y,
-          11,
-          true
-        );
-
-        y -= 20;
-        drawText(
-          `Phone: +91${createPurchaseOrderForm?.contactNo}`,
-          40,
-          y,
-          11,
-          true
-        );
-        drawText(
-          `GST: ${createPurchaseOrderForm?.gstNumber}`,
-          320,
-          y,
-          11,
-          true
-        );
-
-        // Table headers
-        y -= 35;
-        const headers = [
-          "Description",
-          "Rate",
-          "Qty",
-          "Disc%",
-          "GST%",
-          "Amount",
-        ];
-        const colX = [40, 220, 270, 310, 360, 420];
-        headers.forEach((text, i) => drawText(text, colX[i], y, 10, true));
-
-        y -= 10;
-        page.drawLine({
-          start: { x: 40, y },
-          end: { x: 550, y },
-          thickness: 0.8,
-          color: rgb(0.8, 0.8, 0.8),
-        });
-
-        // Table items
-        const items = createPurchaseOrderForm?.listItems || [];
-        y -= 20;
-        items.forEach((item) => {
-          drawText(item.item_description, colX[0], y);
-          drawText(item.base_amount, colX[1], y);
-          drawText(String(item.quantity), colX[2], y);
-          drawText(`${item.discount}%`, colX[3], y);
-          drawText(`${item.gst_amount}%`, colX[4], y);
-          drawText(
-            `${Number(item.gross_amount).toLocaleString("en-IN", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}`,
-            colX[5],
-            y
-          );
-          y -= 20;
-        });
-
-        // Line after items
-        page.drawLine({
-          start: { x: 40, y: y + 10 },
-          end: { x: 550, y: y + 10 },
-          thickness: 1,
-          color: rgb(0.7, 0.7, 0.7),
-        });
-
-        // Totals
-        y -= 10;
-        drawText("Subtotal:", 40, y, 11, true);
-        drawText(`Rs.${createPurchaseOrderForm?.subTotalAmount}`, 420, y);
-
-        y -= 20;
-        drawText(
-          `Tax(${createPurchaseOrderForm?.tdsAmount}):`,
-          40,
-          y,
-          11,
-          true
-        );
-        drawText(
-          `+Rs.${Number(
-            ((Number(createPurchaseOrderForm?.subTotalAmount) || 0) *
-              (100 - Number(createPurchaseOrderForm?.discountAmount)) *
-              (Number(createPurchaseOrderForm?.tdsAmount?.split("%")[0]) ||
-                0)) /
-              10000
-          ).toFixed(2)}`,
-          420,
-          y
-        );
-
-        y -= 20;
-        drawText(
-          `Discount(${createPurchaseOrderForm?.discountAmount}%):`,
-          40,
-          y,
-          11,
-          true
-        );
-        drawText(
-          `-Rs.${Number(
-            ((createPurchaseOrderForm?.subTotalAmount || 0) *
-              (createPurchaseOrderForm?.discountAmount || 0)) /
-              100
-          ).toFixed(2)}`,
-          420,
-          y
-        );
-
-        y -= 25;
-        drawText("Total:", 40, y, 12, true);
-        drawText(
-          `Rs.${createPurchaseOrderForm?.totalAmount}`,
-          420,
-          y,
-          12,
-          true
-        );
-
-        page.drawLine({
-          start: { x: 40, y: y - 10 },
-          end: { x: 550, y: y - 10 },
-          thickness: 1,
-          color: rgb(0.7, 0.7, 0.7),
-        });
-
-        // Notes and T&C
-        y -= 40;
-        drawText(
-          `Customer note: ${createPurchaseOrderForm?.notes ?? ""}`,
-          40,
-          y
-        );
-        y -= 20;
-        drawText(
-          `Terms & Conditions: ${
-            createPurchaseOrderForm?.listToc?.[0]?.terms_of_service ?? ""
-          }`,
-          40,
-          y
-        );
-
-        const pdfBytes = await pdfDoc.save();
-        const blob = new Blob([pdfBytes], { type: "application/pdf" });
-        saveAs(blob, "Purchase order.pdf");
-      } catch (error) {
-        console.log(error);
-        showToast(error.message || "Download pdf failed", 1);
-      } finally {
-        setisLoading(false);
-      }
-    },
-    [createPurchaseOrderForm, companyDetails]
-  );
+  const navigate = useNavigate();
 
   return (
     <>
       <div className="mb-4 grid lg:grid-cols-2 grid-cols-1 space-x-2 space-y-2">
         <PurchaseOrderLeftPart purchaseOrderDetails={purchaseOrderDetails} />
-        <PurchaseOrderRightPart handelDownloadInvoice={downloadPDF} />
+        <PurchaseOrderRightPart
+          handelDownloadInvoice={() => {
+            downloadPOasPDF(
+              createPurchaseOrderForm,
+              companyDetails,
+              setisLoading
+            );
+          }}
+        />
       </div>
 
       {/* Action Buttons */}
@@ -392,11 +149,9 @@ const PurchaseOrderForm = ({ purchaseOrderDetails }) => {
                   window.location.search
                 );
                 const purchaseId = searchParams.get("purchaseId");
-                console.log(purchaseId)
+                console.log(purchaseId);
                 if (purchaseId) {
-                  navigate(
-                    `/purchase/addPurchase/new?poNo=${poNo}`
-                  );
+                  navigate(`/purchase/addPurchase/new?poNo=${poNo}`);
                 } else {
                   // navigate("/purchase/OrderList");
                 }
@@ -404,7 +159,11 @@ const PurchaseOrderForm = ({ purchaseOrderDetails }) => {
                 await updatePurchaseOrder(purchaseorderid, setisLoading);
               }
 
-              await downloadPDF(setisLoading);
+              await downloadPOasPDF(
+                createPurchaseOrderForm,
+                companyDetails,
+                setisLoading
+              );
               createPurchaseOrderFormDispatch({
                 type: "RESET",
               });
@@ -837,7 +596,7 @@ const PurchaseOrderRightPart = ({
               e.preventDefault();
               handelDownloadInvoice(setisDownloading);
             }}
-            className="flex whitespace-nowrap items-center gap-2 bg-[#2543B1] text-white px-4 py-3 rounded-xl text-xs md:text-sm lg:text-base xl:text-lg 2xl:text-xl font-medium hover:bg-[#1b34a3] transition"
+            className="flex cursor-pointer whitespace-nowrap items-center gap-2 bg-[#2543B1] text-white px-4 py-3 rounded-xl text-xs md:text-sm lg:text-base xl:text-lg 2xl:text-xl font-medium hover:bg-[#1b34a3] transition"
           >
             <Download className="w-5 h-5" />
             Download PDF

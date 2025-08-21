@@ -321,6 +321,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
         // reset form data
 
         showToast("Purchase Order created.");
+        return res.data.data.po_id
       } catch (error) {
         console.log(error);
         showToast(

@@ -96,7 +96,7 @@ export const SaleInfo = () => {
                     setisDownloading(false);
                   }
                 }}
-                className="px-3 py-4 h-full disabled:cursor-wait disabled:opacity-60 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs text-[#2543B1]  cursor-pointer"
+                className="px-3 h-full disabled:cursor-wait disabled:opacity-60 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs text-[#2543B1]  cursor-pointer"
               >
                 {isDownloading ? (
                   <>
@@ -105,7 +105,7 @@ export const SaleInfo = () => {
                 ) : (
                   <>
                     {" "}
-                    <Download className="w-8 h-8" />
+                    <Download className="w-7 h-7" />
                   </>
                 )}
               </button>
@@ -116,7 +116,7 @@ export const SaleInfo = () => {
                     `/sales/createInvoice?salesId=${saleDetails?.sales_id}`
                   );
                 }}
-                  className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs bg-[#0033661A] text-[#2543B1] rounded-xl hover:bg-[#00336626] cursor-pointer transition"
+                className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs bg-[#0033661A] text-[#2543B1] rounded-xl hover:bg-[#00336626] cursor-pointer transition"
               >
                 Create invoice
               </button>
@@ -125,7 +125,7 @@ export const SaleInfo = () => {
                 onClick={() => {
                   navigate(`/sales/addSales/${saleDetails?.sales_id}`);
                 }}
-                className="px-4 py-3 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
+                className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
               >
                 <Edit className="w-5 h-5" /> Edit Sales
               </button>
@@ -143,10 +143,9 @@ export const SaleInfo = () => {
             saleDetails={saleDetails}
           />
           <SaleInfoRightPart
-            setisLoading={setisLoading}
+            setisSalesDetailsloading={setisLoading}
             getSaleDetails={getSaleDetails}
             className={"lg:col-span-4 col-span-1"}
-            saleDetails={saleDetails}
           />
         </div>
       </div>
@@ -166,7 +165,11 @@ const SaleInfoLeftPart = ({ className, saleDetails }) => {
   );
 };
 
-const SaleInfoRightPart = ({ className }) => {
+const SaleInfoRightPart = ({
+  className,
+  getSaleDetails,
+  setisSalesDetailsloading,
+}) => {
   const [isModalOpen, setisModalOpen] = useState(false);
   const [isLoading, setisLoading] = useState(true);
   const { getSalesTimeLine, salesTimeLine } = useContext(SalesContext);
@@ -228,6 +231,8 @@ const SaleInfoRightPart = ({ className }) => {
   return (
     <>
       <UpdateTimeLineModal
+        getSaleDetails={getSaleDetails}
+        setisSalesDetailsloading={setisSalesDetailsloading}
         setisTimeLineLoading={setisLoading}
         getSalesTimeLine={getSalesTimeLine}
         timeLineDetails={salesTimeLine}
@@ -327,6 +332,8 @@ const UpdateTimeLineModal = ({
   timeLineDetails,
   setisTimeLineLoading,
   getSalesTimeLine,
+  getSaleDetails,
+  setisSalesDetailsloading,
 }) => {
   const [formData, setformData] = useState({
     amount: "",
@@ -375,7 +382,8 @@ const UpdateTimeLineModal = ({
         },
         setisLoading
       );
-      await getSalesTimeLine(saleid, setisTimeLineLoading);
+      // await getSalesTimeLine(saleid, setisTimeLineLoading);
+      await getSaleDetails(saleid, setisSalesDetailsloading);
       handelClose();
     } catch (error) {
       console.log(error);
@@ -692,7 +700,9 @@ const SaleDetails = ({ saleDetails }) => {
                 : "text-[#FB3748]"
             } font-medium 2xl:text-2xl xl:text-xl lg:text-lg md:text-base text-sm`}
           >
-            {saleDetails?.status}
+            {saleDetails?.status?.toLowerCase().includes("partially")
+              ? "Partially paid"
+              : saleDetails?.status}
           </span>
         </div>
       </div>

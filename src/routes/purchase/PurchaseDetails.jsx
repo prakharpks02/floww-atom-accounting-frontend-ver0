@@ -133,9 +133,8 @@ export const PurchaseDetails = () => {
             />
             <PurchaseInfoRightPart
               className={"lg:col-span-4"}
-              purchaseDetails={purchaseDetails}
-              setisLoading={setisLoading}
               getPurchaseListDetails={getPurchaseListDetails}
+              setisPurchaseDetailLoading={setisLoading}
             />
           </div>
         </div>
@@ -156,7 +155,7 @@ const PurchaseInfoLeftPart = ({ className, purchaseDetails }) => {
   );
 };
 
-const PurchaseInfoRightPart = ({ className }) => {
+const PurchaseInfoRightPart = ({ className, getPurchaseListDetails , setisPurchaseDetailLoading }) => {
   const [isModalOpen, setisModalOpen] = useState(false);
   const [isLoading, setisLoading] = useState(true);
   const { getPurchaseTimeLine, purchaseTimeLine } =
@@ -224,6 +223,8 @@ const PurchaseInfoRightPart = ({ className }) => {
         timeLineDetails={purchaseTimeLine}
         isOpen={isModalOpen}
         setisOpen={setisModalOpen}
+        getPurchaseListDetails={getPurchaseListDetails}
+        setisPurchaseDetailLoading={setisPurchaseDetailLoading}
       />
       <div
         className={`h-fit w-full grid lg:grid-cols-1 grid-cols-2 gap-4 ${className}`}
@@ -318,6 +319,8 @@ const UpdateTimeLineModal = ({
   timeLineDetails,
   setisTimeLineLoading,
   getPurchaseTimeLine,
+  getPurchaseListDetails,
+  setisPurchaseDetailLoading
 }) => {
   const [formData, setformData] = useState({
     amount: "",
@@ -362,7 +365,8 @@ const UpdateTimeLineModal = ({
         },
         setisLoading
       );
-      await getPurchaseTimeLine(purchaseid, setisTimeLineLoading);
+      // await getPurchaseTimeLine(purchaseid, setisTimeLineLoading);
+      await getPurchaseListDetails(purchaseid, setisPurchaseDetailLoading);
       handelClose();
     } catch (error) {
       console.log(error);

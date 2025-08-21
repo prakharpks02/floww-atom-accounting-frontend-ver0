@@ -173,7 +173,7 @@ const PurchaseOrderNumber = ({ purchaseDetails, className, poNo }) => {
   const { createPurchaseListFormDispatch } = useContext(PurchaseListContext);
   const { getPurchaseOrderList, purchaseOrderList, purchaseOrderDetails } =
     useContext(PurchaseOrderContext);
-  const [isLoading, setisLoading] = useState(false);
+  const [isLoading, setisLoading] = useState(true);
   const [isDropdownOpen, setisDropdownOpen] = useState(false);
   const [query, setquery] = useState("");
 
@@ -509,29 +509,33 @@ const PurchaseOrderNumber = ({ purchaseDetails, className, poNo }) => {
           )}
 
           {/* add new sales id */}
-          {/* <button
-            tabIndex={0}
-            onClick={() => {
-              navigate("/purchase/createOrder/new?purchaseId=new");
-            }}
-            className=" w-full hover:bg-[#f2f2f2] my-2 transition opacity-80 px-6 py-3 cursor-pointer flex items-center gap-2 rounded-xl text-[#2543B1] text-base font-medium"
-          >
-            <div className=" p-0.5 rounded-full flex items-center bg-[#2543B1]">
-              <Plus className="w-4 h-4 text-white" />
-            </div>
-            {`Add new purchase order`}
-          </button> */}
+          {!isLoading && (
+            <button
+              tabIndex={0}
+              onClick={() => {
+                navigate("/purchase/createOrder/new?purchaseId=new");
+              }}
+              className=" w-full hover:bg-[#f2f2f2] my-2 transition opacity-80 px-6 py-3 cursor-pointer flex items-center gap-2 rounded-xl text-[#2543B1] text-base font-medium"
+            >
+              <div className=" p-0.5 rounded-full flex items-center bg-[#2543B1]">
+                <Plus className="w-4 h-4 text-white" />
+              </div>
+              {`Add new purchase order`}
+            </button>
+          )}
 
           {/* search bar  */}
-          <input
-            value={query}
-            onChange={(e) => {
-              setquery(e.target.value);
-            }}
-            type="text"
-            placeholder="Search Purchase order ID"
-            className=" rounded-t-xl rounded-b-md w-full text-sm text-gray-700 px-4 py-3 outline-none bg-gray-200/50 border-1 border-gray-300 "
-          />
+          {!isLoading && (
+            <input
+              value={query}
+              onChange={(e) => {
+                setquery(e.target.value);
+              }}
+              type="text"
+              placeholder="Search Purchase order ID"
+              className=" rounded-t-xl rounded-b-md w-full text-sm text-gray-700 px-4 py-3 outline-none bg-gray-200/50 border-1 border-gray-300 "
+            />
+          )}
 
           {!isLoading && (
             <ul className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal placeholder:text-[#00000080] text-[#000000a1]">
@@ -1235,7 +1239,12 @@ const SubTotal = ({ className, purchaseDetails }) => {
     //calculate subtotal
     setsubtotal(createPurchaseListForm.subtotalAmount);
     setdiscount(createPurchaseListForm.discountAmount);
-    setisAdjustment(createPurchaseListForm.adjustmentAmount);
+    setisAdjustment(
+      createPurchaseListForm.adjustmentAmount.toString().toLowerCase() ===
+        "true"
+        ? true
+        : false
+    );
     settds({
       value: createPurchaseListForm?.tdsAmount || "0%",
       name: createPurchaseListForm?.tdsReason || "N/A",
