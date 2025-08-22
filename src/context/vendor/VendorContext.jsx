@@ -11,7 +11,7 @@ import { CompanyContext } from "../company/CompanyContext";
 import { showToast } from "../../utils/showToast";
 import axios from "axios";
 import { validateFields } from "../../utils/checkFormValidation";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "../userContext/UserContext";
 import { uploadFile } from "../../utils/uploadFiles";
 
@@ -93,6 +93,7 @@ export const VendorContextProvider = ({ children }) => {
   );
   const { companyDetails } = useContext(CompanyContext);
   const { userDetails } = useContext(UserContext);
+  const { pathname } = useLocation();
 
   const navigate = useNavigate();
 
@@ -232,7 +233,7 @@ export const VendorContextProvider = ({ children }) => {
       console.log(validationErrors);
       if (Object.keys(validationErrors).length > 0) {
         setErrors(validationErrors);
-        console.log(validationErrors)
+        console.log(validationErrors);
         showToast("All fields are required", 1);
         return;
       }
@@ -441,6 +442,13 @@ export const VendorContextProvider = ({ children }) => {
     },
     [AllVendorList, userDetails]
   );
+
+  // reset the to intial value
+  useEffect(() => {
+    setvendorDetails(null);
+    !pathname.toLowerCase().includes("/addvendors") &&
+      createVendorFormDispatch({ type: "RESET" });
+  }, [pathname]);
 
   console.log(createVendorForm);
 

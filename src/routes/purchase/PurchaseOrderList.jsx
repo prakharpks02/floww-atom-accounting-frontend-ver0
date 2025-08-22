@@ -19,6 +19,7 @@ import {
   Upload,
   X,
   RotateCcw,
+  Eye,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { getAllSales } from "../../data/sales/handelSalesdata";
@@ -32,6 +33,9 @@ import {
   getAllMonths,
 } from "../../utils/dropdownFields";
 import { downloadFile } from "../../utils/downloadFile";
+import { ItemToolTip } from "../../component/ItemToolTip";
+import { CompanyContext } from "../../context/company/CompanyContext";
+import { downloadPOasPDF } from "../../utils/downloadPOasPDF";
 
 export const PurchaseOrderList = () => {
   const [tempAllPurchaseOrder, settempAllPurchaseOrder] = useState(null);
@@ -145,15 +149,24 @@ export const PurchaseOrderList = () => {
 };
 
 const ShowPurchaseOrderInTable = ({ allPurchase }) => {
+  const [isDownloading, setisDownloading] = useState(-1);
+  const { companyDetails } = useContext(CompanyContext);
   const navigate = useNavigate();
-  console.log("all ", allPurchase);
+
+  console.log(isDownloading)
   return (
     <>
       {allPurchase && (
-        <div div className=" overflow-auto flex-1 min-h-[300px]">
+        <div div className=" overflow-auto flex-1 min-h-[400px]">
           <table className="min-w-full text-sm text-left ">
             <thead className=" text-sm lg:text-base xl:text-lg 2xl:text-xl text-[#4A4A4A] border-b-[#0000001A] border-b-[1px]  ">
               <tr className="">
+                <th
+                  scope="col"
+                  className="px-3 py-4 whitespace-nowrap font-medium "
+                >
+                  Download
+                </th>
                 <th
                   scope="col"
                   className="px-3 py-4 whitespace-nowrap font-medium "
@@ -171,12 +184,6 @@ const ShowPurchaseOrderInTable = ({ allPurchase }) => {
                   className="px-3 py-4 whitespace-nowrap font-medium "
                 >
                   Email
-                </th>
-                <th
-                  scope="col"
-                  className="px-3 py-4 whitespace-nowrap font-medium "
-                >
-                  Items
                 </th>
                 <th
                   scope="col"
@@ -200,98 +207,122 @@ const ShowPurchaseOrderInTable = ({ allPurchase }) => {
             </thead>
             <tbody>
               {[...(allPurchase || [])].reverse()?.map((purchase, idx) => {
-                return purchase?.list_items?.map((item, index) => {
-                  return purchase.po_url?.map((doc, i) => {
-                    return (
-                      <tr
-                        key={`${idx}-${index}-${i}`}
-                        onClick={(e) => {
-                          doc.invoice_url?.toLowerCase() == "n/a" &&
-                            navigate(
-                              `/purchase/purchaseOrderDetails/${purchase.po_id}`
-                            );
+                return (
+                  <tr
+                    key={`${idx}`}
+                    onClick={(e) => {
+                      purchase.po_url[0].invoice_url?.toLowerCase() == "n/a" &&
+                        navigate(
+                          `/purchase/purchaseOrderDetails/${purchase.po_id}`
+                        );
 
-                          doc.invoice_url?.toLowerCase() != "n/a" &&
-                            downloadFile(
-                              doc.invoice_url,
-                              `Purchase-order-${purchase.po_id}`
-                            );
-                        }}
-                        className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
+                      purchase.po_url[0].invoice_url?.toLowerCase() != "n/a" &&
+                        downloadFile(
+                          purchase.po_url[0].invoice_url,
+                          `Purchase-order-${purchase.po_id}`
+                        );
+                    }}
+                    className=" hover:bg-[#e6e6e6c4] cursor-pointer border-b-[#0000001A] border-b-[1px] text-xs md:text-sm xl:text-base 2xl:text-lg"
+                  >
+                    <td
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        setisDownloading(`${idx}`);
+                        await downloadPOasPDF(
+                          purchase,
+                          companyDetails,
+                        );
+                        setisDownloading(-1);
+                      }}
+                      className=" text-center px-3 py-4 text-[#ffffff] font-medium"
+                    >
+                      <button
+                        disabled={isDownloading === `${idx}`}
+                        aria-label="download sales details"
+                        className=" disabled:cursor-not-allowed text-[#2543B1] cursor-pointer"
                       >
-                        <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
-                          {purchase.po_id}
-                        </td>
-                        <td
-                          className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium"
-                          style={{
-                            textAlign:
-                              doc.invoice_url?.toLowerCase() == "n/a"
-                                ? "start"
-                                : "center",
-                          }}
-                        >
-                          {doc.invoice_url?.toLowerCase() == "n/a"
-                            ? `${purchase.vendor_name}`
-                            : "--"}
-                        </td>
-                        <td
-                          className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium"
-                          style={{
-                            textAlign:
-                              doc.invoice_url?.toLowerCase() == "n/a"
-                                ? "start"
-                                : "center",
-                          }}
-                        >
-                          {doc.invoice_url?.toLowerCase() == "n/a"
-                            ? `${purchase.email}`
-                            : "--"}
-                        </td>
-                        <td
-                          className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium"
-                          style={{
-                            textAlign:
-                              doc.invoice_url?.toLowerCase() == "n/a"
-                                ? "start"
-                                : "center",
-                          }}
-                        >
-                          {doc.invoice_url?.toLowerCase() == "n/a"
-                            ? `${item.item_name}`
-                            : "--"}
-                        </td>
-                        <td className=" text-center whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
-                          {doc.invoice_url?.toLowerCase() == "n/a"
-                            ? `${item.quantity}`
-                            : "--"}
-                        </td>
-                        <td
-                          className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium"
-                          style={{
-                            textAlign:
-                              doc.invoice_url?.toLowerCase() == "n/a"
-                                ? "start"
-                                : "center",
-                          }}
-                        >
-                          {doc.invoice_url?.toLowerCase() == "n/a"
-                            ? ` ₹ ${Number(item.gross_amount).toLocaleString(
-                                "en-IN",
-                                {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                }
-                              )}`
-                            : "--"}
-                        </td>
-                        <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
-                          {purchase.po_date}
-                        </td>
-                      </tr>
-                    );
-                  });
-                });
+                        {isDownloading === `${idx}` ? (
+                          <>
+                            <Loader2 className=" w-5 animate-spin mx-auto" />
+                          </>
+                        ) : (
+                          <Download className=" w-8" />
+                        )}
+                      </button>
+                    </td>
+                    <td className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
+                      {purchase.po_id}
+                    </td>
+                    <td
+                      className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium"
+                      style={{
+                        textAlign:
+                          purchase.po_url[0].invoice_url?.toLowerCase() == "n/a"
+                            ? "start"
+                            : "center",
+                      }}
+                    >
+                      {purchase.po_url[0].invoice_url?.toLowerCase() == "n/a"
+                        ? `${purchase.vendor_name}`
+                        : "--"}
+                    </td>
+                    <td
+                      className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium"
+                      style={{
+                        textAlign:
+                          purchase.po_url[0].invoice_url?.toLowerCase() == "n/a"
+                            ? "start"
+                            : "center",
+                      }}
+                    >
+                      {purchase.po_url[0].invoice_url?.toLowerCase() == "n/a"
+                        ? `${purchase.email}`
+                        : "--"}
+                    </td>
+
+                    <td className="flex items-center justify-center gap-2 text-center whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium">
+                      {purchase.po_url[0].invoice_url?.toLowerCase() ==
+                      "n/a" ? (
+                        <>
+                          {purchase.list_items.length}
+                          <div className=" relative group">
+                            <Eye className=" w-5 " />
+                            <ItemToolTip
+                              items={purchase.list_items}
+                              className={
+                                " hidden group-hover:block top-0 left-[110%]"
+                              }
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        "--"
+                      )}
+                    </td>
+                    <td
+                      className=" whitespace-nowrap px-3 py-4 text-[#4A4A4A] font-medium"
+                      style={{
+                        textAlign:
+                          purchase.po_url[0].invoice_url?.toLowerCase() == "n/a"
+                            ? "start"
+                            : "center",
+                      }}
+                    >
+                      {purchase.po_url[0].invoice_url?.toLowerCase() == "n/a"
+                        ? `₹ ${Number(purchase.total_amount).toLocaleString(
+                            "en-IN",
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }
+                          )}`
+                        : "--"}
+                    </td>
+                    <td className=" whitespace-nowrap px-3 py-4 text-[#A4A4A4] font-medium">
+                      {purchase.po_date}
+                    </td>
+                  </tr>
+                );
               })}
             </tbody>
           </table>

@@ -32,6 +32,7 @@ import { PurchaseListContext } from "../../context/purchaseList/PurchaseListCont
 import { UserContext } from "../../context/userContext/UserContext";
 import { CompanyContext } from "../../context/company/CompanyContext";
 import axios from "axios";
+import { getFileNameFromURL } from "../../utils/getFileNameFromURL";
 
 const timelineData = [
   {
@@ -132,9 +133,8 @@ export const PurchaseDetails = () => {
             />
             <PurchaseInfoRightPart
               className={"lg:col-span-4"}
-              purchaseDetails={purchaseDetails}
-              setisLoading={setisLoading}
               getPurchaseListDetails={getPurchaseListDetails}
+              setisPurchaseDetailLoading={setisLoading}
             />
           </div>
         </div>
@@ -155,16 +155,13 @@ const PurchaseInfoLeftPart = ({ className, purchaseDetails }) => {
   );
 };
 
-const PurchaseInfoRightPart = ({
-  className,
-  purchaseDetails,
-  setisLoading,
-  getPurchaseListDetails,
-}) => {
+const PurchaseInfoRightPart = ({ className, getPurchaseListDetails , setisPurchaseDetailLoading }) => {
   const [isModalOpen, setisModalOpen] = useState(false);
-  const [amountPaid, setamountPaid] = useState(
-    Number(purchaseDetails.total_amount)
-  );
+  const [isLoading, setisLoading] = useState(true);
+  const { getPurchaseTimeLine, purchaseTimeLine } =
+    useContext(PurchaseListContext);
+  const { purchaseid } = useParams();
+
   const iconMap = {
     Approved: <CheckCircle size={18} />,
     Sent: <Send size={18} />,
@@ -181,12 +178,12 @@ const PurchaseInfoRightPart = ({
     return ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext);
   }, []);
 
-  const getFilePreview = (file, ext) => {
+  const getFilePreview = (url, ext) => {
     if (isImage(ext)) {
       return (
         <img
-          src={file?.related_doc_url || "document image"}
-          alt={`preview ${file?.related_doc_name}`}
+          src={url || "document image"}
+          alt={`preview ${getFileNameFromURL(url)}`}
           className="object-contain w-full text-[10px]"
         />
       );
@@ -205,34 +202,35 @@ const PurchaseInfoRightPart = ({
   };
 
   useEffect(() => {
-    const totalAmount = purchaseDetails.payment_transactions_list?.reduce(
-      (sum, txn) => {
-        return sum + parseFloat(txn.amount || "0");
-      },
-      0
+    getPurchaseTimeLine(purchaseid, setisLoading);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className={` py-8 px-3 flex justify-center ${className}`}>
+        <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
+      </div>
     );
-    setamountPaid(totalAmount);
-  }, [purchaseDetails]);
+  }
+
+  console.log(purchaseTimeLine);
 
   return (
     <>
       <UpdateTimeLineModal
-        amountPaid={amountPaid}
-        setisPurchaseDetailLoading={setisLoading}
-        getPurchaseListDetails={getPurchaseListDetails}
-        purchaseDetails={purchaseDetails}
+        setisTimeLineLoading={setisLoading}
+        getPurchaseTimeLine={getPurchaseTimeLine}
+        timeLineDetails={purchaseTimeLine}
         isOpen={isModalOpen}
         setisOpen={setisModalOpen}
+        getPurchaseListDetails={getPurchaseListDetails}
+        setisPurchaseDetailLoading={setisPurchaseDetailLoading}
       />
       <div
         className={`h-fit w-full grid lg:grid-cols-1 grid-cols-2 gap-4 ${className}`}
       >
         {/* amount pie chart  */}
-        <AmountPieChart
-          className={" h-fit"}
-          totalAmount={Number(purchaseDetails.total_amount)}
-          amountPaid={amountPaid}
-        />
+        <AmountPieChart className={" h-fit"} />
         <div
           className={`rounded-lg w-full h-fit 2xl:p-8 xl:p-6 md:p-4 p-2 border-[1.5px] border-[#E8E8E8] `}
         >
@@ -240,15 +238,17 @@ const PurchaseInfoRightPart = ({
             Timeline
           </h2>
           <div className=" mb-6 flex flex-wrap justify-between items-center">
-            <button
-              onClick={() => {
-                setisModalOpen(true);
-              }}
-              className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs 
+            {Number(purchaseTimeLine.remaining_balance) > 0 && (
+              <button
+                onClick={() => {
+                  setisModalOpen(true);
+                }}
+                className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs 
           bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
-            >
-              Update Timeline <History className="w-5 h-5 rotate-y-180" />
-            </button>
+              >
+                Update Timeline <History className="w-5 h-5 rotate-y-180" />
+              </button>
+            )}
             {/* <button
               onClick={() => {
                 setisModalOpen(true);
@@ -260,7 +260,7 @@ const PurchaseInfoRightPart = ({
             </button> */}
           </div>
           <div className="space-y-4">
-            {purchaseDetails?.payment_transactions_list
+            {[...(purchaseTimeLine?.timeline ?? [])]
               ?.reverse()
               ?.map((item, idx) => {
                 const ext = getFileExtension(item?.transaction_url);
@@ -284,12 +284,22 @@ const PurchaseInfoRightPart = ({
                     {/* File box if present */}
                     {item.transaction_url &&
                       item.transaction_url.toLowerCase() != "n/a" && (
-                        <div className="ml-11 bg-white border-[#0000001A] border-1  shadow-sm rounded-lg flex items-center gap-3 px-2 py-2 w-fit text-sm">
-                          <div className=" text-white w-15 px-2 py-2 rounded text-xs font-semibold">
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(item?.transaction_url, "_blank");
+                          }}
+                          className="ml-11 bg-white border-[#0000001A] border-1  shadow-sm rounded-lg flex items-center gap-2 px-2 py-2 w-fit text-sm"
+                        >
+                          <div
+                            className={`text-white ${
+                              isImage(ext) ? "w-30" : "w-15"
+                            } px-2 py-2 rounded text-xs font-semibold`}
+                          >
                             {getFilePreview(item?.transaction_url, ext)}
                           </div>
-                          <span className="text-[#606060] font-medium xl:text-base md:text-sm text-xs">
-                            {item.transaction_url}
+                          <span className="text-[#606060] font-medium xl:text-sm text-xs">
+                            {getFileNameFromURL(item.transaction_url)}
                           </span>
                         </div>
                       )}
@@ -304,25 +314,23 @@ const PurchaseInfoRightPart = ({
 };
 
 const UpdateTimeLineModal = ({
-  amountPaid,
   isOpen,
   setisOpen,
-  purchaseDetails,
-  setisPurchaseDetailLoading,
+  timeLineDetails,
+  setisTimeLineLoading,
+  getPurchaseTimeLine,
   getPurchaseListDetails,
+  setisPurchaseDetailLoading
 }) => {
   const [formData, setformData] = useState({
-    transaction_id: "N/A",
-    timestamp: Date.now(),
     amount: "",
     remark: "",
-    transaction_url: "",
+    file: null,
   });
-  const { userDetails } = useContext(UserContext);
-  const { companyDetails } = useContext(CompanyContext);
+  const { updatePurchaseTimeLine } = useContext(PurchaseListContext);
   const [isLoading, setisLoading] = useState(false);
-  const { purchaseid } = useParams();
 
+  const { purchaseid } = useParams();
   const handleSubmit = async () => {
     await updateTimeLine();
   };
@@ -332,89 +340,32 @@ const UpdateTimeLineModal = ({
   };
 
   const updateTimeLine = useCallback(async () => {
-    // const userId = userDetails?.userId;
-    // if (!userId) {
-    //   showToast("user ID not found", 1);
-    //   return;
-    // }
     const token = localStorage.getItem("token");
     if (!token) {
       showToast("Token not found", 1);
       return;
     }
-    if (!formData.amount || !formData.transaction_url || !formData.remark) {
+    if (!formData.amount || !formData.file || !formData.remark) {
       showToast("All fields are required", 1);
       return;
     }
 
-    if (
-      Number(formData.amount) >
-      Number(purchaseDetails.total_amount) - amountPaid
-    ) {
-      // console.log(
-      //   Number(saleDetails.total_amount) - amountPaid,
-      //   Number(formData.amount)
-      // );
+    if (Number(formData.amount) > Number(timeLineDetails?.remaining_balance)) {
       showToast("Amount must less than leftover amount", 1);
       return;
     }
 
     try {
-      setisLoading(true);
-      const res = await axios.post(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/accounting/update-purchase-details/`,
+      await updatePurchaseTimeLine(
         {
-          poId: purchaseDetails.po_id,
-          poNumber: purchaseDetails.po_number,
-          listItems: purchaseDetails.list_items,
-          listToc: purchaseDetails.list_toc,
-          listStatus: purchaseDetails.list_status,
-          paymentTransactionsList: [
-            ...purchaseDetails.payment_transactions_list,
-            formData,
-          ],
-          attachments: purchaseDetails.attachments,
-          vendorId: purchaseDetails.vendor_id,
-          notes: purchaseDetails.notes,
-          contactNo: purchaseDetails.contact_no,
-          email: purchaseDetails.email,
-          invoiceNo: purchaseDetails.invoice_no,
-          invoiceUrl: purchaseDetails.invoice_url,
-          invoiceDate: purchaseDetails.invoice_date,
-          invoiceDueBy: purchaseDetails.invoice_due_by,
-          quotationId: purchaseDetails.quotation_id,
-          vendorName: purchaseDetails.vendor_name,
-          purchaseDate: purchaseDetails.purchase_date,
-          createdOn: purchaseDetails.created_on,
-          status: purchaseDetails.status,
-          gstNumber: purchaseDetails.gst_number,
-          panNumber: purchaseDetails.pan_number,
-          subtotalAmount: purchaseDetails.subtotal_amount,
-          discountAmount: purchaseDetails.discount_amount,
-          tdsAmount: purchaseDetails.tds_amount,
-          adjustmentAmount: purchaseDetails.adjustment_amount,
-          totalAmount: purchaseDetails.total_amount,
-          tdsReason: purchaseDetails.tds_reason,
-          companyId: purchaseDetails.company_id,
-          // userId: userId,
-          purchaseId: purchaseDetails.purchase_id,
-          purchaseTs: Date.now(),
+          purchaseId: purchaseid,
+          amount: formData.amount,
+          remark: formData.remark,
+          file: formData.file,
         },
-        {
-          headers: {
-            Authorization: token,
-          },
-        }
+        setisLoading
       );
-      if (res.data?.status && res.data.status.toLowerCase() !== "success") {
-        showToast("Somthing went wrong. Please try again", 1);
-        setisLoading(false);
-        return;
-      }
-
-      console.log(res);
+      // await getPurchaseTimeLine(purchaseid, setisTimeLineLoading);
       await getPurchaseListDetails(purchaseid, setisPurchaseDetailLoading);
       handelClose();
     } catch (error) {
@@ -426,9 +377,11 @@ const UpdateTimeLineModal = ({
     } finally {
       setisLoading(false);
     }
-  }, [formData, userDetails, purchaseDetails, companyDetails]);
+  }, [formData, timeLineDetails]);
 
   if (!isOpen) return null;
+
+  console.log(formData);
 
   return (
     <>
@@ -528,7 +481,7 @@ const UploadDocuments = ({ setSelectedFile }) => {
     setSelectedFile((prev) => {
       return {
         ...prev,
-        transaction_url: files && files.length > 0 ? files[0].name : "",
+        file: files && files.length > 0 ? files[0] : "",
       };
     });
   }, [files]);
@@ -602,7 +555,6 @@ const UploadDocuments = ({ setSelectedFile }) => {
 };
 
 const PurchaseDetailsSection = ({ purchaseDetails }) => {
-  console.log(purchaseDetails);
   return (
     <div className="w-full lg:p-6 p-4 rounded-xl border-[1.5px] border-[#E8E8E8]">
       <h2 className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-base text-sm font-semibold text-[#4A4A4A] mb-4">
@@ -757,7 +709,7 @@ const RelatedDocuments = ({ purchaseDetails }) => {
       </div>
 
       <div className="flex flex-wrap items-center justify-start gap-2 mb-4 max-h-[250px] overflow-auto">
-        {files && files.length > 0  ? (
+        {files && files.length > 0 ? (
           <ShowFiles files={files} />
         ) : (
           <div className=" w-full flex flex-col items-center gap-4">
@@ -772,12 +724,12 @@ const RelatedDocuments = ({ purchaseDetails }) => {
   );
 };
 
-const AmountPieChart = ({ className, totalAmount, amountPaid }) => {
-  const amountLeft = Number((totalAmount - amountPaid).toFixed(2));
+const AmountPieChart = ({ className }) => {
+  const { purchaseTimeLine } = useContext(PurchaseListContext);
 
   const data = [
-    { name: "Amount Left", value: amountLeft },
-    { name: "Amount Paid", value: amountPaid },
+    { name: "Amount Left", value: purchaseTimeLine?.remaining_balance || 0 },
+    { name: "Amount Paid", value: purchaseTimeLine?.total_paid || 0 },
   ];
 
   const COLORS = ["#FB3748", "#2543B1"];
@@ -818,7 +770,7 @@ const AmountPieChart = ({ className, totalAmount, amountPaid }) => {
 
         <div className="absolute inset-0 flex flex-col items-center justify-center 2xl:text-3xl xl:text-2xl lg:text-xl md:text-lg text-base font-semibold text-[#4A4A4A]">
           <span className=" ">Total Amount</span>
-          <span className=" ">₹ {totalAmount}</span>
+          <span className=" ">₹ {purchaseTimeLine?.total_amount}</span>
         </div>
       </div>
 
@@ -831,7 +783,7 @@ const AmountPieChart = ({ className, totalAmount, amountPaid }) => {
           <div>
             <span>Amount Paid</span>
             <br />
-            <span>₹ {amountPaid}</span>
+            <span>₹ {purchaseTimeLine?.total_paid}</span>
           </div>
         </div>
         <div className="flex items-center font-medium text-[#606060] ">
@@ -844,11 +796,11 @@ const AmountPieChart = ({ className, totalAmount, amountPaid }) => {
             <br />
             <span>
               ₹{" "}
-              {amountLeft.toLocaleString("en-IN", {
+              {purchaseTimeLine?.remaining_balance.toLocaleString("en-IN", {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 2,
               })}
-            </span>{" "}
+            </span>
           </div>
         </div>
       </div>
@@ -862,9 +814,7 @@ const Description = ({ purchaseDetails }) => {
       <h2 className="2xl:text-3xl xl:text-2xl lg:text-xl md:text-base text-sm font-semibold text-[#4A4A4A] mb-4">
         Description
       </h2>
-      <p className="text-xs text-[#6d6d6d] mt-2">
-        {purchaseDetails?.notes}
-      </p>
+      <p className="text-xs text-[#6d6d6d] mt-2">{purchaseDetails?.notes}</p>
     </div>
   );
 };

@@ -24,6 +24,8 @@ export default function TopBar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  console.log(userDetails);
+
   return (
     !(
       pathname.toLowerCase().includes("login") ||
@@ -48,15 +50,22 @@ export default function TopBar() {
             className="flex items-center gap-3 cursor-pointer select-none"
             onClick={toggleDropdown}
           >
-            {/* <img
-              loading="lazy"
-              src={userDetails.image}
-              alt="Profile image"
-              className="w-10 h-10 text-xs rounded-full object-cover"
-            /> */}
-            <div className=" text-2xl font-semibold flex items-center justify-center w-10 h-10 rounded-full bg-[#0a4f67] text-white">
-              {(userDetails.name || "").split(" ")[0]?.trim()[0].toUpperCase()}
-            </div>
+            {userDetails.image && (
+              <img
+                loading="lazy"
+                src={userDetails.image}
+                alt="Profile image"
+                className="w-10 h-10 text-xs rounded-full object-cover"
+              />
+            )}
+            {!userDetails.image && (
+              <div className=" text-2xl font-semibold flex items-center justify-center w-10 h-10 rounded-full bg-[#0a4f67] text-white">
+                {(userDetails.name || "")
+                  .split(" ")[0]
+                  ?.trim()[0]
+                  .toUpperCase()}
+              </div>
+            )}
             <div className="text-left poppins font-normal flex flex-col justify-between">
               <p className="text-xs font-medium text-[#4A4A4A]">
                 {userDetails.name}
@@ -78,15 +87,17 @@ export default function TopBar() {
                 transition={{ duration: 0.2 }}
                 className="absolute right-0 mt-2 w-fit bg-white border border-gray-200 rounded-md shadow-lg p-2 z-50"
               >
-                <button
-                  onClick={() => {
-                    navigate("/onBoarding");
-                    setOpen(false);
-                  }}
-                  className="w-full whitespace-nowrap cursor-pointer text-left text-sm px-3 py-2 hover:bg-gray-100 rounded"
-                >
-                  Create company
-                </button>
+                {userDetails.email?.toLowerCase() != "member" && (
+                  <button
+                    onClick={() => {
+                      navigate("/onBoarding/new");
+                      setOpen(false);
+                    }}
+                    className="w-full whitespace-nowrap cursor-pointer text-left text-sm px-3 py-2 hover:bg-gray-100 rounded"
+                  >
+                    Create company
+                  </button>
+                )}
                 {/* {userDetails && (
                   <button
                     onClick={() => {

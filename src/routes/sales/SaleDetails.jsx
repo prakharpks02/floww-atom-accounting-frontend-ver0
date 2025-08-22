@@ -70,10 +70,20 @@ export const SaleInfo = () => {
         {/* header  */}
         <div className=" mb-6">
           <div className="flex justify-between items-end mb-1">
-            <h1 className="2xl:text-4xl xl:text-3xl lg:text-2xl md:text-xl text-lg font-semibold text-[#333333]">
-              Sales Information
-            </h1>
-            <div className=" flex items-center gap-3">
+            <div>
+              <h1 className="2xl:text-4xl xl:text-3xl lg:text-2xl md:text-xl text-lg font-semibold text-[#333333]">
+                Sales Information
+              </h1>
+              <div className="flex justify-between items-center  xl:text-base md:text-sm  text-xs">
+                <p className=" text-[#A4A4A4] font-medium ">
+                  Detailed information for sale - {saleDetails?.sales_id}
+                </p>
+                {/* <p className="text-[#A4A4A4] lg:max-w-none max-w-[50%] font-medium ">
+              Note: Edit can only be done once the invoice has been uploaded
+            </p> */}
+              </div>
+            </div>
+            <div className=" flex items-center gap-2">
               <button
                 disabled={isDownloading}
                 onClick={async () => {
@@ -86,38 +96,40 @@ export const SaleInfo = () => {
                     setisDownloading(false);
                   }
                 }}
-                className="px-4 py-3 disabled:cursor-wait disabled:opacity-60 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
+                className="px-3 h-full disabled:cursor-wait disabled:opacity-60 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs text-[#2543B1]  cursor-pointer"
               >
                 {isDownloading ? (
                   <>
                     <Loader2 className=" inline-block w-5 animate-spin" />
-                    Downloading
                   </>
                 ) : (
                   <>
                     {" "}
-                    <Download className="w-5 h-5" /> Download{" "}
+                    <Download className="w-7 h-7" />
                   </>
                 )}
               </button>
               <button
+                disabled={isDownloading}
+                onClick={async () => {
+                  navigate(
+                    `/sales/createInvoice?salesId=${saleDetails?.sales_id}`
+                  );
+                }}
+                className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs bg-[#0033661A] text-[#2543B1] rounded-xl hover:bg-[#00336626] cursor-pointer transition"
+              >
+                Create invoice
+              </button>
+
+              <button
                 onClick={() => {
                   navigate(`/sales/addSales/${saleDetails?.sales_id}`);
                 }}
-                className="px-4 py-3 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
+                className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition-colors"
               >
                 <Edit className="w-5 h-5" /> Edit Sales
               </button>
             </div>
-          </div>
-
-          <div className="mb-8  flex justify-between items-center  xl:text-base md:text-sm  text-xs">
-            <p className=" text-[#A4A4A4] font-medium ">
-              Detailed information for sale - {saleDetails?.sales_id}
-            </p>
-            {/* <p className="text-[#A4A4A4] lg:max-w-none max-w-[50%] font-medium ">
-              Note: Edit can only be done once the invoice has been uploaded
-            </p> */}
           </div>
         </div>
 
@@ -131,10 +143,9 @@ export const SaleInfo = () => {
             saleDetails={saleDetails}
           />
           <SaleInfoRightPart
-            setisLoading={setisLoading}
+            setisSalesDetailsloading={setisLoading}
             getSaleDetails={getSaleDetails}
             className={"lg:col-span-4 col-span-1"}
-            saleDetails={saleDetails}
           />
         </div>
       </div>
@@ -154,7 +165,11 @@ const SaleInfoLeftPart = ({ className, saleDetails }) => {
   );
 };
 
-const SaleInfoRightPart = ({ className, saleDetails }) => {
+const SaleInfoRightPart = ({
+  className,
+  getSaleDetails,
+  setisSalesDetailsloading,
+}) => {
   const [isModalOpen, setisModalOpen] = useState(false);
   const [isLoading, setisLoading] = useState(true);
   const { getSalesTimeLine, salesTimeLine } = useContext(SalesContext);
@@ -216,6 +231,8 @@ const SaleInfoRightPart = ({ className, saleDetails }) => {
   return (
     <>
       <UpdateTimeLineModal
+        getSaleDetails={getSaleDetails}
+        setisSalesDetailsloading={setisSalesDetailsloading}
         setisTimeLineLoading={setisLoading}
         getSalesTimeLine={getSalesTimeLine}
         timeLineDetails={salesTimeLine}
@@ -295,9 +312,6 @@ const SaleInfoRightPart = ({ className, saleDetails }) => {
                             {getFilePreview(item?.transaction_url, ext)}
                           </div>
                           <span className="text-[#606060] font-medium  xl:text-sm text-xs">
-                            {/* {fileName.includes(".")
-                              ? fileName.substring(0, fileName.lastIndexOf("."))
-                              : fileName} */}
                             {getFileNameFromURL(item.transaction_url)}
                           </span>
                         </div>
@@ -318,15 +332,14 @@ const UpdateTimeLineModal = ({
   timeLineDetails,
   setisTimeLineLoading,
   getSalesTimeLine,
+  getSaleDetails,
+  setisSalesDetailsloading,
 }) => {
   const [formData, setformData] = useState({
-    transaction_id: "N/A",
     amount: "",
     remark: "",
     file: null,
   });
-  const { userDetails } = useContext(UserContext);
-  const { companyDetails } = useContext(CompanyContext);
   const { updateSalesTimeLine } = useContext(SalesContext);
   const [isLoading, setisLoading] = useState(false);
 
@@ -341,11 +354,6 @@ const UpdateTimeLineModal = ({
   };
 
   const updateTimeLine = useCallback(async () => {
-    // const userId = userDetails?.userId;
-    // if (!userId) {
-    //   showToast("user ID not found", 1);
-    //   return;
-    // }
     const token = localStorage.getItem("token");
     if (!token) {
       showToast("Token not found", 1);
@@ -357,10 +365,6 @@ const UpdateTimeLineModal = ({
     }
 
     if (Number(formData.amount) > Number(timeLineDetails?.remaining_balance)) {
-      // console.log(
-      //   Number(saleDetails.total_amount) - amountPaid,
-      //   Number(formData.amount)
-      // );
       showToast(
         `Amount must less than remaining amount - ${timeLineDetails?.remaining_balance}`,
         1
@@ -378,7 +382,8 @@ const UpdateTimeLineModal = ({
         },
         setisLoading
       );
-      await getSalesTimeLine(saleid, setisTimeLineLoading);
+      // await getSalesTimeLine(saleid, setisTimeLineLoading);
+      await getSaleDetails(saleid, setisSalesDetailsloading);
       handelClose();
     } catch (error) {
       console.log(error);
@@ -389,7 +394,7 @@ const UpdateTimeLineModal = ({
     } finally {
       setisLoading(false);
     }
-  }, [formData, userDetails, timeLineDetails, companyDetails]);
+  }, [formData, timeLineDetails]);
 
   if (!isOpen) return null;
 
@@ -567,12 +572,7 @@ const UploadDocuments = ({ setSelectedFile }) => {
 };
 
 const AmountPieChart = ({ className }) => {
-  // const totalAmount = amountPaid + amountLeft ;
-  // const amountPaid = 600000;
   const { salesTimeLine } = useContext(SalesContext);
-
-  // console.log(totalAmount, amountPaid, amountLeft);
-
   const data = [
     { name: "Amount Left", value: salesTimeLine?.remaining_balance || 0 },
     { name: "Amount Paid", value: salesTimeLine?.total_paid || 0 },
@@ -700,7 +700,9 @@ const SaleDetails = ({ saleDetails }) => {
                 : "text-[#FB3748]"
             } font-medium 2xl:text-2xl xl:text-xl lg:text-lg md:text-base text-sm`}
           >
-            {saleDetails?.status}
+            {saleDetails?.status?.toLowerCase().includes("partially")
+              ? "Partially paid"
+              : saleDetails?.status}
           </span>
         </div>
       </div>
@@ -894,7 +896,7 @@ const ShowFiles = ({ files }) => {
     }
   };
 
-  console.log(files)
+  console.log(files);
 
   return (
     <div className="max-h-[200px] w-full overflow-y-auto flex flex-wrap justify-center gap-3 pt-5">

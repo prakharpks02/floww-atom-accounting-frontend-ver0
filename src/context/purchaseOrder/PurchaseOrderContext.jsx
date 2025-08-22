@@ -61,7 +61,7 @@ export const initialPurchaseOrderState = {
   poUrl: [{ invoice_url: "N/A" }],
   poDate: "",
   gstNumber: "",
-  vendorPanNumber:"",
+  vendorPanNumber: "",
   tdsAmount: "",
   tdsReason: "",
   adjustmentAmount: "",
@@ -321,7 +321,7 @@ export const PurchaseOrderContextProvider = ({ children }) => {
         // reset form data
 
         showToast("Purchase Order created.");
-        navigate(`/purchase/OrderList`);
+        return res.data.data.po_id
       } catch (error) {
         console.log(error);
         showToast(
