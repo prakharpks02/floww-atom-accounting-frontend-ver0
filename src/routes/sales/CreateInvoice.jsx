@@ -100,7 +100,6 @@ const CreateInvoiceForm = ({ activeTab }) => {
   const [isLoading, setisLoading] = useState(false);
   const { createInvoice, createInvoiceForm } = useContext(InvoiceContext);
   const { companyDetails } = useContext(CompanyContext);
-  const [previousDetails, setpreviousDetails] = useState(-1);
   const { getSaleDetails, setsaleDetails } = useContext(SalesContext);
   const [isSalesDetailsLoading, setisSalesDetailsLoading] = useState(true);
   const [salesId, setsalesId] = useState(null);
@@ -125,10 +124,7 @@ const CreateInvoiceForm = ({ activeTab }) => {
   return (
     <>
       <div className=" grid lg:grid-cols-2 grid-cols-1 gap-x-2 gap-y-4 mb-4">
-        <CreateInvoiceLeftPart
-          previousDetails={previousDetails}
-          salesId={salesId}
-        />
+        <CreateInvoiceLeftPart salesId={salesId} />
         <CreateInvoiceRightPart handelDownloadInvoice={downloadInvoiceAsPDF} />
       </div>
       {/* Action Buttons */}
@@ -177,7 +173,7 @@ const CreateInvoiceLeftPart = ({ salesId }) => {
           <div className=" grid md:grid-cols-2 grid-cols-1 gap-3 space-y-4 mb-4 w-full">
             <SalesIDInputField
               className={" col-span-2"}
-              hasSalesId={salesId ? true : false}
+              hasSalesId={salesId && salesId != "new" ? true : false}
             />
             <InvoiceNumberInputField className={" col-span-1"} />
             <InvoiceDateInputField className={" col-span-1"} />
@@ -1069,7 +1065,7 @@ const SalesIDInputField = ({ className, hasSalesId }) => {
   const [query, setquery] = useState("");
   const { createInvoiceDispatch, createInvoiceForm } =
     useContext(InvoiceContext);
-  const { getAllSales, AllSalesList, setsaleDetails ,saleDetails } =
+  const { getAllSales, AllSalesList, setsaleDetails, saleDetails } =
     useContext(SalesContext);
   const [salesId, setsalesId] = useState("");
   const dropDownRef = useRef();
@@ -1196,18 +1192,7 @@ const SalesIDInputField = ({ className, hasSalesId }) => {
               <button
                 tabIndex={0}
                 onClick={() => {
-                  localStorage.setItem(
-                    "createInvoiceForm",
-                    JSON.stringify(createInvoiceForm)
-                  );
-                  navigate(
-                    // `${
-                    //   createInvoiceForm.invoiceNumber
-                    //     ? `/sales/addSales/new?invoiceNo=${createInvoiceForm.invoiceNumber}`
-                    //     : "/sales/addSales/new"
-                    // }`
-                    "/sales/addSales/new?invoiceNo=new"
-                  );
+                  navigate("/sales/addSales/new?invoiceNo=new");
                 }}
                 className=" w-full hover:bg-[#f2f2f2] my-2 transition opacity-80 px-6 py-3 cursor-pointer flex items-center gap-2 rounded-xl text-[#2543B1] text-base font-medium"
               >
@@ -1421,7 +1406,6 @@ const CustomerNameInputField = ({ className }) => {
       customer_name: saleDetails?.customer_name || "",
     });
   }, [saleDetails]);
-
 
   return (
     <>

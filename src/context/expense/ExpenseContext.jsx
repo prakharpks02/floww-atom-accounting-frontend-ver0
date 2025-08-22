@@ -10,7 +10,7 @@ import { CompanyContext } from "../company/CompanyContext";
 import { showToast } from "../../utils/showToast";
 import axios from "axios";
 import { validateFields } from "../../utils/checkFormValidation";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   FilterDataOnCategory,
   FilterDataOnCreatedBy,
@@ -90,6 +90,7 @@ export const ExpenseContextprovider = ({ children }) => {
   );
   const { userDetails } = useContext(UserContext);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   // get all expenses
   const getAllExpense = async (setisLoading = () => {}) => {
@@ -464,6 +465,13 @@ export const ExpenseContextprovider = ({ children }) => {
     },
     [AllExpenseList, userDetails]
   );
+
+  // reset the to intial value
+  useEffect(() => {
+    setexpenseDetails(null);
+    !pathname.toLowerCase().includes("/addexpense") &&
+      createExpenseFormdispatch({ type: "RESET" });
+  }, [pathname]);
 
   console.log(createExpenseForm);
 

@@ -23,6 +23,7 @@ import {
 } from "../../utils/filterData";
 import { UserContext } from "../userContext/UserContext";
 import { uploadFile } from "../../utils/uploadFiles";
+import { formatISODateToDDMMYYYY } from "../../utils/formateDate";
 
 export const PurchaseListContext = createContext();
 
@@ -121,6 +122,7 @@ export const PurchaseListReducer = (state, action) => {
 export const PurchaseListContextProvider = ({ children }) => {
   const [purchaseList, setpurchaseList] = useState(null);
   const [purchaseDetails, setpurchaseDetails] = useState(null);
+  const [purchaseTimeLine, setpurchaseTimeLine] = useState(null);
   //create purchase reducer
   const [createPurchaseListForm, createPurchaseListFormDispatch] = useReducer(
     PurchaseListReducer,
@@ -378,7 +380,7 @@ export const PurchaseListContextProvider = ({ children }) => {
         setisLoading(true);
 
         // upload documens
-        console.log(createPurchaseListForm.attachments)
+        console.log(createPurchaseListForm.attachments);
         for (let i = 0; i < createPurchaseListForm.attachments.length; i++) {
           const file = createPurchaseListForm.attachments[i];
           if (file.related_doc_url.toLowerCase() === "n/a") {
@@ -522,13 +524,140 @@ export const PurchaseListContextProvider = ({ children }) => {
     [purchaseList, userDetails]
   );
 
+  //update sales timline
+  const updatePurchaseTimeLine = useCallback(
+    async (data, setisLoading = () => {}) => {
+      if (!data) {
+        showToast("Please provide the data", 1);
+        throw new Error("Please provide the data", 1);
+      }
+
+      const { purchaseId, amount, remark, file } = data;
+      if (!purchaseId || !amount || !remark || !file) {
+        showToast("All fields are required", 1);
+        throw new Error("All fields are required", 1);
+      }
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Token not found", 1);
+        throw new Error("Token not found", 1);
+      }
+
+      try {
+        setisLoading(true);
+        let transactionUrl = "N/A";
+        // upload documens
+        if (file) {
+          const reponse = await uploadFile(file.name, file, token);
+          console.log(reponse);
+          transactionUrl = reponse.doc_url;
+          console.log("file uploaded");
+        }
+
+        const res = await axios.post(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/accounting/update-purchase-timeline-details/`,
+          {
+            purchaseId: purchaseId,
+            transaction: {
+              amount: amount,
+              timestamp: formatISODateToDDMMYYYY(Date.now() / 1000),
+              transaction_url: transactionUrl,
+              remark: remark,
+            },
+          },
+          {
+            headers: {
+              Authorization: token,
+            },
+          }
+        );
+        console.log(res);
+        if (res.data?.status && res.data.status.toLowerCase() !== "success") {
+          setisLoading(false);
+          throw new Error("Somthing went wrong. Please try again", 1);
+        }
+
+        // reset to initial value
+        showToast("Timeline updated");
+      } catch (error) {
+        console.log(error);
+        showToast(
+          error.response?.data?.message ||
+            error.response?.data?.detail ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+        throw new Error(
+          error.response?.data?.message ||
+            error.response?.data?.detail ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+      } finally {
+        setisLoading(false);
+      }
+    },
+    []
+  );
+
+  //get sales timeline details
+  const getPurchaseTimeLine = useCallback(
+    async (purchaseId, setisLoading = () => {}) => {
+      if (!purchaseId) {
+        showToast("Please provide sales id", 1);
+        return;
+      }
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Token not found", 1);
+        return;
+      }
+      try {
+        setisLoading(true);
+        const res = await axios.get(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/accounting/purchase/timeline/?purchaseId=${purchaseId}`,
+          {
+            headers: {
+              Authorization: token,
+            },
+          }
+        );
+        console.log(res);
+        if (res.data?.status && res.data.status.toLowerCase() !== "success") {
+          setisLoading(false);
+          throw new Error("Somthing went wrong. Please try again", 1);
+        }
+
+        setpurchaseTimeLine(res.data);
+      } catch (error) {
+        console.log(error);
+        showToast(
+          error.response?.data?.message ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+      } finally {
+        setisLoading(false);
+      }
+    },
+    []
+  );
+
   useEffect(() => {
     setpurchaseDetails(null);
     !pathname.toLowerCase().includes("/addPurchase") &&
       createPurchaseListFormDispatch({ type: "RESET" });
   }, [pathname]);
 
-  console.log(createPurchaseListForm);
+  // console.log(createPurchaseListForm);
 
   return (
     <PurchaseListContext.Provider
@@ -543,6 +672,10 @@ export const PurchaseListContextProvider = ({ children }) => {
         updatePurchaseList,
         handelMultipleFilter,
         searchPurchase,
+        updatePurchaseTimeLine,
+        getPurchaseTimeLine,
+        purchaseTimeLine,
+        setpurchaseDetails
       }}
     >
       {children}

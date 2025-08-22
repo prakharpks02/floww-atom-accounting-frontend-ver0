@@ -39,27 +39,50 @@ import { PurchaseOrderContext } from "../../context/purchaseOrder/PurchaseOrderC
 export const AddPurchase = () => {
   const navigate = useNavigate();
   const [isLoading, setisLoading] = useState(false);
+  const [isPODetailsLoading, setisPODetailsLoading] = useState(true);
   const {
     createPurchaseList,
     updatePurchaseList,
     getPurchaseListDetails,
     purchaseDetails,
+    setpurchaseDetails,
   } = useContext(PurchaseListContext);
+  const { getPurchaseOrderDetails, setpurchaseOrderDetails } =
+    useContext(PurchaseOrderContext);
   const [isDataFechting, setisDataFechting] = useState(true);
+  const [poNo, setpoNo] = useState(null);
   const { purchaseid } = useParams();
 
   useEffect(() => {
-    getPurchaseListDetails(purchaseid, setisDataFechting);
+    if (purchaseid != "new") {
+      getPurchaseListDetails(purchaseid, setisDataFechting);
+    } else {
+      setpurchaseDetails(null);
+      setisDataFechting(false);
+    }
   }, []);
+
+  useEffect(() => {
+    const temp = new URLSearchParams(window.location.search).get("poNo");
+    setpoNo(temp);
+    if (!temp) {
+      setpurchaseOrderDetails(null);
+      setisPODetailsLoading(false);
+    } else getPurchaseOrderDetails(temp, setisPODetailsLoading);
+  }, []);
+
+  if (isDataFechting || isPODetailsLoading) {
+    return (
+      <div className=" flex-1 flex justify-center items-center py-10 px-4 min-h-[300px]">
+        <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
+      </div>
+    );
+  }
 
   return (
     <>
       <ToastContainer />
-      {isDataFechting && (
-        <div className=" flex-1 flex justify-center items-center py-10 px-4 min-h-[300px]">
-          <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
-        </div>
-      )}
+
       {!isDataFechting && (
         <div className=" p-6 md:px-4 xl:px-6 2xl:px-8 ">
           <h1 className=" md:text-xl lg:text-2xl xl:text-3xl 2xl:text-4xl text-[#4A4A4A] font-semibold mb-1">
@@ -79,6 +102,7 @@ export const AddPurchase = () => {
             {/* Purchases info */}
             <div className="grid grid-cols-1 md:grid-cols-2 space-x-4 space-y-5">
               <PurchaseOrderNumber
+                poNo={poNo}
                 purchaseDetails={purchaseDetails}
                 className={"col-span-2"}
               />
@@ -105,11 +129,16 @@ export const AddPurchase = () => {
             <div className="flex items-center space-x-4 2xl:text-xl xl:text-lg lg:text-base md:text-sm">
               <button
                 disabled={isLoading}
-                onClick={(e) => {
-                  purchaseid?.toLowerCase() === "new" &&
-                    createPurchaseList(e, setisLoading);
-                  if (purchaseid?.toLowerCase() !== "new") {
-                    updatePurchaseList(purchaseid, setisLoading);
+                onClick={async (e) => {
+                  try {
+                    if (purchaseid?.toLowerCase() === "new") {
+                      await createPurchaseList(e, setisLoading);
+                      navigate("/purchase/purchaseList");
+                    } else {
+                      await updatePurchaseList(purchaseid, setisLoading);
+                    }
+                  } catch (error) {
+                    console.log(error);
                   }
                 }}
                 tabIndex={0}
@@ -139,15 +168,16 @@ export const AddPurchase = () => {
   );
 };
 
-const PurchaseOrderNumber = ({ purchaseDetails, className }) => {
+const PurchaseOrderNumber = ({ purchaseDetails, className, poNo }) => {
   const [orderNo, setorderNo] = useState(purchaseDetails?.po_number || "");
   const { createPurchaseListFormDispatch } = useContext(PurchaseListContext);
-  const { getPurchaseOrderList, purchaseOrderList } =
+  const { getPurchaseOrderList, purchaseOrderList, purchaseOrderDetails } =
     useContext(PurchaseOrderContext);
-  const [isLoading, setisLoading] = useState(false);
+  const [isLoading, setisLoading] = useState(true);
   const [isDropdownOpen, setisDropdownOpen] = useState(false);
   const [query, setquery] = useState("");
 
+  const navigate = useNavigate();
   const dropDownRef = useRef();
   const containerRef = useRef();
 
@@ -340,11 +370,86 @@ const PurchaseOrderNumber = ({ purchaseDetails, className }) => {
     });
   }, [purchaseDetails]);
 
-  console.log(filteredData);
+  useEffect(() => {
+    if (!purchaseOrderDetails) return;
+    setorderNo(purchaseOrderDetails.po_number);
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseOrderDetails.list_items,
+      field: "listItems",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseOrderDetails.po_number,
+      field: "poNumber",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseOrderDetails.vendor_id,
+      field: "vendorId",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseOrderDetails.contact_no,
+      field: "contactNo",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseOrderDetails.email,
+      field: "email",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseOrderDetails.vendor_name,
+      field: "vendorName",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseOrderDetails.gst_number,
+      field: "gstNumber",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseOrderDetails.vendor_pan_number,
+      field: "panNumber",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseOrderDetails.sub_total_amount,
+      field: "subtotalAmount",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseOrderDetails.discount_amount,
+      field: "discountAmount",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseOrderDetails.tds_amount,
+      field: "tdsAmount",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseOrderDetails.tds_reason,
+      field: "tdsReason",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseOrderDetails.adjustment_amount,
+      field: "adjustmentAmount",
+    });
+    createPurchaseListFormDispatch({
+      type: "UPDATE_FIELD",
+      value: purchaseOrderDetails.total_amount,
+      field: "totalAmount",
+    });
+  }, [purchaseOrderDetails]);
+
+  console.log(purchaseOrderDetails);
   return (
     <div
       className={` relative ${className} ${
-        purchaseDetails ? "pointer-events-none" : ""
+        purchaseDetails || (poNo && poNo != "new") ? "pointer-events-none" : ""
       }`}
     >
       <label className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal mb-1">
@@ -403,16 +508,34 @@ const PurchaseOrderNumber = ({ purchaseDetails, className }) => {
             </div>
           )}
 
+          {/* add new sales id */}
+          {!isLoading && (
+            <button
+              tabIndex={0}
+              onClick={() => {
+                navigate("/purchase/createOrder/new?purchaseId=new");
+              }}
+              className=" w-full hover:bg-[#f2f2f2] my-2 transition opacity-80 px-6 py-3 cursor-pointer flex items-center gap-2 rounded-xl text-[#2543B1] text-base font-medium"
+            >
+              <div className=" p-0.5 rounded-full flex items-center bg-[#2543B1]">
+                <Plus className="w-4 h-4 text-white" />
+              </div>
+              {`Add new purchase order`}
+            </button>
+          )}
+
           {/* search bar  */}
-          <input
-            value={query}
-            onChange={(e) => {
-              setquery(e.target.value);
-            }}
-            type="text"
-            placeholder="Search Purchase order ID"
-            className=" rounded-t-xl rounded-b-md w-full text-sm text-gray-700 px-4 py-3 outline-none bg-gray-200/50 border-1 border-gray-300 "
-          />
+          {!isLoading && (
+            <input
+              value={query}
+              onChange={(e) => {
+                setquery(e.target.value);
+              }}
+              type="text"
+              placeholder="Search Purchase order ID"
+              className=" rounded-t-xl rounded-b-md w-full text-sm text-gray-700 px-4 py-3 outline-none bg-gray-200/50 border-1 border-gray-300 "
+            />
+          )}
 
           {!isLoading && (
             <ul className="2xl:text-lg xl:text-base lg:text-sm text-xs font-normal placeholder:text-[#00000080] text-[#000000a1]">
@@ -526,10 +649,7 @@ const ItemDetails = ({ purchaseDetails }) => {
 
   const { createPurchaseListForm, createPurchaseListFormDispatch } =
     useContext(PurchaseListContext);
-  const [items, setItems] = useState(
-    purchaseDetails?.list_items ||
-      createPurchaseListForm.listItems || [blankItem]
-  );
+  const [items, setItems] = useState([blankItem]);
 
   // changes fields for particular item row
   const handleChange = (index, field, value) => {
@@ -592,14 +712,12 @@ const ItemDetails = ({ purchaseDetails }) => {
     });
   };
 
-  // reset state value when no purchase data
   useEffect(() => {
-    if (!purchaseDetails) return;
-  }, [purchaseDetails]);
-
-  useEffect(() => {
-    setItems(createPurchaseListForm?.listItems || []);
-  }, [createPurchaseListForm]);
+    setItems(
+      purchaseDetails?.list_items ||
+        createPurchaseListForm?.listItems || [blankItem]
+    );
+  }, [createPurchaseListForm, purchaseDetails]);
 
   //first set all item details to create purchase form
   useEffect(() => {
@@ -799,10 +917,8 @@ const AdditionalNotes = ({ className, purchaseDetails }) => {
 const VendorNameInputField = ({ className, purchaseDetails }) => {
   const { createPurchaseListForm } = useContext(PurchaseListContext);
   const [vendorName, setvendorName] = useState("");
-  const { createPurchaseListFormDispatch } = useContext(PurchaseListContext);
   const [isLoading, setisLoading] = useState(true);
   const navigate = useNavigate();
-  const { AllVendorList, getAllVendors } = useContext(VendorContext);
 
   useEffect(() => {
     setvendorName(createPurchaseListForm?.vendorName || "");
@@ -1010,7 +1126,7 @@ const UploadInvoice = ({ purchaseDetails }) => {
     });
   }, [files]);
 
-  console.log(files)
+  console.log(files);
 
   return (
     <div className=" mb-6 outline-[#00000029] rounded-lg px-3 py-6 border-2 border-[#00000033] border-dashed">
@@ -1123,7 +1239,12 @@ const SubTotal = ({ className, purchaseDetails }) => {
     //calculate subtotal
     setsubtotal(createPurchaseListForm.subtotalAmount);
     setdiscount(createPurchaseListForm.discountAmount);
-    setisAdjustment(createPurchaseListForm.adjustmentAmount);
+    setisAdjustment(
+      createPurchaseListForm.adjustmentAmount.toString().toLowerCase() ===
+        "true"
+        ? true
+        : false
+    );
     settds({
       value: createPurchaseListForm?.tdsAmount || "0%",
       name: createPurchaseListForm?.tdsReason || "N/A",

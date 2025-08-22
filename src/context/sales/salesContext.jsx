@@ -608,7 +608,6 @@ export const SalesContextProvider = ({ children }) => {
           {
             salesId: salesId,
             transaction: {
-              transaction_id: "TRN001",
               amount: amount,
               timestamp: formatISODateToDDMMYYYY(Date.now() / 1000),
               transaction_url: transactionUrl,
@@ -628,9 +627,7 @@ export const SalesContextProvider = ({ children }) => {
         }
 
         // reset to initial value
-        createSaleFormDispatch({ type: "RESET" });
         showToast("Timeline updated");
-        // navigate(`/sales/saleDetails/${saleid}`);
       } catch (error) {
         console.log(error);
         showToast(
@@ -651,7 +648,7 @@ export const SalesContextProvider = ({ children }) => {
         setisLoading(false);
       }
     },
-    [saleDetails]
+    []
   );
 
   //get sales timeline details

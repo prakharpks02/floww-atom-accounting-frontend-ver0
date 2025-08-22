@@ -11,6 +11,7 @@ import {
   ChevronRight,
   ChevronDown,
   Loader2,
+  PenLine,
 } from "lucide-react";
 import React, { useContext, useEffect, useRef } from "react";
 import { useMemo, useState } from "react";
@@ -385,6 +386,7 @@ const SwitchCompanyButton = ({ isPanelClosed }) => {
   const [isLoading, setisLoading] = useState(true);
   const { userDetails } = useContext(UserContext);
 
+  const navigate = useNavigate();
   console.log(companyList);
 
   useEffect(() => {
@@ -416,29 +418,43 @@ const SwitchCompanyButton = ({ isPanelClosed }) => {
     >
       {/* Main Button */}
       <div
-        className={`flex items-center gap-3 rounded-xl ${
-          !isPanelClosed ? " px-4" : " justify-center"
+        className={`flex items-center gap-2 rounded-xl ${
+          !isPanelClosed
+            ? companyList && companyList.length > 0
+              ? "px-2 justify-evenly"
+              : "px-4 justify-start"
+            : " justify-center"
         } py-3 bg-[#0000000D] cursor-pointer select-none`}
         onClick={() => setIsOpen((prev) => !prev)}
       >
-        <img
-          loading="lazy"
-          src={
-            companyDetails?.company_logo ||
-            "https://api.dicebear.com/6.x/initials/svg?seed=G"
-          } // fallback
-          alt="logo"
-          className="w-10 h-10 rounded-full text-xs bg-white object-cover"
-        />
-        {!isPanelClosed && (
-          <div className="text-left">
-            <p className="2xl:text-xl xl:text-lg lg:text-base text-sm font-semibold text-[#4A4A4A]">
-              {companyDetails?.company_name || "Company"}
-            </p>
-          </div>
+          <img
+            loading="lazy"
+            src={
+              companyDetails?.company_logo ||
+              "https://api.dicebear.com/6.x/initials/svg?seed=G"
+            }
+            alt="logo"
+            className="w-10 h-10 rounded-full text-xs bg-white object-cover"
+          />
+          {!isPanelClosed && (
+            <div className="text-left">
+              <p className=" xl:text-base  text-sm font-semibold text-[#4A4A4A]">
+                {companyDetails?.company_name || "Company"}
+              </p>
+            </div>
+          )}
+        {!isPanelClosed && userDetails.email?.toLowerCase() != "member" && (
+          <PenLine
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/onBoarding/${companyDetails?.company_id}`);
+            }}
+            className=" w-5 text-gray-700"
+          />
         )}
+
         {!isPanelClosed && companyList && companyList.length > 0 && (
-          <div className="ml-auto bg-gray-200 rounded-full p-1 hover:bg-gray-300 transition">
+          <div className=" bg-gray-200 rounded-full p-1 hover:bg-gray-300 transition">
             <ChevronDown className=" text-gray-800" size={20} />
           </div>
         )}

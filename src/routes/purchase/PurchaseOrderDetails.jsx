@@ -29,6 +29,8 @@ import { showToast } from "../../utils/showToast";
 import { downloadAsZip } from "../../utils//downloadAsZip";
 import { ItemDetailsTable } from "../../component/ItemDetailsTable";
 import { PurchaseOrderContext } from "../../context/purchaseOrder/PurchaseOrderContext";
+import { downloadPOasPDF } from "../../utils/downloadPOasPDF";
+import { CompanyContext } from "../../context/company/CompanyContext";
 
 const timelineData = [
   {
@@ -73,15 +75,17 @@ const timelineData = [
 
 export const PurchaseOrderDetails = () => {
   const navigate = useNavigate();
-  const { purchaseid } = useParams();
+  const { poId } = useParams();
   const [isLoading, setisLoading] = useState(true);
+  const [isDownloading, setisDownloading] = useState(false);
   const { getPurchaseOrderDetails, purchaseOrderDetails } =
     useContext(PurchaseOrderContext);
+  const { companyDetails } = useContext(CompanyContext);
 
   useEffect(() => {
-    getPurchaseOrderDetails(purchaseid, setisLoading);
+    getPurchaseOrderDetails(poId, setisLoading);
   }, []);
-
+console.log(isDownloading)
   return (
     <>
       <ToastContainer />
@@ -98,10 +102,46 @@ export const PurchaseOrderDetails = () => {
               <h1 className="2xl:text-4xl xl:text-3xl lg:text-2xl md:text-xl text-lg font-semibold text-[#333333]">
                 PUR Order Equipment Purchase
               </h1>
-              <div className=" flex gap-3 w-fit">
+              <div className=" items-center flex gap-3 w-fit">
+                <button
+                  disabled={isDownloading}
+                  onClick={async () => {
+                    try {
+                      setisDownloading(true);
+                      await downloadPOasPDF(
+                        purchaseOrderDetails,
+                        companyDetails,
+                      );
+                    } catch (error) {
+                      console.log(error);
+                    } finally {
+                      setisDownloading(false);
+                    }
+                  }}
+                  className="px-3 h-full disabled:cursor-wait disabled:opacity-60 flex items-center justify-center gap-2 font-medium 2xl:text-xl xl:text-lg lg:text-base md:text-sm text-xs text-[#2543B1]  cursor-pointer"
+                >
+                  {isDownloading ? (
+                    <>
+                      <Loader2 className=" inline-block w-5 animate-spin" />
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-7 h-7" />
+                    </>
+                  )}
+                </button>
+
                 <button
                   onClick={() => {
-                    navigate(`/purchase/createOrder/${purchaseid}`);
+                    navigate(`/purchase/addPurchase/new?poNo=${poId}`);
+                  }}
+                  className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs bg-[#0033661A] text-[#2543B1] rounded-xl hover:bg-[#00336626] cursor-pointer transition"
+                >
+                  Create purchase
+                </button>
+                <button
+                  onClick={() => {
+                    navigate(`/purchase/createOrder/${poId}`);
                   }}
                   className="px-4 py-3 flex items-center justify-center gap-2 font-medium xl:text-base md:text-sm text-xs bg-[#2543B1] text-white rounded-xl hover:bg-[#2725b1] cursor-pointer transition"
                 >
@@ -388,7 +428,7 @@ const RelatedDocuments = ({ purchaseOrderDetails }) => {
       </div>
 
       <div className="flex flex-wrap items-center justify-start gap-2 mb-4 max-h-[250px] overflow-auto">
-        {files && files.length>0  ? (
+        {files && files.length > 0 ? (
           <ShowUploadedFiles files={files} />
         ) : (
           <div className=" w-full flex flex-col items-center gap-4">

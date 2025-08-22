@@ -8,9 +8,7 @@ import {
 } from "react";
 import axios from "axios";
 import { showToast } from "../../utils/showToast";
-import { ToastContainer } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 import { LogoAnimation } from "../../component/logo-animation";
 import { OnBoardingPage } from "../../routes/onBoarding/OnBoarding";
 import { validateFields } from "../../utils/checkFormValidation";
@@ -52,7 +50,6 @@ export const CompanyContextProvider = ({ children }) => {
   const [companyDetails, setcompanyDetails] = useState(null);
   const [companyList, setcompanyList] = useState(null);
   const [isAuthenticating, setisAuthenticating] = useState(true);
-  const [isLoading, setisLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [companyForm, companyFormDispatch] = useReducer(
     formReducer,
@@ -62,56 +59,57 @@ export const CompanyContextProvider = ({ children }) => {
   const navigate = useNavigate();
 
   // function to get company details
-  const getCompanyDetails = useCallback(async () => {
-    const companyId = localStorage.getItem("companyid") || undefined;
-    // console.log(companyId)
-    if (!companyId) {
-      showToast("Company ID not found. Please login with a company.", 1);
-      setisAuthenticating(false);
-      return;
-    }
-
-    const token = localStorage.getItem("token");
-    if (!token) {
-      showToast("Token not found", 1);
-      return;
-    }
-
-    try {
-      const res = await axios.get(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/accounting/get-company-details-accounting/?companyId=${companyId}`,
-        {
-          headers: {
-            Authorization: token,
-          },
-        }
-      );
-      console.log(res);
-      if (
-        res.data.error_message?.toLowerCase() !== "na" ||
-        (res.data.status && res.data.status.toLowerCase() !== "success")
-      ) {
+  const getCompanyDetails = useCallback(
+    async (setisLoading = () => {}) => {
+      const companyId = localStorage.getItem("companyid") || undefined;
+      // console.log(companyId)
+      if (!companyId) {
+        showToast("Company ID not found. Please login with a company.", 1);
         setisAuthenticating(false);
-        // navigate("/onBoarding");
         return;
       }
-      setcompanyDetails(res.data.data);
-    } catch (error) {
-      console.log(error);
-      // navigate("/onBoarding");
-      showToast(
-        error.response?.data?.message ||
-          error.response?.data?.error ||
-          error.message ||
-          "Somthing went wrong. Please try again",
-        1
-      );
-    } finally {
-      setisAuthenticating(false);
-    }
-  }, [userDetails]);
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Token not found", 1);
+        return;
+      }
+
+      try {
+        const res = await axios.get(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/accounting/get-company-details-accounting/?companyId=${companyId}`,
+          {
+            headers: {
+              Authorization: token,
+            },
+          }
+        );
+        console.log(res);
+        if (
+          res.data.error_message?.toLowerCase() !== "na" ||
+          (res.data.status && res.data.status.toLowerCase() !== "success")
+        ) {
+          setisAuthenticating(false);
+          return;
+        }
+        setcompanyDetails(res.data.data);
+      } catch (error) {
+        console.log(error);
+        showToast(
+          error.response?.data?.message ||
+            error.response?.data?.error ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+      } finally {
+        setisAuthenticating(false);
+      }
+    },
+    [userDetails]
+  );
 
   // function to change comapny form data
   const handleChange = (name, value) => {
@@ -133,9 +131,7 @@ export const CompanyContextProvider = ({ children }) => {
 
   // function to submit compnay form and create compnay
   const createCompany = useCallback(
-    async (e) => {
-      e.preventDefault();
-
+    async (setisLoading = () => {}) => {
       const validationErrors = validateFields(companyForm);
 
       if (Object.keys(validationErrors).length > 0) {
@@ -145,12 +141,6 @@ export const CompanyContextProvider = ({ children }) => {
       }
 
       setErrors({});
-      // const userid = userDetails?.userId;
-      // if (!userid) {
-      //   showToast("User ID not found", 1);
-      //   return;
-      // }
-
       const token = localStorage.getItem("token");
       if (!token) {
         showToast("Token not found", 1);
@@ -193,7 +183,7 @@ export const CompanyContextProvider = ({ children }) => {
         localStorage.setItem("companyid", res.data.data.company_id);
         await getCompanyDetails();
         navigate("/");
-        // window.location.reload();
+        window.location.reload();
       } catch (error) {
         console.log(error);
         showToast(
@@ -207,24 +197,12 @@ export const CompanyContextProvider = ({ children }) => {
         setisLoading(false);
       }
     },
-    [companyForm, userDetails]
+    [companyForm]
   );
 
   //get company list
   const getCompanyList = useCallback(
     async (setisLoading = () => {}) => {
-      console.log("aniran dasa");
-      // if (!companyDetails) return;
-
-      // const userId = userDetails?.userId || undefined;
-
-      // console.log(companyId)
-      // if (!userId) {
-      //   showToast("User not found. Please login first.", 1);
-      //   setisAuthenticating(false);
-      //   return;
-      // }
-
       const token = localStorage.getItem("token");
       if (!token) {
         showToast("Token not found", 1);
@@ -253,7 +231,6 @@ export const CompanyContextProvider = ({ children }) => {
           (res.data.status && res.data.status.toLowerCase() !== "success")
         ) {
           setisLoading(false);
-          // navigate("/onBoarding");
           return;
         }
 
@@ -269,7 +246,6 @@ export const CompanyContextProvider = ({ children }) => {
         );
       } catch (error) {
         console.log(error);
-        // navigate("/onBoarding");
         showToast(
           error.response?.data?.message ||
             error.response?.data?.error ||
@@ -285,8 +261,87 @@ export const CompanyContextProvider = ({ children }) => {
     [userDetails, companyDetails]
   );
 
+  //update company detaoils
+  const updateCompany = useCallback(
+    async (companyId, setisLoading = () => {}) => {
+      const validationErrors = validateFields(companyForm);
+
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        showToast("All fields are required", 1);
+        return;
+      }
+
+      setErrors({});
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Token not found", 1);
+        return;
+      }
+
+      try {
+        setisLoading(true);
+
+        // upload documens
+        const file = companyForm.companyLogo;
+        if (file.fileBlob) {
+          const response = await uploadFile(
+            file.fileName,
+            file.fileBlob,
+            token
+          );
+          console.log(response);
+          companyForm.companyLogo = response.doc_url;
+          console.log("company iconimage uploaded");
+        }
+
+        const res = await axios.post(
+          `${
+            import.meta.env.VITE_BACKEND_URL
+          }/api/accounting/update-company-details-accounting/`,
+          {
+            // userId: userid,
+            companyId: companyId,
+            ...companyForm,
+            companyAddress: `${companyForm.companyStreet}, ${companyForm.companyLandmark}, ${companyForm.companyState}, ${companyForm.companyZIP}`,
+          },
+          {
+            headers: {
+              Authorization: token,
+            },
+          }
+        );
+
+        console.log(res);
+        if (res.data.status && res.data.status.toLowerCase() !== "success") {
+          showToast("Somthing went wrong. Please try again", 1);
+          return;
+        }
+
+        showToast("Company created");
+        await getCompanyDetails();
+        navigate("/");
+      } catch (error) {
+        console.log(error);
+        showToast(
+          error.response?.data?.message ||
+            error.response?.data?.error ||
+            error.message ||
+            "Somthing went wrong. Please try again",
+          1
+        );
+      } finally {
+        setisLoading(false);
+      }
+    },
+    [companyForm]
+  );
+
   useEffect(() => {
-    if (!localStorage.getItem("companyid") || localStorage.getItem("companyid").toString() == "null") {
+    if (
+      !localStorage.getItem("companyid") ||
+      localStorage.getItem("companyid").toString() == "null"
+    ) {
       console.log("ngfnhgfhbfghgfhfghfghull");
       getCompanyList();
     } else {
@@ -323,7 +378,9 @@ export const CompanyContextProvider = ({ children }) => {
             handleChange,
             errors,
             createCompany,
-            isLoading,
+            setcompanyDetails,
+            updateCompany,
+            companyFormDispatch,
           }}
         >
           <OnBoardingPage />
@@ -341,10 +398,11 @@ export const CompanyContextProvider = ({ children }) => {
           handleChange,
           errors,
           createCompany,
-          isLoading,
           getCompanyList,
           companyList,
           setcompanyDetails,
+          companyFormDispatch,
+          updateCompany,
         }}
       >
         {children}

@@ -6,9 +6,30 @@ import { useContext, useEffect, useState } from "react";
 import { AlertCircle, Loader2, Upload, User } from "lucide-react";
 import { CompanyContext } from "../../context/company/CompanyContext";
 import { indianStates } from "../../utils/dropdownFields";
+import { useParams } from "react-router-dom";
+import { getFileNameFromURL } from "../../utils/getFileNameFromURL";
 
 export const OnBoardingPage = () => {
-  const { createCompany, isLoading } = useContext(CompanyContext);
+  const { createCompany, updateCompany, companyDetails, companyFormDispatch } =
+    useContext(CompanyContext);
+  const [isLoading, setisLoading] = useState(false);
+  const { companyId } = useParams();
+  // const [isDataFechting, setisDataFechting] = useState(true);
+
+  // if (isDataFechting) {
+  //   return (
+  //     <div className=" flex-1 flex justify-center items-center py-10 px-4 min-h-[300px]">
+  //       <Loader2 className=" animate-spin md:w-10 md:h-10 w-8 h-8  text-gray-700" />
+  //     </div>
+  //   );
+  // }
+
+  const parts = (companyDetails?.company_address || "").split(",");
+  const [zip, state, street] = [
+    parts.pop()?.trim(),
+    parts.pop()?.trim(),
+    parts.join(", ")?.trim().replace(/,+$/, ""),
+  ];
 
   return (
     <>
@@ -28,20 +49,24 @@ export const OnBoardingPage = () => {
           </h2>
           {/* form content  */}
           <div className=" space-y-4">
-            <NameAndProfileImg />
-            <StreetAddress className={" mb-6"} />
+            <NameAndProfileImg isUpdate={companyId !== "new"} />
+            <StreetAddress
+              isUpdate={companyId !== "new"}
+              className={" mb-6"}
+              data={street}
+            />
             <div className=" grid md:grid-cols-3 grid-cols-1 space-y-5 gap-x-2 mb-8">
-              <ZipCode />
-              <State />
-              <LandMark />
+              <ZipCode isUpdate={companyId !== "new"} data={zip} />
+              <State isUpdate={companyId !== "new"} data={state} />
+              <LandMark isUpdate={companyId !== "new"} data={""} />
             </div>
             <div className=" grid md:grid-cols-2 grid-cols-1 gap-3 space-y-5 mb-5">
-              <ContactNumber />
-              <CompanyWebsite />
-              <GstNumber />
-              <PanNumber />
-              <EmailAddress />
-              <CinNumber />
+              <ContactNumber isUpdate={companyId !== "new"} />
+              <CompanyWebsite isUpdate={companyId !== "new"} />
+              <GstNumber isUpdate={companyId !== "new"} />
+              <PanNumber isUpdate={companyId !== "new"} />
+              <EmailAddress isUpdate={companyId !== "new"} />
+              <CinNumber isUpdate={companyId !== "new"} />
             </div>
           </div>
 
@@ -49,18 +74,30 @@ export const OnBoardingPage = () => {
           <div className=" flex justify-end gap-3">
             <button
               disabled={isLoading}
-              onClick={createCompany}
+              onClick={(e) => {
+                e.preventDefault();
+                !companyId || companyId == "new"
+                  ? createCompany(setisLoading)
+                  : updateCompany(companyId, setisLoading);
+              }}
               className="sm:w-auto w-[70%] disabled:cursor-not-allowed 2xl:text-xl xl:text-lg lg:text-base md:text-sm xl:rounded-2xl rounded-xl xl:px-6 px-4 xl:py-4 py-3 cursor-pointer bg-[#2543B1] border-2 border-[#3333331A] text-white hover:bg-[#252eb1]"
             >
               {isLoading ? (
                 <Loader2 className=" w-5 h-5 text-white animate-spin mx-auto" />
+              ) : !companyId || companyId == "new" ? (
+                "Add company"
               ) : (
-                "Add Company"
+                "Update company"
               )}
             </button>
             <button
               disabled={isLoading}
-              onClick={createCompany}
+              onClick={(e) => {
+                e.preventDefault();
+                companyFormDispatch({
+                  type: "RESET",
+                });
+              }}
               className="sm:w-auto w-[30%] disabled:cursor-not-allowed 2xl:text-xl hover:bg-gray-50 transition xl:text-lg lg:text-base md:text-sm xl:rounded-2xl rounded-xl xl:px-6 px-4 xl:py-4 py-3 cursor-pointer border-2 border-[#3333331A]  "
             >
               Cancel
@@ -72,18 +109,20 @@ export const OnBoardingPage = () => {
   );
 };
 
-const NameAndProfileImg = ({ className }) => {
+const NameAndProfileImg = ({ className, isUpdate }) => {
   const [companyName, setcompanyName] = useState("");
   const [selectedFile, setselectedFile] = useState(null);
   const [previewUrl, setpreviewUrl] = useState("");
 
-  const { handleChange, errors } = useContext(CompanyContext);
+  const { handleChange, errors, companyDetails } = useContext(CompanyContext);
 
   useEffect(() => {
     if (!selectedFile) return;
 
-    const url = URL.createObjectURL(selectedFile);
-    setpreviewUrl(url);
+    if (selectedFile instanceof File) {
+      const url = URL.createObjectURL(selectedFile);
+      setpreviewUrl(url);
+    }
   }, [selectedFile]);
 
   useEffect(() => {
@@ -92,11 +131,24 @@ const NameAndProfileImg = ({ className }) => {
 
   useEffect(() => {
     selectedFile &&
-      handleChange("companyLogo", {
-        fileBlob: selectedFile || "N/A",
-        fileName: selectedFile.name || "N/A",
-      });
+      handleChange(
+        "companyLogo",
+        selectedFile instanceof File
+          ? {
+              fileBlob: selectedFile || "N/A",
+              fileName: selectedFile.name || "N/A",
+            }
+          : selectedFile
+      );
   }, [selectedFile]);
+
+  useEffect(() => {
+    if (isUpdate) {
+      setcompanyName(companyDetails?.company_name || "");
+      setselectedFile(companyDetails?.company_logo || "");
+      setpreviewUrl(companyDetails?.company_logo || "");
+    }
+  }, [companyDetails]);
 
   return (
     <div className={`grid gap-5 lg:grid-cols-5 ${className}`}>
@@ -124,7 +176,11 @@ const NameAndProfileImg = ({ className }) => {
         <div className="grid grid-cols-10 items-center gap-2">
           {/* file name */}
           <p className="col-span-7 text-xs sm:text-sm md:text-base lg:text-sm xl:text-base 2xl:text-lg font-normal overflow-x-auto whitespace-nowrap">
-            {selectedFile ? selectedFile.name : "No image selected"}
+            {selectedFile
+              ? selectedFile instanceof File
+                ? selectedFile.name
+                : getFileNameFromURL(selectedFile)
+              : "No image selected"}
           </p>
 
           {/* image */}
@@ -133,7 +189,7 @@ const NameAndProfileImg = ({ className }) => {
               <img
                 loading="lazy"
                 alt="profile image"
-                className="w-8 h-8 sm:w-15 sm:h-15 lg:w-15 lg:h-15 rounded-full object-cover"
+                className="w-9 h-9 sm:w-16 sm:h-16 lg:w-16 lg:h-16 rounded-full object-cover text-xs border-2 border-gray-500 p-1"
                 src={previewUrl}
               />
             ) : (
@@ -195,14 +251,19 @@ const NameAndProfileImg = ({ className }) => {
   );
 };
 
-const StreetAddress = ({ className }) => {
-  const [address, setaddress] = useState("");
-  const { handleChange, errors } = useContext(CompanyContext);
+const StreetAddress = ({ className, isUpdate, data }) => {
+  const [address, setaddress] = useState(isUpdate ? data : "");
+  const { handleChange, errors, companyDetails } = useContext(CompanyContext);
   useEffect(() => {
     address && handleChange("companyStreet", address);
   }, [address]);
 
-  console.log(errors);
+  // useEffect(() => {
+  //   if (isUpdate) {
+  //     setaddress(companyDetails?.company_address || "");
+  //   }
+  // }, [companyDetails]);
+
   return (
     <div className={` relative ${className}`}>
       <InputField
@@ -223,8 +284,8 @@ const StreetAddress = ({ className }) => {
   );
 };
 
-const ZipCode = ({ className }) => {
-  const [zipCode, setzipCode] = useState("");
+const ZipCode = ({ className, data, isUpdate }) => {
+  const [zipCode, setzipCode] = useState(isUpdate ? data : "");
   const { handleChange, errors } = useContext(CompanyContext);
   useEffect(() => {
     zipCode && handleChange("companyZIP", zipCode);
@@ -249,8 +310,8 @@ const ZipCode = ({ className }) => {
   );
 };
 
-const State = ({ className }) => {
-  const [state, setstate] = useState("");
+const State = ({ className, data, isUpdate }) => {
+  const [state, setstate] = useState(isUpdate ? data : "");
   const { handleChange, errors } = useContext(CompanyContext);
   useEffect(() => {
     state && handleChange("companyState", state);
@@ -296,12 +357,19 @@ const LandMark = ({ className }) => {
   );
 };
 
-const CompanyWebsite = ({ className }) => {
+const CompanyWebsite = ({ className, isUpdate }) => {
   const [website, setwebsite] = useState("");
-  const { handleChange, errors } = useContext(CompanyContext);
+  const { handleChange, errors, companyDetails } = useContext(CompanyContext);
   useEffect(() => {
     website && handleChange("companyWebsite", website);
   }, [website]);
+
+  useEffect(() => {
+    if (isUpdate) {
+      setwebsite(companyDetails?.company_website || "");
+    }
+  }, [companyDetails]);
+
   return (
     <div className={` relative ${className}`}>
       <InputField
@@ -322,12 +390,18 @@ const CompanyWebsite = ({ className }) => {
   );
 };
 
-const GstNumber = ({ className }) => {
+const GstNumber = ({ className, isUpdate }) => {
   const [gst, setgst] = useState("");
-  const { handleChange, errors } = useContext(CompanyContext);
+  const { handleChange, errors, companyDetails } = useContext(CompanyContext);
   useEffect(() => {
     gst && handleChange("companyGSTIN", gst);
   }, [gst]);
+
+  useEffect(() => {
+    if (isUpdate) {
+      setgst(companyDetails?.company_GSTIN || "");
+    }
+  }, [companyDetails]);
   return (
     <div className={` relative ${className}`}>
       <InputField
@@ -350,12 +424,19 @@ const GstNumber = ({ className }) => {
   );
 };
 
-const PanNumber = ({ className }) => {
+const PanNumber = ({ className, isUpdate }) => {
   const [pan, setpan] = useState("");
-  const { handleChange, errors } = useContext(CompanyContext);
+  const { handleChange, errors, companyDetails } = useContext(CompanyContext);
   useEffect(() => {
     pan && handleChange("companyPAN", pan);
   }, [pan]);
+
+  useEffect(() => {
+    if (isUpdate) {
+      setpan(companyDetails?.company_PAN || "");
+    }
+  }, [companyDetails]);
+
   return (
     <div className={` relative ${className}`}>
       <InputField
@@ -378,12 +459,18 @@ const PanNumber = ({ className }) => {
   );
 };
 
-const EmailAddress = ({ className }) => {
+const EmailAddress = ({ className, isUpdate }) => {
   const [email, setemail] = useState("");
-  const { handleChange, errors } = useContext(CompanyContext);
+  const { handleChange, errors, companyDetails } = useContext(CompanyContext);
   useEffect(() => {
     email && handleChange("companyEmail", email);
   }, [email]);
+
+  useEffect(() => {
+    if (isUpdate) {
+      setemail(companyDetails?.company_email || "");
+    }
+  }, [companyDetails]);
   return (
     <div className={` relative ${className}`}>
       <InputField
@@ -405,12 +492,19 @@ const EmailAddress = ({ className }) => {
   );
 };
 
-const CinNumber = ({ className }) => {
+const CinNumber = ({ className, isUpdate }) => {
   const [cin, setcin] = useState("");
-  const { handleChange, errors } = useContext(CompanyContext);
+  const { handleChange, errors, companyDetails } = useContext(CompanyContext);
   useEffect(() => {
     cin && handleChange("companyCIN", cin);
   }, [cin]);
+
+  useEffect(() => {
+    if (isUpdate) {
+      setcin(companyDetails?.company_CIN || "");
+    }
+  }, [companyDetails]);
+
   return (
     <div className={` relative ${className}`}>
       <InputField
@@ -433,12 +527,18 @@ const CinNumber = ({ className }) => {
   );
 };
 
-const ContactNumber = ({ className }) => {
+const ContactNumber = ({ className, isUpdate }) => {
   const [number, setnumber] = useState("");
-  const { handleChange, errors } = useContext(CompanyContext);
+  const { handleChange, errors, companyDetails } = useContext(CompanyContext);
   useEffect(() => {
     number && handleChange("companyMobileNo", number);
   }, [number]);
+
+  useEffect(() => {
+    if (isUpdate) {
+      setnumber(companyDetails?.company_mobile_no || "");
+    }
+  }, [companyDetails]);
 
   return (
     <div className=" relative">

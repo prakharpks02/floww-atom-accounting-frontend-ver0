@@ -5,6 +5,7 @@ import { formatISODateToDDMMYYYY } from "../../utils/formateDate";
 import { ToastContainer } from "react-toastify";
 import { DashBoardContext } from "../../context/dashBoard/DashBoardContext";
 import { ExpenseDataPieChart } from "./ExpenseDataPieChart";
+import { Link } from "react-router-dom";
 
 export const Dashboard = () => {
   const { dashBoardDetails, getDashBoardDetails } =
@@ -129,54 +130,57 @@ const RecentTransaction = ({ dashBoardDetails }) => {
             This is the data of recent transactions from your accounts
           </p>
         </div>
-        <a
-          href="#"
+        <Link
+          to={"/recentTransactionList"}
           className="text-[#0077EE] underline underline-offset-1 text-xs lg:text-sm xl:text-base 2xl:text-lg font-medium hover:underline"
         >
           View all
-        </a>
+        </Link>
       </div>
-      <div className="divide-y">
-        {dashBoardDetails?.recent_transactions?.map((item, idx) => (
-          <div
-            key={idx}
-            className="flex justify-between items-center p-3 border-[1px] border-[#0000001A] rounded-xl xl:rounded-2xl "
-          >
-            <div className="flex items-center gap-4 ">
-              <div className="px-3 py-2 bg-[#0033661A] rounded-lg xl:rounded-xl 2xl:rounded-2xl">
-                <ArrowRightLeft className="text-blue-700 w-4" />
+      <div className="divide-y space-y-3">
+        {dashBoardDetails?.recent_transactions?.map((item, idx) => {
+          if (idx > 4) return;
+          return (
+            <div
+              key={idx}
+              className="flex justify-between items-center  p-3 border-[1px] border-[#0000001A] rounded-xl xl:rounded-2xl "
+            >
+              <div className="flex items-center gap-4 ">
+                <div className="px-3 py-2 bg-[#0033661A] rounded-lg xl:rounded-xl 2xl:rounded-2xl">
+                  <ArrowRightLeft className="text-blue-700 w-4" />
+                </div>
+                <div>
+                  <p className="font-medium text-[#333333] text-base lg:text-lg xl:text-xl 2xl:text-2xl ">
+                    {item.type}
+                  </p>
+                  <p className="text-xs xl:text-sm 2xl:text-base text-[#8E8E8E]">
+                    {item.name}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-[#333333] text-base lg:text-lg xl:text-xl 2xl:text-2xl ">
-                  {item.type}
+              <div className="text-right">
+                <p
+                  className={`font-medium text-base lg:text-lg xl:text-xl 2xl:text-2xl  ${
+                    item.amount < 0 ? "text-[#FB3748]" : "text-[#1FC16B]"
+                  }`}
+                >
+                  {item.amount < 0
+                    ? `-₹ ${Math.abs(
+                        Number(item.amount).toString() !== "NaN"
+                          ? Number(item.amount)
+                          : 0
+                      ).toLocaleString("en-IN")}`
+                    : `+₹ ${Number(item.amount).toLocaleString("en-IN")}`}
                 </p>
-                <p className="text-xs xl:text-sm 2xl:text-base text-[#8E8E8E]">
-                  {item.name}
+                <p className="text-xs xl:text-sm 2xl:text-base font-light text-[#777777]">
+                  {item.timestamp && item.timestamp.includes("-")
+                    ? item.timestamp
+                    : formatISODateToDDMMYYYY(item.timestamp)}
                 </p>
               </div>
             </div>
-            <div className="text-right">
-              <p
-                className={`font-medium text-base lg:text-lg xl:text-xl 2xl:text-2xl  ${
-                  item.amount < 0 ? "text-[#FB3748]" : "text-[#1FC16B]"
-                }`}
-              >
-                {item.amount < 0
-                  ? `-₹ ${Math.abs(
-                      Number(item.amount).toString() !== "NaN"
-                        ? Number(item.amount)
-                        : 0
-                    ).toLocaleString("en-IN")}`
-                  : `+₹ ${Number(item.amount).toLocaleString("en-IN")}`}
-              </p>
-              <p className="text-xs xl:text-sm 2xl:text-base font-light text-[#777777]">
-                {item.timestamp && item.timestamp.includes("-")
-                  ? item.timestamp
-                  : formatISODateToDDMMYYYY(item.timestamp)}
-              </p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

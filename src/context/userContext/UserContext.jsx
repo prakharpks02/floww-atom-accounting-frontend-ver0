@@ -32,7 +32,7 @@ export const UserContextProvider = ({ children }) => {
     }
     const formData = new FormData();
     formData.append("fileName", fileName.split(".").slice(0, -1).join("."));
-    formData.append("fileBlob", fileBlob);
+    formData.append("file", fileBlob);
 
     try {
       const response = await axios.post(
@@ -62,18 +62,25 @@ export const UserContextProvider = ({ children }) => {
 
     try {
       setisLoading(true);
-
       if (userData.imageUrl.fileBlob) {
         const res = await uploadProfileImage(
           userData.imageUrl.fileName || `profile-image`,
           userData.imageUrl.fileBlob
         );
         console.log(res);
-        userData.imageUrl = res.doc_url;
+        userData.imageUrl = res.azure_url;
         console.log("profile image uploaded");
       } else {
-        userData.imageUrl = "N/A";
+        userData.imageUrl = "/user.png";
       }
+      console.log(userData.imageUrl);
+      console.log({
+        firebase_token: userData.firebaseToken,
+        phone_number: `+91${userData.mobileNumber}`,
+        name: userData.name,
+        email: userData.email,
+        icon_image: userData.imageUrl,
+      });
 
       const res = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/auth/user/signup/`,
@@ -91,7 +98,6 @@ export const UserContextProvider = ({ children }) => {
         (res.data.status && res.data.status.toLowerCase() !== "success")
       ) {
         showToast(res.data.error || "Fail to create user", 1);
-        // navigate("/onBoarding");
         return;
       }
       localStorage.setItem("token", res.data.token);
@@ -100,9 +106,9 @@ export const UserContextProvider = ({ children }) => {
         // userId: res.data.user_id,
         email: userData.email,
         mobileNo: `+91${userData.mobileNumber}`,
-        image: undefined,
+        image: userData.image,
       });
-      // navigate("/");
+      navigate("/");
       showToast("User created successfully");
     } catch (error) {
       console.log(error);
@@ -113,7 +119,6 @@ export const UserContextProvider = ({ children }) => {
           "Something went wrong. Please try again",
         1
       );
-      // navigate("/onBoarding");
     } finally {
       setisLoading(false);
       setisLoading(false);
@@ -142,27 +147,22 @@ export const UserContextProvider = ({ children }) => {
           },
         }
       );
-      // const res = await axios.get(
-      //   `${import.meta.env.VITE_BACKEND_URL}/api/auth/user/user/details/?phone_number=+91${mobileNo}`,
-      //   {
-      //     headers: {
-      //       Authorization: token,
-      //     },
-      //   }
-      // );
       console.log(res);
       if (
         res.data.error ||
         (res.data.status && res.data.status?.toLowerCase() !== "success")
       ) {
-        showToast(res.data.error || "Fail to create user", 1);
+        // showToast(
+        //   res.data.error || res.data.detail || "Fail to get user details",
+        //   1
+        // );
         setisAuthenticating(false);
-        // navigate("/onBoarding");
         return;
       }
       if (res.data?.data?.member_company_id) console.log("present");
       res.data?.data?.member_company_id &&
         localStorage.setItem("companyid", res.data.data.member_company_id);
+
       setuserDetails({
         // userId: res.data.data.user_id,
         name: res.data.data.name,
@@ -176,18 +176,16 @@ export const UserContextProvider = ({ children }) => {
             ? "Member"
             : res.data.data.phone_number,
       });
-      // navigate("/");
-      // showToast("User created successfully");
     } catch (error) {
       console.log(error);
-      showToast(
-        error.response?.data?.error ||
-          error.response?.data?.message ||
-          error.message ||
-          "Something went wrong. Please try again",
-        1
-      );
-      // navigate("/onBoarding");
+      // showToast(
+      //   error.response?.data?.error ||
+      //     error.response?.data?.detail ||
+      //     error.response?.data?.message ||
+      //     error.message ||
+      //     "Something went wrong. Please try again",
+      //   1
+      // );
     } finally {
       setisAuthenticating(false);
     }
@@ -387,7 +385,6 @@ export const UserContextProvider = ({ children }) => {
       ) {
         showToast(res.data.error || "Fail to Login user", 1);
         setisLoading(false);
-        // navigate("/onBoarding");
         return;
       }
       localStorage.setItem("token", res.data.token);
@@ -404,7 +401,6 @@ export const UserContextProvider = ({ children }) => {
           "Something went wrong. Please try again",
         1
       );
-      // navigate("/onBoarding");
     } finally {
       setisAuthenticating(false);
       setisLoading(false);
